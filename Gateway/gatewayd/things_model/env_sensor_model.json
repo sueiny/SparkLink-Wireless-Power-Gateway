@@ -1,0 +1,117 @@
+{
+  "properties": [
+    {
+      "functionName": "温度",
+      "identifier": "temperature",
+      "functionType": "properties",
+      "accessMode": "r",
+      "specs": {
+        "dataType": {
+          "type": "DOUBLE",
+          "specs": {
+            "unit": "°C"
+          }
+        }
+      },
+      "extensionDesc": null
+    },
+    {
+      "functionName": "湿度",
+      "identifier": "humidity",
+      "functionType": "properties",
+      "accessMode": "r",
+      "specs": {
+        "dataType": {
+          "type": "DOUBLE",
+          "specs": {
+            "unit": "%RH"
+          }
+        }
+      },
+      "extensionDesc": null
+    },
+    {
+      "functionName": "在线状态",
+      "identifier": "online",
+      "functionType": "properties",
+      "accessMode": "r",
+      "specs": {
+        "dataType": {
+          "type": "ENUM",
+          "specsList": [
+            {
+              "value": 0,
+              "name": "离线",
+              "dataType": "ENUM"
+            },
+            {
+              "value": 1,
+              "name": "在线",
+              "dataType": "ENUM"
+            }
+          ]
+        }
+      },
+      "extensionDesc": null
+    }
+  ],
+  "events": [
+    {
+      "functionName": "高温告警",
+      "identifier": "high_temperature",
+      "functionType": "events",
+      "eventType": "ALERT",
+      "outputData": [
+        {
+          "functionName": "当前温度",
+          "identifier": "temperature",
+          "dataType": {
+            "type": "DOUBLE",
+            "specs": {
+              "unit": "°C"
+            }
+          }
+        },
+        {
+          "functionName": "阈值",
+          "identifier": "threshold",
+          "dataType": {
+            "type": "DOUBLE",
+            "specs": {
+              "unit": "°C"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "functionName": "高湿告警",
+      "identifier": "high_humidity",
+      "functionType": "events",
+      "eventType": "ALERT",
+      "outputData": [
+        {
+          "functionName": "当前湿度",
+          "identifier": "humidity",
+          "dataType": {
+            "type": "DOUBLE",
+            "specs": {
+              "unit": "%RH"
+            }
+          }
+        },
+        {
+          "functionName": "阈值",
+          "identifier": "threshold",
+          "dataType": {
+            "type": "DOUBLE",
+            "specs": {
+              "unit": "%RH"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "services": []
+}

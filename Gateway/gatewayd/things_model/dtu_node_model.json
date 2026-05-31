@@ -1,0 +1,789 @@
+{
+  "properties": [
+    {
+      "functionName": "节点角色",
+      "identifier": "role",
+      "functionType": "properties",
+      "accessMode": "r",
+      "specs": {
+        "dataType": {
+          "type": "ENUM",
+          "specsList": [
+            {
+              "value": 0,
+              "name": "root",
+              "dataType": "ENUM"
+            },
+            {
+              "value": 1,
+              "name": "node",
+              "dataType": "ENUM"
+            }
+          ]
+        }
+      },
+      "extensionDesc": null
+    },
+    {
+      "functionName": "MAC地址",
+      "identifier": "mac",
+      "functionType": "properties",
+      "accessMode": "r",
+      "specs": {
+        "dataType": {
+          "type": "TEXT",
+          "specs": {}
+        }
+      },
+      "extensionDesc": null
+    },
+    {
+      "functionName": "设备名称",
+      "identifier": "name",
+      "functionType": "properties",
+      "accessMode": "r",
+      "specs": {
+        "dataType": {
+          "type": "TEXT",
+          "specs": {}
+        }
+      },
+      "extensionDesc": null
+    },
+    {
+      "functionName": "在线状态",
+      "identifier": "online",
+      "functionType": "properties",
+      "accessMode": "r",
+      "specs": {
+        "dataType": {
+          "type": "ENUM",
+          "specsList": [
+            {
+              "value": 0,
+              "name": "离线",
+              "dataType": "ENUM"
+            },
+            {
+              "value": 1,
+              "name": "在线",
+              "dataType": "ENUM"
+            }
+          ]
+        }
+      },
+      "extensionDesc": null
+    },
+    {
+      "functionName": "运行时长",
+      "identifier": "uptime",
+      "functionType": "properties",
+      "accessMode": "r",
+      "specs": {
+        "dataType": {
+          "type": "INT",
+          "specs": {
+            "unit": "s"
+          }
+        }
+      },
+      "extensionDesc": null
+    },
+    {
+      "functionName": "拓扑信息",
+      "identifier": "topology",
+      "functionType": "properties",
+      "accessMode": "r",
+      "specs": {
+        "dataType": {
+          "type": "STRUCT",
+          "specs": [
+            {
+              "functionName": "父节点MAC",
+              "identifier": "parent_mac",
+              "remark": "上级DTU节点MAC地址",
+              "dataType": {
+                "type": "TEXT",
+                "specs": {}
+              }
+            },
+            {
+              "functionName": "子节点数",
+              "identifier": "child_count",
+              "remark": "下级DTU节点数量",
+              "dataType": {
+                "type": "INT",
+                "specs": {
+                  "unit": "count"
+                }
+              }
+            },
+            {
+              "functionName": "子节点列表",
+              "identifier": "child_macs",
+              "remark": "下级DTU节点MAC列表，逗号分隔",
+              "dataType": {
+                "type": "TEXT",
+                "specs": {}
+              }
+            }
+          ]
+        }
+      },
+      "extensionDesc": null
+    },
+    {
+      "functionName": "采集配置",
+      "identifier": "collect_config",
+      "functionType": "properties",
+      "accessMode": "rw",
+      "specs": {
+        "dataType": {
+          "type": "STRUCT",
+          "specs": [
+            {
+              "functionName": "Modbus设备数",
+              "identifier": "modbus_count",
+              "remark": "RS485总线下挂设备数量，最多8台",
+              "dataType": {
+                "type": "INT",
+                "specs": {
+                  "unit": "count"
+                }
+              }
+            },
+            {
+              "functionName": "采集周期",
+              "identifier": "collect_cycle",
+              "remark": "数据采集周期",
+              "dataType": {
+                "type": "INT",
+                "specs": {
+                  "unit": "ms"
+                }
+              }
+            },
+            {
+              "functionName": "预设地址1",
+              "identifier": "addr_1",
+              "remark": "Modbus设备地址，范围1-255，未使用填0",
+              "dataType": {
+                "type": "INT",
+                "specs": {}
+              }
+            },
+            {
+              "functionName": "预设类型1",
+              "identifier": "type_1",
+              "remark": "Modbus设备类型",
+              "dataType": {
+                "type": "ENUM",
+                "specsList": [
+                  {
+                    "value": 0,
+                    "name": "未定义",
+                    "dataType": "ENUM"
+                  },
+                  {
+                    "value": 1,
+                    "name": "三相电表",
+                    "dataType": "ENUM"
+                  },
+                  {
+                    "value": 2,
+                    "name": "单相电表",
+                    "dataType": "ENUM"
+                  },
+                  {
+                    "value": 3,
+                    "name": "温湿度变送器",
+                    "dataType": "ENUM"
+                  },
+                  {
+                    "value": 4,
+                    "name": "继电器",
+                    "dataType": "ENUM"
+                  },
+                  {
+                    "value": 5,
+                    "name": "其他预留",
+                    "dataType": "ENUM"
+                  }
+                ]
+              }
+            },
+            {
+              "functionName": "预设地址2",
+              "identifier": "addr_2",
+              "remark": "Modbus设备地址，范围1-255，未使用填0",
+              "dataType": {
+                "type": "INT",
+                "specs": {}
+              }
+            },
+            {
+              "functionName": "预设类型2",
+              "identifier": "type_2",
+              "remark": "Modbus设备类型",
+              "dataType": {
+                "type": "ENUM",
+                "specsList": [
+                  {
+                    "value": 0,
+                    "name": "未定义",
+                    "dataType": "ENUM"
+                  },
+                  {
+                    "value": 1,
+                    "name": "三相电表",
+                    "dataType": "ENUM"
+                  },
+                  {
+                    "value": 2,
+                    "name": "单相电表",
+                    "dataType": "ENUM"
+                  },
+                  {
+                    "value": 3,
+                    "name": "温湿度变送器",
+                    "dataType": "ENUM"
+                  },
+                  {
+                    "value": 4,
+                    "name": "继电器",
+                    "dataType": "ENUM"
+                  },
+                  {
+                    "value": 5,
+                    "name": "其他预留",
+                    "dataType": "ENUM"
+                  }
+                ]
+              }
+            },
+            {
+              "functionName": "预设地址3",
+              "identifier": "addr_3",
+              "remark": "Modbus设备地址，范围1-255，未使用填0",
+              "dataType": {
+                "type": "INT",
+                "specs": {}
+              }
+            },
+            {
+              "functionName": "预设类型3",
+              "identifier": "type_3",
+              "remark": "Modbus设备类型",
+              "dataType": {
+                "type": "ENUM",
+                "specsList": [
+                  {
+                    "value": 0,
+                    "name": "未定义",
+                    "dataType": "ENUM"
+                  },
+                  {
+                    "value": 1,
+                    "name": "三相电表",
+                    "dataType": "ENUM"
+                  },
+                  {
+                    "value": 2,
+                    "name": "单相电表",
+                    "dataType": "ENUM"
+                  },
+                  {
+                    "value": 3,
+                    "name": "温湿度变送器",
+                    "dataType": "ENUM"
+                  },
+                  {
+                    "value": 4,
+                    "name": "继电器",
+                    "dataType": "ENUM"
+                  },
+                  {
+                    "value": 5,
+                    "name": "其他预留",
+                    "dataType": "ENUM"
+                  }
+                ]
+              }
+            },
+            {
+              "functionName": "预设地址4",
+              "identifier": "addr_4",
+              "remark": "Modbus设备地址，范围1-255，未使用填0",
+              "dataType": {
+                "type": "INT",
+                "specs": {}
+              }
+            },
+            {
+              "functionName": "预设类型4",
+              "identifier": "type_4",
+              "remark": "Modbus设备类型",
+              "dataType": {
+                "type": "ENUM",
+                "specsList": [
+                  {
+                    "value": 0,
+                    "name": "未定义",
+                    "dataType": "ENUM"
+                  },
+                  {
+                    "value": 1,
+                    "name": "三相电表",
+                    "dataType": "ENUM"
+                  },
+                  {
+                    "value": 2,
+                    "name": "单相电表",
+                    "dataType": "ENUM"
+                  },
+                  {
+                    "value": 3,
+                    "name": "温湿度变送器",
+                    "dataType": "ENUM"
+                  },
+                  {
+                    "value": 4,
+                    "name": "继电器",
+                    "dataType": "ENUM"
+                  },
+                  {
+                    "value": 5,
+                    "name": "其他预留",
+                    "dataType": "ENUM"
+                  }
+                ]
+              }
+            },
+            {
+              "functionName": "预设地址5",
+              "identifier": "addr_5",
+              "remark": "Modbus设备地址，范围1-255，未使用填0",
+              "dataType": {
+                "type": "INT",
+                "specs": {}
+              }
+            },
+            {
+              "functionName": "预设类型5",
+              "identifier": "type_5",
+              "remark": "Modbus设备类型",
+              "dataType": {
+                "type": "ENUM",
+                "specsList": [
+                  {
+                    "value": 0,
+                    "name": "未定义",
+                    "dataType": "ENUM"
+                  },
+                  {
+                    "value": 1,
+                    "name": "三相电表",
+                    "dataType": "ENUM"
+                  },
+                  {
+                    "value": 2,
+                    "name": "单相电表",
+                    "dataType": "ENUM"
+                  },
+                  {
+                    "value": 3,
+                    "name": "温湿度变送器",
+                    "dataType": "ENUM"
+                  },
+                  {
+                    "value": 4,
+                    "name": "继电器",
+                    "dataType": "ENUM"
+                  },
+                  {
+                    "value": 5,
+                    "name": "其他预留",
+                    "dataType": "ENUM"
+                  }
+                ]
+              }
+            },
+            {
+              "functionName": "预设地址6",
+              "identifier": "addr_6",
+              "remark": "Modbus设备地址，范围1-255，未使用填0",
+              "dataType": {
+                "type": "INT",
+                "specs": {}
+              }
+            },
+            {
+              "functionName": "预设类型6",
+              "identifier": "type_6",
+              "remark": "Modbus设备类型",
+              "dataType": {
+                "type": "ENUM",
+                "specsList": [
+                  {
+                    "value": 0,
+                    "name": "未定义",
+                    "dataType": "ENUM"
+                  },
+                  {
+                    "value": 1,
+                    "name": "三相电表",
+                    "dataType": "ENUM"
+                  },
+                  {
+                    "value": 2,
+                    "name": "单相电表",
+                    "dataType": "ENUM"
+                  },
+                  {
+                    "value": 3,
+                    "name": "温湿度变送器",
+                    "dataType": "ENUM"
+                  },
+                  {
+                    "value": 4,
+                    "name": "继电器",
+                    "dataType": "ENUM"
+                  },
+                  {
+                    "value": 5,
+                    "name": "其他预留",
+                    "dataType": "ENUM"
+                  }
+                ]
+              }
+            },
+            {
+              "functionName": "预设地址7",
+              "identifier": "addr_7",
+              "remark": "Modbus设备地址，范围1-255，未使用填0",
+              "dataType": {
+                "type": "INT",
+                "specs": {}
+              }
+            },
+            {
+              "functionName": "预设类型7",
+              "identifier": "type_7",
+              "remark": "Modbus设备类型",
+              "dataType": {
+                "type": "ENUM",
+                "specsList": [
+                  {
+                    "value": 0,
+                    "name": "未定义",
+                    "dataType": "ENUM"
+                  },
+                  {
+                    "value": 1,
+                    "name": "三相电表",
+                    "dataType": "ENUM"
+                  },
+                  {
+                    "value": 2,
+                    "name": "单相电表",
+                    "dataType": "ENUM"
+                  },
+                  {
+                    "value": 3,
+                    "name": "温湿度变送器",
+                    "dataType": "ENUM"
+                  },
+                  {
+                    "value": 4,
+                    "name": "继电器",
+                    "dataType": "ENUM"
+                  },
+                  {
+                    "value": 5,
+                    "name": "其他预留",
+                    "dataType": "ENUM"
+                  }
+                ]
+              }
+            },
+            {
+              "functionName": "预设地址8",
+              "identifier": "addr_8",
+              "remark": "Modbus设备地址，范围1-255，未使用填0",
+              "dataType": {
+                "type": "INT",
+                "specs": {}
+              }
+            },
+            {
+              "functionName": "预设类型8",
+              "identifier": "type_8",
+              "remark": "Modbus设备类型",
+              "dataType": {
+                "type": "ENUM",
+                "specsList": [
+                  {
+                    "value": 0,
+                    "name": "未定义",
+                    "dataType": "ENUM"
+                  },
+                  {
+                    "value": 1,
+                    "name": "三相电表",
+                    "dataType": "ENUM"
+                  },
+                  {
+                    "value": 2,
+                    "name": "单相电表",
+                    "dataType": "ENUM"
+                  },
+                  {
+                    "value": 3,
+                    "name": "温湿度变送器",
+                    "dataType": "ENUM"
+                  },
+                  {
+                    "value": 4,
+                    "name": "继电器",
+                    "dataType": "ENUM"
+                  },
+                  {
+                    "value": 5,
+                    "name": "其他预留",
+                    "dataType": "ENUM"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "extensionDesc": null
+    }
+  ],
+  "services": [
+    {
+      "functionName": "重启DTU",
+      "identifier": "reboot",
+      "functionType": "services",
+      "callType": "ASYNC",
+      "inputData": [],
+      "outputData": [
+        {
+          "functionName": "执行结果",
+          "identifier": "result",
+          "dataType": {
+            "type": "ENUM",
+            "specsList": [
+              {
+                "value": 0,
+                "name": "失败",
+                "dataType": "ENUM"
+              },
+              {
+                "value": 1,
+                "name": "成功",
+                "dataType": "ENUM"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "functionName": "设置采集周期",
+      "identifier": "set_collect_cycle",
+      "functionType": "services",
+      "callType": "ASYNC",
+      "inputData": [
+        {
+          "functionName": "采集周期",
+          "identifier": "cycle_ms",
+          "dataType": {
+            "type": "INT",
+            "specs": {
+              "unit": "ms"
+            }
+          }
+        }
+      ],
+      "outputData": [
+        {
+          "functionName": "执行结果",
+          "identifier": "result",
+          "dataType": {
+            "type": "ENUM",
+            "specsList": [
+              {
+                "value": 0,
+                "name": "失败",
+                "dataType": "ENUM"
+              },
+              {
+                "value": 1,
+                "name": "成功",
+                "dataType": "ENUM"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "functionName": "触发立即采集",
+      "identifier": "trigger_collect",
+      "functionType": "services",
+      "callType": "ASYNC",
+      "inputData": [],
+      "outputData": [
+        {
+          "functionName": "执行结果",
+          "identifier": "result",
+          "dataType": {
+            "type": "ENUM",
+            "specsList": [
+              {
+                "value": 0,
+                "name": "失败",
+                "dataType": "ENUM"
+              },
+              {
+                "value": 1,
+                "name": "成功",
+                "dataType": "ENUM"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "events": [
+    {
+      "functionName": "节点离线",
+      "identifier": "node_offline",
+      "functionType": "events",
+      "eventType": "ALERT",
+      "outputData": [
+        {
+          "functionName": "节点MAC",
+          "identifier": "mac",
+          "dataType": {
+            "type": "TEXT",
+            "specs": {}
+          }
+        }
+      ]
+    },
+    {
+      "functionName": "设备离线",
+      "identifier": "device_offline",
+      "functionType": "events",
+      "eventType": "ALERT",
+      "outputData": [
+        {
+          "functionName": "节点MAC",
+          "identifier": "mac",
+          "dataType": {
+            "type": "TEXT",
+            "specs": {}
+          }
+        },
+        {
+          "functionName": "设备地址",
+          "identifier": "addr",
+          "dataType": {
+            "type": "INT",
+            "specs": {}
+          }
+        }
+      ]
+    },
+    {
+      "functionName": "采集失败",
+      "identifier": "collect_fail",
+      "functionType": "events",
+      "eventType": "ALERT",
+      "outputData": [
+        {
+          "functionName": "节点MAC",
+          "identifier": "mac",
+          "dataType": {
+            "type": "TEXT",
+            "specs": {}
+          }
+        },
+        {
+          "functionName": "设备地址",
+          "identifier": "addr",
+          "dataType": {
+            "type": "INT",
+            "specs": {}
+          }
+        }
+      ]
+    },
+    {
+      "functionName": "采集周期变更",
+      "identifier": "collect_cycle_changed",
+      "functionType": "events",
+      "eventType": "INFO",
+      "outputData": [
+        {
+          "functionName": "原采集周期",
+          "identifier": "old_cycle",
+          "dataType": {
+            "type": "INT",
+            "specs": {
+              "unit": "ms"
+            }
+          }
+        },
+        {
+          "functionName": "新采集周期",
+          "identifier": "new_cycle",
+          "dataType": {
+            "type": "INT",
+            "specs": {
+              "unit": "ms"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "functionName": "拓扑变更",
+      "identifier": "topology_changed",
+      "functionType": "events",
+      "eventType": "INFO",
+      "outputData": [
+        {
+          "functionName": "父节点MAC",
+          "identifier": "parent_mac",
+          "dataType": {
+            "type": "TEXT",
+            "specs": {}
+          }
+        },
+        {
+          "functionName": "子节点数",
+          "identifier": "child_count",
+          "dataType": {
+            "type": "INT",
+            "specs": {
+              "unit": "count"
+            }
+          }
+        },
+        {
+          "functionName": "子节点列表",
+          "identifier": "child_macs",
+          "dataType": {
+            "type": "TEXT",
+            "specs": {}
+          }
+        }
+      ]
+    }
+  ]
+}

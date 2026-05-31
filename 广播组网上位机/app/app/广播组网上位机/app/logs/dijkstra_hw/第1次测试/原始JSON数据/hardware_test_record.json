@@ -1,0 +1,6981 @@
+{
+  "algorithm": "dijkstra",
+  "field_sources": {
+    "default": "not directly measurable on current hardware",
+    "derived": "computed from real benchmark records",
+    "firmware_source": "sample/sle_mesh_test source constants",
+    "real_ack": "SEND followed by ACK or timeout",
+    "real_rssi": "RSSI_REQ and RSSI_REPORT",
+    "real_serial": "raw TX/RX serial bytes"
+  },
+  "firmware_params": {
+    "address": {
+      "dongle": "0x00",
+      "invalid": "0xFF",
+      "node_addr_location": "own_addr.addr[5]",
+      "sle_mac_prefix": "11:00:00:00:00"
+    },
+    "advertising": {
+      "actual_announce_tx_power": 20,
+      "announce_channel_map": "0x07",
+      "announce_interval_max": "0xC8",
+      "announce_interval_min": "0xC8",
+      "announce_interval_note": "source comment maps 0xC8 to 25 ms",
+      "announce_level": "SLE_ANNOUNCE_LEVEL_NORMAL",
+      "announce_mode": "SLE_ANNOUNCE_MODE_NONCONN_SCANABLE",
+      "announce_role": "SLE_ANNOUNCE_ROLE_T_CAN_NEGO",
+      "defined_sm_adv_tx_power": 14,
+      "scan_rsp_tx_power_field": 20
+    },
+    "capacity_limits": {
+      "adv_data_len_max": 200,
+      "adv_handle": 1,
+      "dedup_table_size": 32,
+      "max_frame_len": 200,
+      "max_neighbors": 32,
+      "path_cache_size": 8,
+      "relay_queue_size": 8,
+      "rssi_max_entries": 16,
+      "rssi_store_slots": 16,
+      "uart_line_max": 256,
+      "uart_rx_ring_size": 512
+    },
+    "connection_params_present_but_not_primary_for_broadcast": {
+      "conn_interval_max": "0x14",
+      "conn_interval_min": "0x14",
+      "conn_max_latency": "0x1F3",
+      "conn_supervision_timeout": "0x1F4"
+    },
+    "protocol": {
+      "frame_types": {
+        "ACK": "0x05",
+        "DATA": "0x02",
+        "PATH_REQ": "0x03",
+        "PATH_RESP": "0x04",
+        "RSSI_REPORT": "0x01"
+      },
+      "magic0": "0x4D",
+      "magic1": "0x53",
+      "version": "0x01"
+    },
+    "scan": {
+      "own_addr_type": 0,
+      "seek_filter_policy": 0,
+      "seek_interval_0": 160,
+      "seek_phys": 1,
+      "seek_type_0": 0,
+      "seek_window_0": 48
+    },
+    "source": "sample/sle_mesh_test",
+    "timing_ms": {
+      "adv_duration_ms": 125,
+      "dedup_timeout_ms": 2000,
+      "neighbor_timeout_ms": 15000,
+      "rssi_collect_window_ms": 200,
+      "rssi_report_period_ms": 5000,
+      "scan_collect_window_ms": 3000,
+      "worker_sleep_ms": 50
+    },
+    "uart_commands": {
+      "dongle_to_pc": [
+        "RSSI_REPORT",
+        "HEX",
+        "ACK",
+        "DATA",
+        "PATH_REQ",
+        "NO DATA"
+      ],
+      "note": "ACK is a dongle-to-PC event, not a PC command",
+      "pc_to_dongle": [
+        "RSSI_REQ",
+        "SEND",
+        "PATH_RESP",
+        "TOPO?"
+      ]
+    }
+  },
+  "result_summary": {
+    "latency_policy": {
+      "ack_match_rule": "ACK dst equals current target; seq is recorded but not required to match",
+      "point_to_point_ms": "gateway_to_target_ms - gateway_to_source_ms",
+      "success_latency_only": true,
+      "timeout_latency_for_simulation_aligned_round_record": "ack_timeout_s",
+      "total_latency_ms": "point_to_point_ms for Dijkstra"
+    },
+    "pairs": {
+      "01:02": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 112.20789797759305,
+        "command_downlink_latency_ms": 336.62369393277913,
+        "destination": "02",
+        "end_to_end_avg_latency_ms": 336.62369393277913,
+        "gateway_to_source_ms": 100.9763409383595,
+        "gateway_to_target_ms": 802.6924759615213,
+        "last_cost": 3.0,
+        "last_route": [
+          0,
+          2,
+          1,
+          2
+        ],
+        "latency": {
+          "avg_ms": 336.62369393277913,
+          "max_ms": 1404.0219832677394,
+          "min_ms": 0.0,
+          "p95_ms": 1404.0219832677394
+        },
+        "latency_jitter": {
+          "jitter_ms": 186.65461889196214,
+          "stddev_ms": 301.0257022170128
+        },
+        "loss_rate": 0.3,
+        "lost": 6,
+        "path_rssi": {
+          "mean_rssi": -74.33333333333333,
+          "min_rssi": -79,
+          "route": [
+            0,
+            2,
+            1,
+            2
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 701.7161350231618,
+        "recollect_count": 2,
+        "route_fallback": false,
+        "route_hops": 3,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 02 -> 01 -> 02",
+        "sent": 20,
+        "source": "01",
+        "success": 14,
+        "total_latency_ms": 701.7161350231618
+      },
+      "01:03": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 31.613247112060588,
+        "command_downlink_latency_ms": 94.83974133618176,
+        "destination": "03",
+        "end_to_end_avg_latency_ms": 94.83974133618176,
+        "gateway_to_source_ms": 702.9243900906295,
+        "gateway_to_target_ms": 101.18903685361147,
+        "last_cost": 12.0,
+        "last_route": [
+          0,
+          2,
+          1,
+          3
+        ],
+        "latency": {
+          "avg_ms": 94.83974133618176,
+          "max_ms": 401.01901488378644,
+          "min_ms": 0.0,
+          "p95_ms": 392.82446703873575
+        },
+        "latency_jitter": {
+          "jitter_ms": 207.96727093020036,
+          "stddev_ms": 354.9632683933977
+        },
+        "loss_rate": 0.0,
+        "lost": 0,
+        "path_rssi": {
+          "mean_rssi": -77.66666666666667,
+          "min_rssi": -79,
+          "route": [
+            0,
+            2,
+            1,
+            3
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.0,
+        "recollect_count": 0,
+        "route_fallback": false,
+        "route_hops": 3,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 02 -> 01 -> 03",
+        "sent": 20,
+        "source": "01",
+        "success": 20,
+        "total_latency_ms": 0.0
+      },
+      "01:04": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 18.813956616213545,
+        "command_downlink_latency_ms": 75.25582646485418,
+        "destination": "04",
+        "end_to_end_avg_latency_ms": 75.25582646485418,
+        "gateway_to_source_ms": 101.00718610920012,
+        "gateway_to_target_ms": 101.04744415730238,
+        "last_cost": 18.0,
+        "last_route": [
+          0,
+          2,
+          1,
+          3,
+          4
+        ],
+        "latency": {
+          "avg_ms": 75.25582646485418,
+          "max_ms": 501.47601240314543,
+          "min_ms": 0.0,
+          "p95_ms": 301.0800168849528
+        },
+        "latency_jitter": {
+          "jitter_ms": 51.71729642474516,
+          "stddev_ms": 90.26763610072146
+        },
+        "loss_rate": 0.0,
+        "lost": 0,
+        "path_rssi": {
+          "mean_rssi": -75.5,
+          "min_rssi": -79,
+          "route": [
+            0,
+            2,
+            1,
+            3,
+            4
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.040258048102259636,
+        "recollect_count": 0,
+        "route_fallback": false,
+        "route_hops": 4,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 02 -> 01 -> 03 -> 04",
+        "sent": 20,
+        "source": "01",
+        "success": 20,
+        "total_latency_ms": 0.040258048102259636
+      },
+      "01:05": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 13.396556469767043,
+        "command_downlink_latency_ms": 40.18966940930113,
+        "destination": "05",
+        "end_to_end_avg_latency_ms": 40.18966940930113,
+        "gateway_to_source_ms": 201.44078810699284,
+        "gateway_to_target_ms": 100.99457297474146,
+        "last_cost": 12.0,
+        "last_route": [
+          0,
+          2,
+          1,
+          5
+        ],
+        "latency": {
+          "avg_ms": 40.18966940930113,
+          "max_ms": 501.52524397708476,
+          "min_ms": 0.0,
+          "p95_ms": 301.4717230107635
+        },
+        "latency_jitter": {
+          "jitter_ms": 74.3391187805794,
+          "stddev_ms": 149.09928987191458
+        },
+        "loss_rate": 0.0,
+        "lost": 0,
+        "path_rssi": {
+          "mean_rssi": -79.66666666666667,
+          "min_rssi": -82,
+          "route": [
+            0,
+            2,
+            1,
+            5
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.0,
+        "recollect_count": 0,
+        "route_fallback": false,
+        "route_hops": 3,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 02 -> 01 -> 05",
+        "sent": 20,
+        "source": "01",
+        "success": 20,
+        "total_latency_ms": 0.0
+      },
+      "01:06": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 6.608731759785625,
+        "command_downlink_latency_ms": 26.4349270391425,
+        "destination": "06",
+        "end_to_end_avg_latency_ms": 26.4349270391425,
+        "gateway_to_source_ms": 502.08792509511113,
+        "gateway_to_target_ms": 100.98973498679698,
+        "last_cost": 15.0,
+        "last_route": [
+          0,
+          2,
+          1,
+          2,
+          6
+        ],
+        "latency": {
+          "avg_ms": 26.4349270391425,
+          "max_ms": 401.2574558146298,
+          "min_ms": 0.0,
+          "p95_ms": 401.2574558146298
+        },
+        "latency_jitter": {
+          "jitter_ms": 190.5105729197139,
+          "stddev_ms": 293.6483662111348
+        },
+        "loss_rate": 0.05,
+        "lost": 1,
+        "path_rssi": {
+          "mean_rssi": -75.75,
+          "min_rssi": -80,
+          "route": [
+            0,
+            2,
+            1,
+            2,
+            6
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.0,
+        "recollect_count": 0,
+        "route_fallback": false,
+        "route_hops": 4,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 02 -> 01 -> 02 -> 06",
+        "sent": 20,
+        "source": "01",
+        "success": 19,
+        "total_latency_ms": 0.0
+      },
+      "01:07": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 20.09157156816831,
+        "command_downlink_latency_ms": 100.45785784084154,
+        "destination": "07",
+        "end_to_end_avg_latency_ms": 100.45785784084154,
+        "gateway_to_source_ms": 301.6180160921067,
+        "gateway_to_target_ms": 201.07910293154418,
+        "last_cost": 27.0,
+        "last_route": [
+          0,
+          2,
+          1,
+          2,
+          6,
+          7
+        ],
+        "latency": {
+          "avg_ms": 100.45785784084154,
+          "max_ms": 402.77968696318567,
+          "min_ms": 0.0,
+          "p95_ms": 402.77968696318567
+        },
+        "latency_jitter": {
+          "jitter_ms": 153.9741375867658,
+          "stddev_ms": 180.716213469609
+        },
+        "loss_rate": 0.05,
+        "lost": 1,
+        "path_rssi": {
+          "mean_rssi": -75.8,
+          "min_rssi": -80,
+          "route": [
+            0,
+            2,
+            1,
+            2,
+            6,
+            7
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.0,
+        "recollect_count": 0,
+        "route_fallback": false,
+        "route_hops": 5,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 02 -> 01 -> 02 -> 06 -> 07",
+        "sent": 20,
+        "source": "01",
+        "success": 19,
+        "total_latency_ms": 0.0
+      },
+      "01:08": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 23.761116663655756,
+        "command_downlink_latency_ms": 95.04446665462302,
+        "destination": "08",
+        "end_to_end_avg_latency_ms": 95.04446665462302,
+        "gateway_to_source_ms": 100.89058615267277,
+        "gateway_to_target_ms": 100.97699286416173,
+        "last_cost": 13.0,
+        "last_route": [
+          0,
+          2,
+          1,
+          9,
+          8
+        ],
+        "latency": {
+          "avg_ms": 95.04446665462302,
+          "max_ms": 1403.6046371329576,
+          "min_ms": 0.0,
+          "p95_ms": 1403.6046371329576
+        },
+        "latency_jitter": {
+          "jitter_ms": 121.68417139159095,
+          "stddev_ms": 191.08633823757017
+        },
+        "loss_rate": 0.05,
+        "lost": 1,
+        "path_rssi": {
+          "mean_rssi": -67.0,
+          "min_rssi": -79,
+          "route": [
+            0,
+            2,
+            1,
+            9,
+            8
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.08640671148896217,
+        "recollect_count": 0,
+        "route_fallback": false,
+        "route_hops": 4,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 02 -> 01 -> 09 -> 08",
+        "sent": 20,
+        "source": "01",
+        "success": 19,
+        "total_latency_ms": 0.08640671148896217
+      },
+      "01:09": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 79.86636847878496,
+        "command_downlink_latency_ms": 239.59910543635488,
+        "destination": "09",
+        "end_to_end_avg_latency_ms": 239.59910543635488,
+        "gateway_to_source_ms": 602.3334970232099,
+        "gateway_to_target_ms": 201.29351899959147,
+        "last_cost": 12.0,
+        "last_route": [
+          0,
+          2,
+          1,
+          9
+        ],
+        "latency": {
+          "avg_ms": 239.59910543635488,
+          "max_ms": 1103.5191069822758,
+          "min_ms": 0.0,
+          "p95_ms": 1103.5191069822758
+        },
+        "latency_jitter": {
+          "jitter_ms": 119.14594365904729,
+          "stddev_ms": 171.02546141474906
+        },
+        "loss_rate": 0.1,
+        "lost": 2,
+        "path_rssi": {
+          "mean_rssi": -78.5,
+          "min_rssi": -79,
+          "route": [
+            0,
+            2,
+            1,
+            9
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.0,
+        "recollect_count": 0,
+        "route_fallback": false,
+        "route_hops": 3,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 02 -> 01 -> 09",
+        "sent": 20,
+        "source": "01",
+        "success": 18,
+        "total_latency_ms": 0.0
+      },
+      "01:10": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 11.154135588892839,
+        "command_downlink_latency_ms": 44.616542355571355,
+        "destination": "10",
+        "end_to_end_avg_latency_ms": 44.616542355571355,
+        "gateway_to_source_ms": 101.48282395675778,
+        "gateway_to_target_ms": 100.9978752117604,
+        "last_cost": 13.0,
+        "last_route": [
+          0,
+          2,
+          1,
+          9,
+          16
+        ],
+        "latency": {
+          "avg_ms": 44.616542355571355,
+          "max_ms": 401.27820591442287,
+          "min_ms": 0.0,
+          "p95_ms": 401.27820591442287
+        },
+        "latency_jitter": {
+          "jitter_ms": 130.6708432787142,
+          "stddev_ms": 240.91926339405703
+        },
+        "loss_rate": 0.1,
+        "lost": 2,
+        "path_rssi": {
+          "mean_rssi": -67.33333333333333,
+          "min_rssi": -79,
+          "route": [
+            0,
+            2,
+            1,
+            9,
+            16
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.0,
+        "recollect_count": 0,
+        "route_fallback": false,
+        "route_hops": 4,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 02 -> 01 -> 09 -> 10",
+        "sent": 20,
+        "source": "01",
+        "success": 18,
+        "total_latency_ms": 0.0
+      },
+      "02:01": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 23.753563165847286,
+        "command_downlink_latency_ms": 71.26068949754186,
+        "destination": "01",
+        "end_to_end_avg_latency_ms": 71.26068949754186,
+        "gateway_to_source_ms": 501.9683700520545,
+        "gateway_to_target_ms": 101.1671640444547,
+        "last_cost": 12.0,
+        "last_route": [
+          0,
+          3,
+          2,
+          1
+        ],
+        "latency": {
+          "avg_ms": 71.26068949754186,
+          "max_ms": 502.1092889364809,
+          "min_ms": 0.0,
+          "p95_ms": 502.1092889364809
+        },
+        "latency_jitter": {
+          "jitter_ms": 117.183634511105,
+          "stddev_ms": 150.78810098592814
+        },
+        "loss_rate": 0.15,
+        "lost": 3,
+        "path_rssi": {
+          "mean_rssi": -66.0,
+          "min_rssi": -78,
+          "route": [
+            0,
+            3,
+            2,
+            1
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.0,
+        "recollect_count": 1,
+        "route_fallback": false,
+        "route_hops": 3,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 03 -> 02 -> 01",
+        "sent": 20,
+        "source": "02",
+        "success": 17,
+        "total_latency_ms": 0.0
+      },
+      "02:03": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 8.87107110226198,
+        "command_downlink_latency_ms": 17.74214220452396,
+        "destination": "03",
+        "end_to_end_avg_latency_ms": 17.74214220452396,
+        "gateway_to_source_ms": 100.7932189386338,
+        "gateway_to_target_ms": 100.93819699250162,
+        "last_cost": 6.0,
+        "last_route": [
+          0,
+          2,
+          3
+        ],
+        "latency": {
+          "avg_ms": 17.74214220452396,
+          "max_ms": 100.57111526839435,
+          "min_ms": 0.0,
+          "p95_ms": 100.57111526839435
+        },
+        "latency_jitter": {
+          "jitter_ms": 207.96727093020036,
+          "stddev_ms": 354.9632683933977
+        },
+        "loss_rate": 0.15,
+        "lost": 3,
+        "path_rssi": {
+          "mean_rssi": -74.5,
+          "min_rssi": -79,
+          "route": [
+            0,
+            2,
+            3
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.14497805386781693,
+        "recollect_count": 1,
+        "route_fallback": false,
+        "route_hops": 2,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 02 -> 03",
+        "sent": 20,
+        "source": "02",
+        "success": 17,
+        "total_latency_ms": 0.14497805386781693
+      },
+      "02:04": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 13.383563045257082,
+        "command_downlink_latency_ms": 40.150689135771245,
+        "destination": "04",
+        "end_to_end_avg_latency_ms": 40.150689135771245,
+        "gateway_to_source_ms": 301.72777990810573,
+        "gateway_to_target_ms": 100.91807204298675,
+        "last_cost": 12.0,
+        "last_route": [
+          0,
+          2,
+          3,
+          4
+        ],
+        "latency": {
+          "avg_ms": 40.150689135771245,
+          "max_ms": 501.37627497315407,
+          "min_ms": 0.0,
+          "p95_ms": 100.8291570469737
+        },
+        "latency_jitter": {
+          "jitter_ms": 51.71729642474516,
+          "stddev_ms": 90.26763610072146
+        },
+        "loss_rate": 0.0,
+        "lost": 0,
+        "path_rssi": {
+          "mean_rssi": -72.66666666666667,
+          "min_rssi": -79,
+          "route": [
+            0,
+            2,
+            3,
+            4
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.0,
+        "recollect_count": 0,
+        "route_fallback": false,
+        "route_hops": 3,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 02 -> 03 -> 04",
+        "sent": 20,
+        "source": "02",
+        "success": 20,
+        "total_latency_ms": 0.0
+      },
+      "02:05": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 32.65052641509101,
+        "command_downlink_latency_ms": 65.30105283018202,
+        "destination": "05",
+        "end_to_end_avg_latency_ms": 65.30105283018202,
+        "gateway_to_source_ms": 401.8125180155039,
+        "gateway_to_target_ms": 101.0776231996715,
+        "last_cost": 12.0,
+        "last_route": [
+          0,
+          2,
+          5
+        ],
+        "latency": {
+          "avg_ms": 65.30105283018202,
+          "max_ms": 301.15292500704527,
+          "min_ms": 0.0,
+          "p95_ms": 300.8146302308887
+        },
+        "latency_jitter": {
+          "jitter_ms": 74.3391187805794,
+          "stddev_ms": 149.09928987191458
+        },
+        "loss_rate": 0.0,
+        "lost": 0,
+        "path_rssi": {
+          "mean_rssi": -82.0,
+          "min_rssi": -85,
+          "route": [
+            0,
+            2,
+            5
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.0,
+        "recollect_count": 0,
+        "route_fallback": false,
+        "route_hops": 2,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 02 -> 05",
+        "sent": 20,
+        "source": "02",
+        "success": 20,
+        "total_latency_ms": 0.0
+      },
+      "02:06": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 31.411827533264404,
+        "command_downlink_latency_ms": 94.23548259979322,
+        "destination": "06",
+        "end_to_end_avg_latency_ms": 94.23548259979322,
+        "gateway_to_source_ms": 100.86372098885477,
+        "gateway_to_target_ms": 100.88957380503416,
+        "last_cost": 18.0,
+        "last_route": [
+          0,
+          2,
+          3,
+          6
+        ],
+        "latency": {
+          "avg_ms": 94.23548259979322,
+          "max_ms": 1294.7770308237523,
+          "min_ms": 0.0,
+          "p95_ms": 1294.7770308237523
+        },
+        "latency_jitter": {
+          "jitter_ms": 190.5105729197139,
+          "stddev_ms": 293.6483662111348
+        },
+        "loss_rate": 0.1,
+        "lost": 2,
+        "path_rssi": {
+          "mean_rssi": -76.33333333333333,
+          "min_rssi": -80,
+          "route": [
+            0,
+            2,
+            3,
+            6
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.025852816179394722,
+        "recollect_count": 0,
+        "route_fallback": false,
+        "route_hops": 3,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 02 -> 03 -> 06",
+        "sent": 20,
+        "source": "02",
+        "success": 18,
+        "total_latency_ms": 0.025852816179394722
+      },
+      "02:07": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 27.86884001883057,
+        "command_downlink_latency_ms": 111.47536007532229,
+        "destination": "07",
+        "end_to_end_avg_latency_ms": 111.47536007532229,
+        "gateway_to_source_ms": 301.3624679297209,
+        "gateway_to_target_ms": 100.9792541153729,
+        "last_cost": 24.0,
+        "last_route": [
+          0,
+          2,
+          3,
+          6,
+          7
+        ],
+        "latency": {
+          "avg_ms": 111.47536007532229,
+          "max_ms": 501.6242030542344,
+          "min_ms": 0.0,
+          "p95_ms": 501.6242030542344
+        },
+        "latency_jitter": {
+          "jitter_ms": 153.9741375867658,
+          "stddev_ms": 180.716213469609
+        },
+        "loss_rate": 0.1,
+        "lost": 2,
+        "path_rssi": {
+          "mean_rssi": -76.25,
+          "min_rssi": -80,
+          "route": [
+            0,
+            2,
+            3,
+            6,
+            7
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.0,
+        "recollect_count": 0,
+        "route_fallback": false,
+        "route_hops": 4,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 02 -> 03 -> 06 -> 07",
+        "sent": 20,
+        "source": "02",
+        "success": 18,
+        "total_latency_ms": 0.0
+      },
+      "02:08": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 30.120495314865064,
+        "command_downlink_latency_ms": 90.36148594459519,
+        "destination": "08",
+        "end_to_end_avg_latency_ms": 90.36148594459519,
+        "gateway_to_source_ms": 602.6170100085437,
+        "gateway_to_target_ms": 101.03158792480826,
+        "last_cost": 13.0,
+        "last_route": [
+          0,
+          2,
+          16,
+          8
+        ],
+        "latency": {
+          "avg_ms": 90.36148594459519,
+          "max_ms": 803.444140125066,
+          "min_ms": 0.0,
+          "p95_ms": 301.2972038704902
+        },
+        "latency_jitter": {
+          "jitter_ms": 121.68417139159095,
+          "stddev_ms": 191.08633823757017
+        },
+        "loss_rate": 0.0,
+        "lost": 0,
+        "path_rssi": {
+          "mean_rssi": -59.5,
+          "min_rssi": -79,
+          "route": [
+            0,
+            2,
+            16,
+            8
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.0,
+        "recollect_count": 0,
+        "route_fallback": false,
+        "route_hops": 3,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 02 -> 10 -> 08",
+        "sent": 20,
+        "source": "02",
+        "success": 20,
+        "total_latency_ms": 0.0
+      },
+      "02:09": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 25.56632200310774,
+        "command_downlink_latency_ms": 76.69896600932321,
+        "destination": "09",
+        "end_to_end_avg_latency_ms": 76.69896600932321,
+        "gateway_to_source_ms": 101.39150405302644,
+        "gateway_to_target_ms": 201.3591539580375,
+        "last_cost": 13.0,
+        "last_route": [
+          0,
+          2,
+          16,
+          9
+        ],
+        "latency": {
+          "avg_ms": 76.69896600932321,
+          "max_ms": 702.3163728881627,
+          "min_ms": 0.0,
+          "p95_ms": 702.3163728881627
+        },
+        "latency_jitter": {
+          "jitter_ms": 119.14594365904729,
+          "stddev_ms": 171.02546141474906
+        },
+        "loss_rate": 0.15,
+        "lost": 3,
+        "path_rssi": {
+          "mean_rssi": -60.5,
+          "min_rssi": -79,
+          "route": [
+            0,
+            2,
+            16,
+            9
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 99.96764990501106,
+        "recollect_count": 0,
+        "route_fallback": false,
+        "route_hops": 3,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 02 -> 10 -> 09",
+        "sent": 20,
+        "source": "02",
+        "success": 17,
+        "total_latency_ms": 99.96764990501106
+      },
+      "02:10": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 84.68632432050072,
+        "command_downlink_latency_ms": 169.37264864100143,
+        "destination": "10",
+        "end_to_end_avg_latency_ms": 169.37264864100143,
+        "gateway_to_source_ms": 100.89632798917592,
+        "gateway_to_target_ms": 100.97592300735414,
+        "last_cost": 12.0,
+        "last_route": [
+          0,
+          2,
+          16
+        ],
+        "latency": {
+          "avg_ms": 169.37264864100143,
+          "max_ms": 1907.119587995112,
+          "min_ms": 0.0,
+          "p95_ms": 1907.119587995112
+        },
+        "latency_jitter": {
+          "jitter_ms": 130.6708432787142,
+          "stddev_ms": 240.91926339405703
+        },
+        "loss_rate": 0.2,
+        "lost": 4,
+        "path_rssi": {
+          "mean_rssi": -79.0,
+          "min_rssi": -79,
+          "route": [
+            0,
+            2,
+            16
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.07959501817822456,
+        "recollect_count": 0,
+        "route_fallback": false,
+        "route_hops": 2,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 02 -> 10",
+        "sent": 20,
+        "source": "02",
+        "success": 16,
+        "total_latency_ms": 0.07959501817822456
+      },
+      "03:01": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 27.608620596583933,
+        "command_downlink_latency_ms": 110.43448238633573,
+        "destination": "01",
+        "end_to_end_avg_latency_ms": 110.43448238633573,
+        "gateway_to_source_ms": 100.8624448440969,
+        "gateway_to_target_ms": 101.10251000151038,
+        "last_cost": 24.0,
+        "last_route": [
+          0,
+          2,
+          3,
+          2,
+          1
+        ],
+        "latency": {
+          "avg_ms": 110.43448238633573,
+          "max_ms": 501.53948087245226,
+          "min_ms": 0.0,
+          "p95_ms": 301.3538420200348
+        },
+        "latency_jitter": {
+          "jitter_ms": 117.183634511105,
+          "stddev_ms": 150.78810098592814
+        },
+        "loss_rate": 0.0,
+        "lost": 0,
+        "path_rssi": {
+          "mean_rssi": -76.25,
+          "min_rssi": -79,
+          "route": [
+            0,
+            2,
+            3,
+            2,
+            1
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.24006515741348267,
+        "recollect_count": 0,
+        "route_fallback": false,
+        "route_hops": 4,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 02 -> 03 -> 02 -> 01",
+        "sent": 20,
+        "source": "03",
+        "success": 20,
+        "total_latency_ms": 0.24006515741348267
+      },
+      "03:02": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 107.00044472857068,
+        "command_downlink_latency_ms": 214.00088945714137,
+        "destination": "02",
+        "end_to_end_avg_latency_ms": 214.00088945714137,
+        "gateway_to_source_ms": 100.95772705972195,
+        "gateway_to_target_ms": 502.22901604138315,
+        "last_cost": 6.0,
+        "last_route": [
+          0,
+          3,
+          2
+        ],
+        "latency": {
+          "avg_ms": 214.00088945714137,
+          "max_ms": 1504.287684801966,
+          "min_ms": 0.0,
+          "p95_ms": 1504.287684801966
+        },
+        "latency_jitter": {
+          "jitter_ms": 186.65461889196214,
+          "stddev_ms": 301.0257022170128
+        },
+        "loss_rate": 0.25,
+        "lost": 5,
+        "path_rssi": {
+          "mean_rssi": -60.0,
+          "min_rssi": -78,
+          "route": [
+            0,
+            3,
+            2
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 401.2712889816612,
+        "recollect_count": 1,
+        "route_fallback": false,
+        "route_hops": 2,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 03 -> 02",
+        "sent": 20,
+        "source": "03",
+        "success": 15,
+        "total_latency_ms": 401.2712889816612
+      },
+      "03:04": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 10.04121593432501,
+        "command_downlink_latency_ms": 20.08243186865002,
+        "destination": "04",
+        "end_to_end_avg_latency_ms": 20.08243186865002,
+        "gateway_to_source_ms": 101.03564918972552,
+        "gateway_to_target_ms": 100.93455296009779,
+        "last_cost": 6.0,
+        "last_route": [
+          0,
+          3,
+          4
+        ],
+        "latency": {
+          "avg_ms": 20.08243186865002,
+          "max_ms": 200.53892605938017,
+          "min_ms": 0.0,
+          "p95_ms": 200.5337041337043
+        },
+        "latency_jitter": {
+          "jitter_ms": 51.71729642474516,
+          "stddev_ms": 90.26763610072146
+        },
+        "loss_rate": 0.0,
+        "lost": 0,
+        "path_rssi": {
+          "mean_rssi": -55.5,
+          "min_rssi": -69,
+          "route": [
+            0,
+            3,
+            4
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.0,
+        "recollect_count": 0,
+        "route_fallback": false,
+        "route_hops": 2,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 03 -> 04",
+        "sent": 20,
+        "source": "03",
+        "success": 20,
+        "total_latency_ms": 0.0
+      },
+      "03:05": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 5.28530644971812,
+        "command_downlink_latency_ms": 15.855919349154359,
+        "destination": "05",
+        "end_to_end_avg_latency_ms": 15.855919349154359,
+        "gateway_to_source_ms": 409.34009896591306,
+        "gateway_to_target_ms": 100.96645005978644,
+        "last_cost": 9.0,
+        "last_route": [
+          0,
+          3,
+          0,
+          5
+        ],
+        "latency": {
+          "avg_ms": 15.855919349154359,
+          "max_ms": 100.40292469784617,
+          "min_ms": 0.0,
+          "p95_ms": 100.40292469784617
+        },
+        "latency_jitter": {
+          "jitter_ms": 74.3391187805794,
+          "stddev_ms": 149.09928987191458
+        },
+        "loss_rate": 0.05,
+        "lost": 1,
+        "path_rssi": {
+          "mean_rssi": -58.666666666666664,
+          "min_rssi": -74,
+          "route": [
+            0,
+            3,
+            0,
+            5
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.0,
+        "recollect_count": 0,
+        "route_fallback": false,
+        "route_hops": 3,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 03 -> 00 -> 05",
+        "sent": 20,
+        "source": "03",
+        "success": 19,
+        "total_latency_ms": 0.0
+      },
+      "03:06": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 56.620439502577746,
+        "command_downlink_latency_ms": 169.86131850773324,
+        "destination": "06",
+        "end_to_end_avg_latency_ms": 169.86131850773324,
+        "gateway_to_source_ms": 100.73747602291405,
+        "gateway_to_target_ms": 100.95671215094626,
+        "last_cost": 15.0,
+        "last_route": [
+          0,
+          3,
+          0,
+          6
+        ],
+        "latency": {
+          "avg_ms": 169.86131850773324,
+          "max_ms": 1304.6380351297557,
+          "min_ms": 0.0,
+          "p95_ms": 1304.6380351297557
+        },
+        "latency_jitter": {
+          "jitter_ms": 190.5105729197139,
+          "stddev_ms": 293.6483662111348
+        },
+        "loss_rate": 0.35,
+        "lost": 7,
+        "path_rssi": {
+          "mean_rssi": -51.0,
+          "min_rssi": -60,
+          "route": [
+            0,
+            3,
+            0,
+            6
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.2192361280322075,
+        "recollect_count": 1,
+        "route_fallback": false,
+        "route_hops": 3,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 03 -> 00 -> 06",
+        "sent": 20,
+        "source": "03",
+        "success": 13,
+        "total_latency_ms": 0.2192361280322075
+      },
+      "03:07": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 33.939104828545275,
+        "command_downlink_latency_ms": 135.7564193141811,
+        "destination": "07",
+        "end_to_end_avg_latency_ms": 135.7564193141811,
+        "gateway_to_source_ms": 101.08031309209764,
+        "gateway_to_target_ms": 201.29701495170593,
+        "last_cost": 27.0,
+        "last_route": [
+          0,
+          3,
+          0,
+          6,
+          7
+        ],
+        "latency": {
+          "avg_ms": 135.7564193141811,
+          "max_ms": 1404.4089789967984,
+          "min_ms": 0.0,
+          "p95_ms": 1404.4089789967984
+        },
+        "latency_jitter": {
+          "jitter_ms": 153.9741375867658,
+          "stddev_ms": 180.716213469609
+        },
+        "loss_rate": 0.15,
+        "lost": 3,
+        "path_rssi": {
+          "mean_rssi": -59.333333333333336,
+          "min_rssi": -76,
+          "route": [
+            0,
+            3,
+            0,
+            6,
+            7
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 100.21670185960829,
+        "recollect_count": 0,
+        "route_fallback": false,
+        "route_hops": 4,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 03 -> 00 -> 06 -> 07",
+        "sent": 20,
+        "source": "03",
+        "success": 17,
+        "total_latency_ms": 100.21670185960829
+      },
+      "03:08": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 46.03552281332668,
+        "command_downlink_latency_ms": 138.10656843998004,
+        "destination": "08",
+        "end_to_end_avg_latency_ms": 138.10656843998004,
+        "gateway_to_source_ms": 101.03131993673742,
+        "gateway_to_target_ms": 100.81661585718393,
+        "last_cost": 13.0,
+        "last_route": [
+          0,
+          3,
+          9,
+          8
+        ],
+        "latency": {
+          "avg_ms": 138.10656843998004,
+          "max_ms": 1404.772148001939,
+          "min_ms": 0.0,
+          "p95_ms": 1404.772148001939
+        },
+        "latency_jitter": {
+          "jitter_ms": 121.68417139159095,
+          "stddev_ms": 191.08633823757017
+        },
+        "loss_rate": 0.2,
+        "lost": 4,
+        "path_rssi": {
+          "mean_rssi": -43.0,
+          "min_rssi": -44,
+          "route": [
+            0,
+            3,
+            9,
+            8
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.0,
+        "recollect_count": 0,
+        "route_fallback": false,
+        "route_hops": 3,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 03 -> 09 -> 08",
+        "sent": 20,
+        "source": "03",
+        "success": 16,
+        "total_latency_ms": 0.0
+      },
+      "03:09": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 4.295854210587485,
+        "command_downlink_latency_ms": 21.479271052937424,
+        "destination": "09",
+        "end_to_end_avg_latency_ms": 21.479271052937424,
+        "gateway_to_source_ms": 1505.9306020848453,
+        "gateway_to_target_ms": 100.93084000982344,
+        "last_cost": 17.0,
+        "last_route": [
+          0,
+          3,
+          0,
+          16,
+          8,
+          9
+        ],
+        "latency": {
+          "avg_ms": 21.479271052937424,
+          "max_ms": 100.41808569803834,
+          "min_ms": 0.0,
+          "p95_ms": 100.41808569803834
+        },
+        "latency_jitter": {
+          "jitter_ms": 119.14594365904729,
+          "stddev_ms": 171.02546141474906
+        },
+        "loss_rate": 0.3,
+        "lost": 6,
+        "path_rssi": {
+          "mean_rssi": -48.5,
+          "min_rssi": -60,
+          "route": [
+            0,
+            3,
+            0,
+            16,
+            8,
+            9
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.0,
+        "recollect_count": 1,
+        "route_fallback": false,
+        "route_hops": 5,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 03 -> 00 -> 10 -> 08 -> 09",
+        "sent": 20,
+        "source": "03",
+        "success": 14,
+        "total_latency_ms": 0.0
+      },
+      "03:10": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 19.111859229659395,
+        "command_downlink_latency_ms": 57.335577688978184,
+        "destination": "10",
+        "end_to_end_avg_latency_ms": 57.335577688978184,
+        "gateway_to_source_ms": 101.01813194341958,
+        "gateway_to_target_ms": 101.0557219851762,
+        "last_cost": 15.0,
+        "last_route": [
+          0,
+          3,
+          4,
+          16
+        ],
+        "latency": {
+          "avg_ms": 57.335577688978184,
+          "max_ms": 601.7606710083783,
+          "min_ms": 0.0,
+          "p95_ms": 601.7606710083783
+        },
+        "latency_jitter": {
+          "jitter_ms": 130.6708432787142,
+          "stddev_ms": 240.91926339405703
+        },
+        "loss_rate": 0.3,
+        "lost": 6,
+        "path_rssi": {
+          "mean_rssi": -64.66666666666667,
+          "min_rssi": -83,
+          "route": [
+            0,
+            3,
+            4,
+            16
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.037590041756629944,
+        "recollect_count": 1,
+        "route_fallback": false,
+        "route_hops": 3,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 03 -> 04 -> 10",
+        "sent": 20,
+        "source": "03",
+        "success": 14,
+        "total_latency_ms": 0.037590041756629944
+      },
+      "04:01": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 6.98220229241997,
+        "command_downlink_latency_ms": 27.92880916967988,
+        "destination": "01",
+        "end_to_end_avg_latency_ms": 27.92880916967988,
+        "gateway_to_source_ms": 1204.220874933526,
+        "gateway_to_target_ms": 101.17214196361601,
+        "last_cost": 13.0,
+        "last_route": [
+          0,
+          4,
+          0,
+          2,
+          1
+        ],
+        "latency": {
+          "avg_ms": 27.92880916967988,
+          "max_ms": 401.8474919721484,
+          "min_ms": 0.0,
+          "p95_ms": 401.8474919721484
+        },
+        "latency_jitter": {
+          "jitter_ms": 117.183634511105,
+          "stddev_ms": 150.78810098592814
+        },
+        "loss_rate": 0.1,
+        "lost": 2,
+        "path_rssi": {
+          "mean_rssi": -68.0,
+          "min_rssi": -79,
+          "route": [
+            0,
+            4,
+            0,
+            2,
+            1
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.0,
+        "recollect_count": 0,
+        "route_fallback": false,
+        "route_hops": 4,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 04 -> 00 -> 02 -> 01",
+        "sent": 20,
+        "source": "04",
+        "success": 18,
+        "total_latency_ms": 0.0
+      },
+      "04:02": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 33.424876904927004,
+        "command_downlink_latency_ms": 100.27463071478101,
+        "destination": "02",
+        "end_to_end_avg_latency_ms": 100.27463071478101,
+        "gateway_to_source_ms": 100.97193415276706,
+        "gateway_to_target_ms": 301.2782211881131,
+        "last_cost": 7.0,
+        "last_route": [
+          0,
+          4,
+          3,
+          2
+        ],
+        "latency": {
+          "avg_ms": 100.27463071478101,
+          "max_ms": 1002.6915438938886,
+          "min_ms": 0.0,
+          "p95_ms": 1002.6915438938886
+        },
+        "latency_jitter": {
+          "jitter_ms": 186.65461889196214,
+          "stddev_ms": 301.0257022170128
+        },
+        "loss_rate": 0.35,
+        "lost": 7,
+        "path_rssi": {
+          "mean_rssi": -59.666666666666664,
+          "min_rssi": -78,
+          "route": [
+            0,
+            4,
+            3,
+            2
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 200.30628703534603,
+        "recollect_count": 2,
+        "route_fallback": false,
+        "route_hops": 3,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 04 -> 03 -> 02",
+        "sent": 20,
+        "source": "04",
+        "success": 13,
+        "total_latency_ms": 200.30628703534603
+      },
+      "04:03": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 53.29233093652874,
+        "command_downlink_latency_ms": 106.58466187305748,
+        "destination": "03",
+        "end_to_end_avg_latency_ms": 106.58466187305748,
+        "gateway_to_source_ms": 100.79650394618511,
+        "gateway_to_target_ms": 201.17097510956228,
+        "last_cost": 1.0,
+        "last_route": [
+          0,
+          4,
+          3
+        ],
+        "latency": {
+          "avg_ms": 106.58466187305748,
+          "max_ms": 1103.3577190246433,
+          "min_ms": 0.0,
+          "p95_ms": 1103.3577190246433
+        },
+        "latency_jitter": {
+          "jitter_ms": 207.96727093020036,
+          "stddev_ms": 354.9632683933977
+        },
+        "loss_rate": 0.2,
+        "lost": 4,
+        "path_rssi": {
+          "mean_rssi": -50.5,
+          "min_rssi": -55,
+          "route": [
+            0,
+            4,
+            3
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 100.37447116337717,
+        "recollect_count": 1,
+        "route_fallback": false,
+        "route_hops": 2,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 04 -> 03",
+        "sent": 20,
+        "source": "04",
+        "success": 16,
+        "total_latency_ms": 100.37447116337717
+      },
+      "04:05": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 6.703152581273268,
+        "command_downlink_latency_ms": 20.109457743819803,
+        "destination": "05",
+        "end_to_end_avg_latency_ms": 20.109457743819803,
+        "gateway_to_source_ms": 201.5517670661211,
+        "gateway_to_target_ms": 100.90933996252716,
+        "last_cost": 7.0,
+        "last_route": [
+          0,
+          4,
+          3,
+          5
+        ],
+        "latency": {
+          "avg_ms": 20.109457743819803,
+          "max_ms": 301.07311997562647,
+          "min_ms": 0.0,
+          "p95_ms": 100.39280401542783
+        },
+        "latency_jitter": {
+          "jitter_ms": 74.3391187805794,
+          "stddev_ms": 149.09928987191458
+        },
+        "loss_rate": 0.0,
+        "lost": 0,
+        "path_rssi": {
+          "mean_rssi": -60.666666666666664,
+          "min_rssi": -81,
+          "route": [
+            0,
+            4,
+            3,
+            5
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.0,
+        "recollect_count": 0,
+        "route_fallback": false,
+        "route_hops": 3,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 04 -> 03 -> 05",
+        "sent": 20,
+        "source": "04",
+        "success": 20,
+        "total_latency_ms": 0.0
+      },
+      "04:06": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 44.64971164965795,
+        "command_downlink_latency_ms": 133.94913494897386,
+        "destination": "06",
+        "end_to_end_avg_latency_ms": 133.94913494897386,
+        "gateway_to_source_ms": 1204.4262599665672,
+        "gateway_to_target_ms": 201.27687300555408,
+        "last_cost": 13.0,
+        "last_route": [
+          0,
+          4,
+          0,
+          6
+        ],
+        "latency": {
+          "avg_ms": 133.94913494897386,
+          "max_ms": 905.6648118421435,
+          "min_ms": 0.0,
+          "p95_ms": 905.6648118421435
+        },
+        "latency_jitter": {
+          "jitter_ms": 190.5105729197139,
+          "stddev_ms": 293.6483662111348
+        },
+        "loss_rate": 0.25,
+        "lost": 5,
+        "path_rssi": {
+          "mean_rssi": -57.5,
+          "min_rssi": -60,
+          "route": [
+            0,
+            4,
+            0,
+            6
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.0,
+        "recollect_count": 1,
+        "route_fallback": false,
+        "route_hops": 3,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 04 -> 00 -> 06",
+        "sent": 20,
+        "source": "04",
+        "success": 15,
+        "total_latency_ms": 0.0
+      },
+      "04:07": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 35.79715188104837,
+        "command_downlink_latency_ms": 107.39145564314511,
+        "destination": "07",
+        "end_to_end_avg_latency_ms": 107.39145564314511,
+        "gateway_to_source_ms": 101.05057689361274,
+        "gateway_to_target_ms": 502.3341078776866,
+        "last_cost": 18.0,
+        "last_route": [
+          0,
+          4,
+          6,
+          7
+        ],
+        "latency": {
+          "avg_ms": 107.39145564314511,
+          "max_ms": 501.45540200173855,
+          "min_ms": 0.0,
+          "p95_ms": 501.45540200173855
+        },
+        "latency_jitter": {
+          "jitter_ms": 153.9741375867658,
+          "stddev_ms": 180.716213469609
+        },
+        "loss_rate": 0.3,
+        "lost": 6,
+        "path_rssi": {
+          "mean_rssi": -65.5,
+          "min_rssi": -76,
+          "route": [
+            0,
+            4,
+            6,
+            7
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 401.2835309840739,
+        "recollect_count": 2,
+        "route_fallback": false,
+        "route_hops": 3,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 04 -> 06 -> 07",
+        "sent": 20,
+        "source": "04",
+        "success": 14,
+        "total_latency_ms": 401.2835309840739
+      },
+      "04:08": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 18.578539654198618,
+        "command_downlink_latency_ms": 55.73561896259586,
+        "destination": "08",
+        "end_to_end_avg_latency_ms": 55.73561896259586,
+        "gateway_to_source_ms": 602.1313709206879,
+        "gateway_to_target_ms": 101.05749312788248,
+        "last_cost": 13.0,
+        "last_route": [
+          0,
+          4,
+          3,
+          8
+        ],
+        "latency": {
+          "avg_ms": 55.73561896259586,
+          "max_ms": 400.8381809107959,
+          "min_ms": 0.0,
+          "p95_ms": 400.8381809107959
+        },
+        "latency_jitter": {
+          "jitter_ms": 121.68417139159095,
+          "stddev_ms": 191.08633823757017
+        },
+        "loss_rate": 0.1,
+        "lost": 2,
+        "path_rssi": {
+          "mean_rssi": -62.0,
+          "min_rssi": -85,
+          "route": [
+            0,
+            4,
+            3,
+            8
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.0,
+        "recollect_count": 0,
+        "route_fallback": false,
+        "route_hops": 3,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 04 -> 03 -> 08",
+        "sent": 20,
+        "source": "04",
+        "success": 18,
+        "total_latency_ms": 0.0
+      },
+      "04:09": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 25.09406716045406,
+        "command_downlink_latency_ms": 50.18813432090812,
+        "destination": "09",
+        "end_to_end_avg_latency_ms": 50.18813432090812,
+        "gateway_to_source_ms": 100.98484414629638,
+        "gateway_to_target_ms": 201.046341098845,
+        "last_cost": 12.0,
+        "last_route": [
+          0,
+          4,
+          9
+        ],
+        "latency": {
+          "avg_ms": 50.18813432090812,
+          "max_ms": 300.8669519331306,
+          "min_ms": 0.0,
+          "p95_ms": 300.8669519331306
+        },
+        "latency_jitter": {
+          "jitter_ms": 119.14594365904729,
+          "stddev_ms": 171.02546141474906
+        },
+        "loss_rate": 0.1,
+        "lost": 2,
+        "path_rssi": {
+          "mean_rssi": -55.0,
+          "min_rssi": -55,
+          "route": [
+            0,
+            4,
+            9
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 100.06149695254862,
+        "recollect_count": 0,
+        "route_fallback": false,
+        "route_hops": 2,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 04 -> 09",
+        "sent": 20,
+        "source": "04",
+        "success": 18,
+        "total_latency_ms": 100.06149695254862
+      },
+      "04:10": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 44.0358501131924,
+        "command_downlink_latency_ms": 132.10755033957722,
+        "destination": "10",
+        "end_to_end_avg_latency_ms": 132.10755033957722,
+        "gateway_to_source_ms": 100.88095883838832,
+        "gateway_to_target_ms": 100.8347230963409,
+        "last_cost": 13.0,
+        "last_route": [
+          0,
+          4,
+          9,
+          16
+        ],
+        "latency": {
+          "avg_ms": 132.10755033957722,
+          "max_ms": 905.022444203496,
+          "min_ms": 0.0,
+          "p95_ms": 905.022444203496
+        },
+        "latency_jitter": {
+          "jitter_ms": 130.6708432787142,
+          "stddev_ms": 240.91926339405703
+        },
+        "loss_rate": 0.05,
+        "lost": 1,
+        "path_rssi": {
+          "mean_rssi": -50.0,
+          "min_rssi": -55,
+          "route": [
+            0,
+            4,
+            9,
+            16
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.0,
+        "recollect_count": 0,
+        "route_fallback": false,
+        "route_hops": 3,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 04 -> 09 -> 10",
+        "sent": 20,
+        "source": "04",
+        "success": 19,
+        "total_latency_ms": 0.0
+      },
+      "05:01": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 25.498204691079902,
+        "command_downlink_latency_ms": 76.4946140732397,
+        "destination": "01",
+        "end_to_end_avg_latency_ms": 76.4946140732397,
+        "gateway_to_source_ms": 100.91270785778761,
+        "gateway_to_target_ms": 100.83315498195589,
+        "last_cost": 24.0,
+        "last_route": [
+          0,
+          5,
+          2,
+          1
+        ],
+        "latency": {
+          "avg_ms": 76.4946140732397,
+          "max_ms": 598.6036588437855,
+          "min_ms": 0.0,
+          "p95_ms": 598.6036588437855
+        },
+        "latency_jitter": {
+          "jitter_ms": 117.183634511105,
+          "stddev_ms": 150.78810098592814
+        },
+        "loss_rate": 0.15,
+        "lost": 3,
+        "path_rssi": {
+          "mean_rssi": -78.33333333333333,
+          "min_rssi": -83,
+          "route": [
+            0,
+            5,
+            2,
+            1
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.0,
+        "recollect_count": 0,
+        "route_fallback": false,
+        "route_hops": 3,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 05 -> 02 -> 01",
+        "sent": 20,
+        "source": "05",
+        "success": 17,
+        "total_latency_ms": 0.0
+      },
+      "05:02": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 4.4710788410156965,
+        "command_downlink_latency_ms": 13.41323652304709,
+        "destination": "02",
+        "end_to_end_avg_latency_ms": 13.41323652304709,
+        "gateway_to_source_ms": 1906.4625361934304,
+        "gateway_to_target_ms": 100.99259810522199,
+        "last_cost": 18.0,
+        "last_route": [
+          0,
+          5,
+          0,
+          2
+        ],
+        "latency": {
+          "avg_ms": 13.41323652304709,
+          "max_ms": 100.50919512286782,
+          "min_ms": 0.0,
+          "p95_ms": 100.50919512286782
+        },
+        "latency_jitter": {
+          "jitter_ms": 186.65461889196214,
+          "stddev_ms": 301.0257022170128
+        },
+        "loss_rate": 0.25,
+        "lost": 5,
+        "path_rssi": {
+          "mean_rssi": -76.5,
+          "min_rssi": -79,
+          "route": [
+            0,
+            5,
+            0,
+            2
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.0,
+        "recollect_count": 1,
+        "route_fallback": false,
+        "route_hops": 3,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 05 -> 00 -> 02",
+        "sent": 20,
+        "source": "05",
+        "success": 15,
+        "total_latency_ms": 0.0
+      },
+      "05:03": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 56.11371753655155,
+        "command_downlink_latency_ms": 112.2274350731031,
+        "destination": "03",
+        "end_to_end_avg_latency_ms": 112.2274350731031,
+        "gateway_to_source_ms": 502.6518020313233,
+        "gateway_to_target_ms": 100.83081782795489,
+        "last_cost": 6.0,
+        "last_route": [
+          0,
+          5,
+          3
+        ],
+        "latency": {
+          "avg_ms": 112.2274350731031,
+          "max_ms": 1605.6872841436416,
+          "min_ms": 0.0,
+          "p95_ms": 1605.6872841436416
+        },
+        "latency_jitter": {
+          "jitter_ms": 207.96727093020036,
+          "stddev_ms": 354.9632683933977
+        },
+        "loss_rate": 0.15,
+        "lost": 3,
+        "path_rssi": {
+          "mean_rssi": -72.0,
+          "min_rssi": -74,
+          "route": [
+            0,
+            5,
+            3
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.0,
+        "recollect_count": 0,
+        "route_fallback": false,
+        "route_hops": 2,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 05 -> 03",
+        "sent": 20,
+        "source": "05",
+        "success": 17,
+        "total_latency_ms": 0.0
+      },
+      "05:04": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 7.0336659136636746,
+        "command_downlink_latency_ms": 21.100997740991023,
+        "destination": "04",
+        "end_to_end_avg_latency_ms": 21.100997740991023,
+        "gateway_to_source_ms": null,
+        "gateway_to_target_ms": null,
+        "last_cost": 9.0,
+        "last_route": [
+          0,
+          5,
+          3,
+          4
+        ],
+        "latency": {
+          "avg_ms": 21.100997740991023,
+          "max_ms": 200.66553493961692,
+          "min_ms": 0.0,
+          "p95_ms": 200.66553493961692
+        },
+        "latency_jitter": {
+          "jitter_ms": 51.71729642474516,
+          "stddev_ms": 90.26763610072146
+        },
+        "loss_rate": 0.05,
+        "lost": 1,
+        "path_rssi": {
+          "mean_rssi": -71.0,
+          "min_rssi": -74,
+          "route": [
+            0,
+            5,
+            3,
+            4
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": null,
+        "recollect_count": 0,
+        "route_fallback": false,
+        "route_hops": 3,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 05 -> 03 -> 04",
+        "sent": 20,
+        "source": "05",
+        "success": 19,
+        "total_latency_ms": null
+      },
+      "05:06": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 37.41063735466086,
+        "command_downlink_latency_ms": 112.23191206398256,
+        "destination": "06",
+        "end_to_end_avg_latency_ms": 112.23191206398256,
+        "gateway_to_source_ms": 100.90216808021069,
+        "gateway_to_target_ms": 301.3320069294423,
+        "last_cost": 18.0,
+        "last_route": [
+          0,
+          5,
+          3,
+          6
+        ],
+        "latency": {
+          "avg_ms": 112.23191206398256,
+          "max_ms": 603.739962913096,
+          "min_ms": 0.0,
+          "p95_ms": 603.739962913096
+        },
+        "latency_jitter": {
+          "jitter_ms": 190.5105729197139,
+          "stddev_ms": 293.6483662111348
+        },
+        "loss_rate": 0.15,
+        "lost": 3,
+        "path_rssi": {
+          "mean_rssi": -74.66666666666667,
+          "min_rssi": -80,
+          "route": [
+            0,
+            5,
+            3,
+            6
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 200.4298388492316,
+        "recollect_count": 0,
+        "route_fallback": false,
+        "route_hops": 3,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 05 -> 03 -> 06",
+        "sent": 20,
+        "source": "05",
+        "success": 17,
+        "total_latency_ms": 200.4298388492316
+      },
+      "05:07": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 29.27613710764692,
+        "command_downlink_latency_ms": 117.10454843058768,
+        "destination": "07",
+        "end_to_end_avg_latency_ms": 117.10454843058768,
+        "gateway_to_source_ms": 602.4188948795199,
+        "gateway_to_target_ms": 205.87338716723025,
+        "last_cost": 24.0,
+        "last_route": [
+          0,
+          5,
+          3,
+          6,
+          7
+        ],
+        "latency": {
+          "avg_ms": 117.10454843058768,
+          "max_ms": 501.1105688754469,
+          "min_ms": 0.0,
+          "p95_ms": 501.1105688754469
+        },
+        "latency_jitter": {
+          "jitter_ms": 153.9741375867658,
+          "stddev_ms": 180.716213469609
+        },
+        "loss_rate": 0.1,
+        "lost": 2,
+        "path_rssi": {
+          "mean_rssi": -75.0,
+          "min_rssi": -80,
+          "route": [
+            0,
+            5,
+            3,
+            6,
+            7
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.0,
+        "recollect_count": 0,
+        "route_fallback": false,
+        "route_hops": 4,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 05 -> 03 -> 06 -> 07",
+        "sent": 20,
+        "source": "05",
+        "success": 18,
+        "total_latency_ms": 0.0
+      },
+      "05:08": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 38.98582477510596,
+        "command_downlink_latency_ms": 77.97164955021192,
+        "destination": "08",
+        "end_to_end_avg_latency_ms": 77.97164955021192,
+        "gateway_to_source_ms": 100.9585380088538,
+        "gateway_to_target_ms": 201.30563294515014,
+        "last_cost": 12.0,
+        "last_route": [
+          0,
+          5,
+          8
+        ],
+        "latency": {
+          "avg_ms": 77.97164955021192,
+          "max_ms": 401.05654089711607,
+          "min_ms": 0.0,
+          "p95_ms": 401.05654089711607
+        },
+        "latency_jitter": {
+          "jitter_ms": 121.68417139159095,
+          "stddev_ms": 191.08633823757017
+        },
+        "loss_rate": 0.1,
+        "lost": 2,
+        "path_rssi": {
+          "mean_rssi": -74.0,
+          "min_rssi": -74,
+          "route": [
+            0,
+            5,
+            8
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 100.34709493629634,
+        "recollect_count": 0,
+        "route_fallback": false,
+        "route_hops": 2,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 05 -> 08",
+        "sent": 20,
+        "source": "05",
+        "success": 18,
+        "total_latency_ms": 100.34709493629634
+      },
+      "05:09": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 30.661242567778874,
+        "command_downlink_latency_ms": 61.32248513555775,
+        "destination": "09",
+        "end_to_end_avg_latency_ms": 61.32248513555775,
+        "gateway_to_source_ms": 301.50166200473905,
+        "gateway_to_target_ms": 101.02804517373443,
+        "last_cost": 12.0,
+        "last_route": [
+          0,
+          5,
+          9
+        ],
+        "latency": {
+          "avg_ms": 61.32248513555775,
+          "max_ms": 301.26226623542607,
+          "min_ms": 0.0,
+          "p95_ms": 301.26226623542607
+        },
+        "latency_jitter": {
+          "jitter_ms": 119.14594365904729,
+          "stddev_ms": 171.02546141474906
+        },
+        "loss_rate": 0.1,
+        "lost": 2,
+        "path_rssi": {
+          "mean_rssi": -74.0,
+          "min_rssi": -74,
+          "route": [
+            0,
+            5,
+            9
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.0,
+        "recollect_count": 0,
+        "route_fallback": false,
+        "route_hops": 2,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 05 -> 09",
+        "sent": 20,
+        "source": "05",
+        "success": 18,
+        "total_latency_ms": 0.0
+      },
+      "05:10": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 35.293307664148784,
+        "command_downlink_latency_ms": 105.87992299244635,
+        "destination": "10",
+        "end_to_end_avg_latency_ms": 105.87992299244635,
+        "gateway_to_source_ms": 301.66339385323226,
+        "gateway_to_target_ms": 101.01327998563647,
+        "last_cost": 13.0,
+        "last_route": [
+          0,
+          5,
+          8,
+          16
+        ],
+        "latency": {
+          "avg_ms": 105.87992299244635,
+          "max_ms": 1303.8370311260223,
+          "min_ms": 0.0,
+          "p95_ms": 1303.8370311260223
+        },
+        "latency_jitter": {
+          "jitter_ms": 130.6708432787142,
+          "stddev_ms": 240.91926339405703
+        },
+        "loss_rate": 0.1,
+        "lost": 2,
+        "path_rssi": {
+          "mean_rssi": -56.0,
+          "min_rssi": -74,
+          "route": [
+            0,
+            5,
+            8,
+            16
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.0,
+        "recollect_count": 0,
+        "route_fallback": false,
+        "route_hops": 3,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 05 -> 08 -> 10",
+        "sent": 20,
+        "source": "05",
+        "success": 18,
+        "total_latency_ms": 0.0
+      },
+      "06:01": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 24.6867919806391,
+        "command_downlink_latency_ms": 123.4339599031955,
+        "destination": "01",
+        "end_to_end_avg_latency_ms": 123.4339599031955,
+        "gateway_to_source_ms": 1107.2840460110456,
+        "gateway_to_target_ms": 101.00208199582994,
+        "last_cost": 30.0,
+        "last_route": [
+          0,
+          3,
+          6,
+          3,
+          2,
+          1
+        ],
+        "latency": {
+          "avg_ms": 123.4339599031955,
+          "max_ms": 1103.315392974764,
+          "min_ms": 0.0,
+          "p95_ms": 1103.315392974764
+        },
+        "latency_jitter": {
+          "jitter_ms": 117.183634511105,
+          "stddev_ms": 150.78810098592814
+        },
+        "loss_rate": 0.35,
+        "lost": 7,
+        "path_rssi": {
+          "mean_rssi": -71.2,
+          "min_rssi": -80,
+          "route": [
+            0,
+            3,
+            6,
+            3,
+            2,
+            1
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.0,
+        "recollect_count": 2,
+        "route_fallback": false,
+        "route_hops": 5,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 03 -> 06 -> 03 -> 02 -> 01",
+        "sent": 20,
+        "source": "06",
+        "success": 13,
+        "total_latency_ms": 0.0
+      },
+      "06:02": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 42.24638957748539,
+        "command_downlink_latency_ms": 168.98555830994155,
+        "destination": "02",
+        "end_to_end_avg_latency_ms": 168.98555830994155,
+        "gateway_to_source_ms": 502.6255138218403,
+        "gateway_to_target_ms": 101.07281897217035,
+        "last_cost": 18.0,
+        "last_route": [
+          0,
+          3,
+          6,
+          3,
+          2
+        ],
+        "latency": {
+          "avg_ms": 168.98555830994155,
+          "max_ms": 1605.138607788831,
+          "min_ms": 0.0,
+          "p95_ms": 1605.138607788831
+        },
+        "latency_jitter": {
+          "jitter_ms": 186.65461889196214,
+          "stddev_ms": 301.0257022170128
+        },
+        "loss_rate": 0.2,
+        "lost": 4,
+        "path_rssi": {
+          "mean_rssi": -69.5,
+          "min_rssi": -80,
+          "route": [
+            0,
+            3,
+            6,
+            3,
+            2
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.0,
+        "recollect_count": 0,
+        "route_fallback": false,
+        "route_hops": 4,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 03 -> 06 -> 03 -> 02",
+        "sent": 20,
+        "source": "06",
+        "success": 16,
+        "total_latency_ms": 0.0
+      },
+      "06:03": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 74.61192890898221,
+        "command_downlink_latency_ms": 223.83578672694662,
+        "destination": "03",
+        "end_to_end_avg_latency_ms": 223.83578672694662,
+        "gateway_to_source_ms": 100.94124497845769,
+        "gateway_to_target_ms": 100.87640793062747,
+        "last_cost": 12.0,
+        "last_route": [
+          0,
+          2,
+          6,
+          3
+        ],
+        "latency": {
+          "avg_ms": 223.83578672694662,
+          "max_ms": 1912.2948569711298,
+          "min_ms": 0.0,
+          "p95_ms": 1912.2948569711298
+        },
+        "latency_jitter": {
+          "jitter_ms": 207.96727093020036,
+          "stddev_ms": 354.9632683933977
+        },
+        "loss_rate": 0.55,
+        "lost": 11,
+        "path_rssi": {
+          "mean_rssi": -79.0,
+          "min_rssi": -80,
+          "route": [
+            0,
+            2,
+            6,
+            3
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.0,
+        "recollect_count": 3,
+        "route_fallback": false,
+        "route_hops": 3,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 02 -> 06 -> 03",
+        "sent": 20,
+        "source": "06",
+        "success": 9,
+        "total_latency_ms": 0.0
+      },
+      "06:04": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 18.486403066689444,
+        "command_downlink_latency_ms": 73.94561226675778,
+        "destination": "04",
+        "end_to_end_avg_latency_ms": 73.94561226675778,
+        "gateway_to_source_ms": 100.92168720439076,
+        "gateway_to_target_ms": 402.117685880512,
+        "last_cost": 18.0,
+        "last_route": [
+          0,
+          2,
+          6,
+          3,
+          4
+        ],
+        "latency": {
+          "avg_ms": 73.94561226675778,
+          "max_ms": 401.5522019471973,
+          "min_ms": 0.0,
+          "p95_ms": 401.5522019471973
+        },
+        "latency_jitter": {
+          "jitter_ms": 51.71729642474516,
+          "stddev_ms": 90.26763610072146
+        },
+        "loss_rate": 0.05,
+        "lost": 1,
+        "path_rssi": {
+          "mean_rssi": -76.5,
+          "min_rssi": -80,
+          "route": [
+            0,
+            2,
+            6,
+            3,
+            4
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 301.19599867612123,
+        "recollect_count": 0,
+        "route_fallback": false,
+        "route_hops": 4,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 02 -> 06 -> 03 -> 04",
+        "sent": 20,
+        "source": "06",
+        "success": 19,
+        "total_latency_ms": 301.19599867612123
+      },
+      "06:05": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 5.200968251416557,
+        "command_downlink_latency_ms": 26.004841257082788,
+        "destination": "05",
+        "end_to_end_avg_latency_ms": 26.004841257082788,
+        "gateway_to_source_ms": 1305.590535979718,
+        "gateway_to_target_ms": 201.4437490142882,
+        "last_cost": 21.0,
+        "last_route": [
+          0,
+          2,
+          6,
+          3,
+          0,
+          5
+        ],
+        "latency": {
+          "avg_ms": 26.004841257082788,
+          "max_ms": 300.4945209249854,
+          "min_ms": 0.0,
+          "p95_ms": 300.4945209249854
+        },
+        "latency_jitter": {
+          "jitter_ms": 74.3391187805794,
+          "stddev_ms": 149.09928987191458
+        },
+        "loss_rate": 0.05,
+        "lost": 1,
+        "path_rssi": {
+          "mean_rssi": -74.2,
+          "min_rssi": -80,
+          "route": [
+            0,
+            2,
+            6,
+            3,
+            0,
+            5
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.0,
+        "recollect_count": 0,
+        "route_fallback": false,
+        "route_hops": 5,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 02 -> 06 -> 03 -> 00 -> 05",
+        "sent": 20,
+        "source": "06",
+        "success": 19,
+        "total_latency_ms": 0.0
+      },
+      "06:07": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 9.98629376824413,
+        "command_downlink_latency_ms": 29.95888130473239,
+        "destination": "07",
+        "end_to_end_avg_latency_ms": 29.95888130473239,
+        "gateway_to_source_ms": 100.92492704279721,
+        "gateway_to_target_ms": 100.86879483424127,
+        "last_cost": 6.0,
+        "last_route": [
+          0,
+          3,
+          6,
+          7
+        ],
+        "latency": {
+          "avg_ms": 29.95888130473239,
+          "max_ms": 209.43914889357984,
+          "min_ms": 0.0,
+          "p95_ms": 209.43914889357984
+        },
+        "latency_jitter": {
+          "jitter_ms": 153.9741375867658,
+          "stddev_ms": 180.716213469609
+        },
+        "loss_rate": 0.65,
+        "lost": 13,
+        "path_rssi": {
+          "mean_rssi": -66.0,
+          "min_rssi": -80,
+          "route": [
+            0,
+            3,
+            6,
+            7
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.0,
+        "recollect_count": 4,
+        "route_fallback": false,
+        "route_hops": 3,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 03 -> 06 -> 07",
+        "sent": 20,
+        "source": "06",
+        "success": 7,
+        "total_latency_ms": 0.0
+      },
+      "06:08": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 8.349705157646289,
+        "command_downlink_latency_ms": 25.049115472938865,
+        "destination": "08",
+        "end_to_end_avg_latency_ms": 25.049115472938865,
+        "gateway_to_source_ms": 101.08894319273531,
+        "gateway_to_target_ms": 100.85971700027585,
+        "last_cost": 12.0,
+        "last_route": [
+          0,
+          3,
+          6,
+          8
+        ],
+        "latency": {
+          "avg_ms": 25.049115472938865,
+          "max_ms": 200.66411304287612,
+          "min_ms": 0.0,
+          "p95_ms": 200.66411304287612
+        },
+        "latency_jitter": {
+          "jitter_ms": 121.68417139159095,
+          "stddev_ms": 191.08633823757017
+        },
+        "loss_rate": 0.2,
+        "lost": 4,
+        "path_rssi": {
+          "mean_rssi": -61.0,
+          "min_rssi": -80,
+          "route": [
+            0,
+            3,
+            6,
+            8
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.0,
+        "recollect_count": 1,
+        "route_fallback": false,
+        "route_hops": 3,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 03 -> 06 -> 08",
+        "sent": 20,
+        "source": "06",
+        "success": 16,
+        "total_latency_ms": 0.0
+      },
+      "06:09": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 9.294924153773872,
+        "command_downlink_latency_ms": 27.884772461321617,
+        "destination": "09",
+        "end_to_end_avg_latency_ms": 27.884772461321617,
+        "gateway_to_source_ms": 101.37698892503977,
+        "gateway_to_target_ms": 101.2121750973165,
+        "last_cost": 12.0,
+        "last_route": [
+          0,
+          3,
+          6,
+          9
+        ],
+        "latency": {
+          "avg_ms": 27.884772461321617,
+          "max_ms": 300.3715621307492,
+          "min_ms": 0.0,
+          "p95_ms": 300.3715621307492
+        },
+        "latency_jitter": {
+          "jitter_ms": 119.14594365904729,
+          "stddev_ms": 171.02546141474906
+        },
+        "loss_rate": 0.1,
+        "lost": 2,
+        "path_rssi": {
+          "mean_rssi": -61.0,
+          "min_rssi": -80,
+          "route": [
+            0,
+            3,
+            6,
+            9
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.0,
+        "recollect_count": 0,
+        "route_fallback": false,
+        "route_hops": 3,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 03 -> 06 -> 09",
+        "sent": 20,
+        "source": "06",
+        "success": 18,
+        "total_latency_ms": 0.0
+      },
+      "06:10": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 30.680302805396625,
+        "command_downlink_latency_ms": 122.7212112215865,
+        "destination": "10",
+        "end_to_end_avg_latency_ms": 122.7212112215865,
+        "gateway_to_source_ms": 100.99410288967192,
+        "gateway_to_target_ms": 201.20103587396443,
+        "last_cost": 13.0,
+        "last_route": [
+          0,
+          3,
+          6,
+          8,
+          16
+        ],
+        "latency": {
+          "avg_ms": 122.7212112215865,
+          "max_ms": 1203.2340748701245,
+          "min_ms": 0.0,
+          "p95_ms": 1203.2340748701245
+        },
+        "latency_jitter": {
+          "jitter_ms": 130.6708432787142,
+          "stddev_ms": 240.91926339405703
+        },
+        "loss_rate": 0.1,
+        "lost": 2,
+        "path_rssi": {
+          "mean_rssi": -53.333333333333336,
+          "min_rssi": -80,
+          "route": [
+            0,
+            3,
+            6,
+            8,
+            16
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 100.20693298429251,
+        "recollect_count": 0,
+        "route_fallback": false,
+        "route_hops": 4,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 03 -> 06 -> 08 -> 10",
+        "sent": 20,
+        "source": "06",
+        "success": 18,
+        "total_latency_ms": 100.20693298429251
+      },
+      "07:01": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 12.074268660163161,
+        "command_downlink_latency_ms": 72.44561196097897,
+        "destination": "01",
+        "end_to_end_avg_latency_ms": 72.44561196097897,
+        "gateway_to_source_ms": 100.95190000720322,
+        "gateway_to_target_ms": 502.3683700710535,
+        "last_cost": 27.0,
+        "last_route": [
+          0,
+          3,
+          6,
+          7,
+          6,
+          2,
+          1
+        ],
+        "latency": {
+          "avg_ms": 72.44561196097897,
+          "max_ms": 401.4164700638503,
+          "min_ms": 0.0,
+          "p95_ms": 401.4164700638503
+        },
+        "latency_jitter": {
+          "jitter_ms": 117.183634511105,
+          "stddev_ms": 150.78810098592814
+        },
+        "loss_rate": 0.1,
+        "lost": 2,
+        "path_rssi": {
+          "mean_rssi": -70.16666666666667,
+          "min_rssi": -80,
+          "route": [
+            0,
+            3,
+            6,
+            7,
+            6,
+            2,
+            1
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 401.4164700638503,
+        "recollect_count": 0,
+        "route_fallback": false,
+        "route_hops": 6,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 03 -> 06 -> 07 -> 06 -> 02 -> 01",
+        "sent": 20,
+        "source": "07",
+        "success": 18,
+        "total_latency_ms": 401.4164700638503
+      },
+      "07:02": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 32.74324430937045,
+        "command_downlink_latency_ms": 163.71622154685227,
+        "destination": "02",
+        "end_to_end_avg_latency_ms": 163.71622154685227,
+        "gateway_to_source_ms": 100.9868560358882,
+        "gateway_to_target_ms": 100.87330709211528,
+        "last_cost": 15.0,
+        "last_route": [
+          0,
+          3,
+          6,
+          7,
+          6,
+          2
+        ],
+        "latency": {
+          "avg_ms": 163.71622154685227,
+          "max_ms": 1203.8433279376477,
+          "min_ms": 0.0,
+          "p95_ms": 1203.8433279376477
+        },
+        "latency_jitter": {
+          "jitter_ms": 186.65461889196214,
+          "stddev_ms": 301.0257022170128
+        },
+        "loss_rate": 0.05,
+        "lost": 1,
+        "path_rssi": {
+          "mean_rssi": -68.6,
+          "min_rssi": -80,
+          "route": [
+            0,
+            3,
+            6,
+            7,
+            6,
+            2
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.0,
+        "recollect_count": 0,
+        "route_fallback": false,
+        "route_hops": 5,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 03 -> 06 -> 07 -> 06 -> 02",
+        "sent": 20,
+        "source": "07",
+        "success": 19,
+        "total_latency_ms": 0.0
+      },
+      "07:03": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 72.45620529075885,
+        "command_downlink_latency_ms": 507.19343703531194,
+        "destination": "03",
+        "end_to_end_avg_latency_ms": 507.19343703531194,
+        "gateway_to_source_ms": 108.57325792312622,
+        "gateway_to_target_ms": 2006.1025889590383,
+        "last_cost": 13.0,
+        "last_route": [
+          0,
+          3,
+          2,
+          1,
+          6,
+          7,
+          0,
+          3
+        ],
+        "latency": {
+          "avg_ms": 507.19343703531194,
+          "max_ms": 1897.529331035912,
+          "min_ms": 0.0,
+          "p95_ms": 1897.529331035912
+        },
+        "latency_jitter": {
+          "jitter_ms": 207.96727093020036,
+          "stddev_ms": 354.9632683933977
+        },
+        "loss_rate": 0.2,
+        "lost": 4,
+        "path_rssi": {
+          "mean_rssi": -66.16666666666667,
+          "min_rssi": -81,
+          "route": [
+            0,
+            3,
+            2,
+            1,
+            6,
+            7,
+            0,
+            3
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 1897.529331035912,
+        "recollect_count": 1,
+        "route_fallback": false,
+        "route_hops": 7,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 03 -> 02 -> 01 -> 06 -> 07 -> 00 -> 03",
+        "sent": 20,
+        "source": "07",
+        "success": 16,
+        "total_latency_ms": 1897.529331035912
+      },
+      "07:04": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 5.794749001506716,
+        "command_downlink_latency_ms": 40.56324301054701,
+        "destination": "04",
+        "end_to_end_avg_latency_ms": 40.56324301054701,
+        "gateway_to_source_ms": 100.84152896888554,
+        "gateway_to_target_ms": 101.14428400993347,
+        "last_cost": 15.0,
+        "last_route": [
+          0,
+          3,
+          2,
+          1,
+          6,
+          7,
+          0,
+          4
+        ],
+        "latency": {
+          "avg_ms": 40.56324301054701,
+          "max_ms": 301.21309612877667,
+          "min_ms": 0.0,
+          "p95_ms": 300.67490693181753
+        },
+        "latency_jitter": {
+          "jitter_ms": 51.71729642474516,
+          "stddev_ms": 90.26763610072146
+        },
+        "loss_rate": 0.0,
+        "lost": 0,
+        "path_rssi": {
+          "mean_rssi": -68.33333333333333,
+          "min_rssi": -81,
+          "route": [
+            0,
+            3,
+            2,
+            1,
+            6,
+            7,
+            0,
+            4
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.3027550410479307,
+        "recollect_count": 0,
+        "route_fallback": false,
+        "route_hops": 7,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 03 -> 02 -> 01 -> 06 -> 07 -> 00 -> 04",
+        "sent": 20,
+        "source": "07",
+        "success": 20,
+        "total_latency_ms": 0.3027550410479307
+      },
+      "07:05": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 6.6881234117317945,
+        "command_downlink_latency_ms": 40.12874047039077,
+        "destination": "05",
+        "end_to_end_avg_latency_ms": 40.12874047039077,
+        "gateway_to_source_ms": 301.4346838463098,
+        "gateway_to_target_ms": 100.98489001393318,
+        "last_cost": 12.0,
+        "last_route": [
+          0,
+          3,
+          2,
+          1,
+          6,
+          7,
+          5
+        ],
+        "latency": {
+          "avg_ms": 40.12874047039077,
+          "max_ms": 300.73782592080534,
+          "min_ms": 0.0,
+          "p95_ms": 200.23730187676847
+        },
+        "latency_jitter": {
+          "jitter_ms": 74.3391187805794,
+          "stddev_ms": 149.09928987191458
+        },
+        "loss_rate": 0.0,
+        "lost": 0,
+        "path_rssi": {
+          "mean_rssi": -71.0,
+          "min_rssi": -81,
+          "route": [
+            0,
+            3,
+            2,
+            1,
+            6,
+            7,
+            5
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.0,
+        "recollect_count": 0,
+        "route_fallback": false,
+        "route_hops": 6,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 03 -> 02 -> 01 -> 06 -> 07 -> 05",
+        "sent": 20,
+        "source": "07",
+        "success": 20,
+        "total_latency_ms": 0.0
+      },
+      "07:06": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 108.68750533296003,
+        "command_downlink_latency_ms": 326.0625159988801,
+        "destination": "06",
+        "end_to_end_avg_latency_ms": 326.0625159988801,
+        "gateway_to_source_ms": 401.7657618969679,
+        "gateway_to_target_ms": null,
+        "last_cost": 3.0,
+        "last_route": [
+          0,
+          6,
+          7,
+          6
+        ],
+        "latency": {
+          "avg_ms": 326.0625159988801,
+          "max_ms": 1504.9040680751204,
+          "min_ms": 0.0,
+          "p95_ms": 1504.9040680751204
+        },
+        "latency_jitter": {
+          "jitter_ms": 190.5105729197139,
+          "stddev_ms": 293.6483662111348
+        },
+        "loss_rate": 0.4,
+        "lost": 8,
+        "path_rssi": {
+          "mean_rssi": -70.5,
+          "min_rssi": -76,
+          "route": [
+            0,
+            6,
+            7,
+            6
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": null,
+        "recollect_count": 1,
+        "route_fallback": false,
+        "route_hops": 3,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 06 -> 07 -> 06",
+        "sent": 20,
+        "source": "07",
+        "success": 12,
+        "total_latency_ms": null
+      },
+      "07:08": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 20.572336324944327,
+        "command_downlink_latency_ms": 61.717008974832986,
+        "destination": "08",
+        "end_to_end_avg_latency_ms": 61.717008974832986,
+        "gateway_to_source_ms": 401.70585201121867,
+        "gateway_to_target_ms": null,
+        "last_cost": 12.0,
+        "last_route": [
+          0,
+          6,
+          7,
+          8
+        ],
+        "latency": {
+          "avg_ms": 61.717008974832986,
+          "max_ms": 200.31898585148156,
+          "min_ms": 0.0,
+          "p95_ms": 200.31898585148156
+        },
+        "latency_jitter": {
+          "jitter_ms": 121.68417139159095,
+          "stddev_ms": 191.08633823757017
+        },
+        "loss_rate": 0.35,
+        "lost": 7,
+        "path_rssi": {
+          "mean_rssi": -79.0,
+          "min_rssi": -82,
+          "route": [
+            0,
+            6,
+            7,
+            8
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": null,
+        "recollect_count": 0,
+        "route_fallback": false,
+        "route_hops": 3,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 06 -> 07 -> 08",
+        "sent": 20,
+        "source": "07",
+        "success": 13,
+        "total_latency_ms": null
+      },
+      "07:09": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 20.054493792768984,
+        "command_downlink_latency_ms": 60.16348137830695,
+        "destination": "09",
+        "end_to_end_avg_latency_ms": 60.16348137830695,
+        "gateway_to_source_ms": 401.6812110785395,
+        "gateway_to_target_ms": 301.4841340482235,
+        "last_cost": 12.0,
+        "last_route": [
+          0,
+          6,
+          7,
+          9
+        ],
+        "latency": {
+          "avg_ms": 60.16348137830695,
+          "max_ms": 200.69805579259992,
+          "min_ms": 0.0,
+          "p95_ms": 200.69805579259992
+        },
+        "latency_jitter": {
+          "jitter_ms": 119.14594365904729,
+          "stddev_ms": 171.02546141474906
+        },
+        "loss_rate": 0.25,
+        "lost": 5,
+        "path_rssi": {
+          "mean_rssi": -76.0,
+          "min_rssi": -76,
+          "route": [
+            0,
+            6,
+            7,
+            9
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.0,
+        "recollect_count": 0,
+        "route_fallback": false,
+        "route_hops": 3,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 06 -> 07 -> 09",
+        "sent": 20,
+        "source": "07",
+        "success": 15,
+        "total_latency_ms": 0.0
+      },
+      "07:10": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 17.985931728990412,
+        "command_downlink_latency_ms": 53.95779518697124,
+        "destination": "10",
+        "end_to_end_avg_latency_ms": 53.95779518697124,
+        "gateway_to_source_ms": 301.28664686344564,
+        "gateway_to_target_ms": 301.46388709545135,
+        "last_cost": 12.0,
+        "last_route": [
+          0,
+          6,
+          7,
+          16
+        ],
+        "latency": {
+          "avg_ms": 53.95779518697124,
+          "max_ms": 200.62259398400784,
+          "min_ms": 0.0,
+          "p95_ms": 200.62259398400784
+        },
+        "latency_jitter": {
+          "jitter_ms": 130.6708432787142,
+          "stddev_ms": 240.91926339405703
+        },
+        "loss_rate": 0.35,
+        "lost": 7,
+        "path_rssi": {
+          "mean_rssi": -79.0,
+          "min_rssi": -82,
+          "route": [
+            0,
+            6,
+            7,
+            16
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.17724023200571537,
+        "recollect_count": 0,
+        "route_fallback": false,
+        "route_hops": 3,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 06 -> 07 -> 10",
+        "sent": 20,
+        "source": "07",
+        "success": 13,
+        "total_latency_ms": 0.17724023200571537
+      },
+      "08:01": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 7.163126071515892,
+        "command_downlink_latency_ms": 28.652504286063568,
+        "destination": "01",
+        "end_to_end_avg_latency_ms": 28.652504286063568,
+        "gateway_to_source_ms": 301.78058007732034,
+        "gateway_to_target_ms": 101.04514821432531,
+        "last_cost": 36.0,
+        "last_route": [
+          0,
+          8,
+          3,
+          2,
+          1
+        ],
+        "latency": {
+          "avg_ms": 28.652504286063568,
+          "max_ms": 200.4333429504186,
+          "min_ms": 0.0,
+          "p95_ms": 200.4333429504186
+        },
+        "latency_jitter": {
+          "jitter_ms": 117.183634511105,
+          "stddev_ms": 150.78810098592814
+        },
+        "loss_rate": 0.3,
+        "lost": 6,
+        "path_rssi": {
+          "mean_rssi": -79.75,
+          "min_rssi": -82,
+          "route": [
+            0,
+            8,
+            3,
+            2,
+            1
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.0,
+        "recollect_count": 1,
+        "route_fallback": false,
+        "route_hops": 4,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 08 -> 03 -> 02 -> 01",
+        "sent": 20,
+        "source": "08",
+        "success": 14,
+        "total_latency_ms": 0.0
+      },
+      "08:02": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 25.716265173963247,
+        "command_downlink_latency_ms": 77.14879552188974,
+        "destination": "02",
+        "end_to_end_avg_latency_ms": 77.14879552188974,
+        "gateway_to_source_ms": null,
+        "gateway_to_target_ms": null,
+        "last_cost": 24.0,
+        "last_route": [
+          0,
+          8,
+          3,
+          2
+        ],
+        "latency": {
+          "avg_ms": 77.14879552188974,
+          "max_ms": 802.3119668941945,
+          "min_ms": 0.0,
+          "p95_ms": 802.3119668941945
+        },
+        "latency_jitter": {
+          "jitter_ms": 186.65461889196214,
+          "stddev_ms": 301.0257022170128
+        },
+        "loss_rate": 0.35,
+        "lost": 7,
+        "path_rssi": {
+          "mean_rssi": -80.33333333333333,
+          "min_rssi": -82,
+          "route": [
+            0,
+            8,
+            3,
+            2
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": null,
+        "recollect_count": 0,
+        "route_fallback": false,
+        "route_hops": 3,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 08 -> 03 -> 02",
+        "sent": 20,
+        "source": "08",
+        "success": 13,
+        "total_latency_ms": null
+      },
+      "08:03": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 28.1957373736077,
+        "command_downlink_latency_ms": 56.3914747472154,
+        "destination": "03",
+        "end_to_end_avg_latency_ms": 56.3914747472154,
+        "gateway_to_source_ms": 201.2586889322847,
+        "gateway_to_target_ms": 100.84878094494343,
+        "last_cost": 12.0,
+        "last_route": [
+          0,
+          8,
+          3
+        ],
+        "latency": {
+          "avg_ms": 56.3914747472154,
+          "max_ms": 902.2635959554464,
+          "min_ms": 0.0,
+          "p95_ms": 902.2635959554464
+        },
+        "latency_jitter": {
+          "jitter_ms": 207.96727093020036,
+          "stddev_ms": 354.9632683933977
+        },
+        "loss_rate": 0.2,
+        "lost": 4,
+        "path_rssi": {
+          "mean_rssi": -81.5,
+          "min_rssi": -82,
+          "route": [
+            0,
+            8,
+            3
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.0,
+        "recollect_count": 0,
+        "route_fallback": false,
+        "route_hops": 2,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 08 -> 03",
+        "sent": 20,
+        "source": "08",
+        "success": 16,
+        "total_latency_ms": 0.0
+      },
+      "08:04": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 1.680774032138288,
+        "command_downlink_latency_ms": 6.723096128553152,
+        "destination": "04",
+        "end_to_end_avg_latency_ms": 6.723096128553152,
+        "gateway_to_source_ms": 101.23274684883654,
+        "gateway_to_target_ms": 100.91150086373091,
+        "last_cost": 4.0,
+        "last_route": [
+          0,
+          3,
+          8,
+          0,
+          4
+        ],
+        "latency": {
+          "avg_ms": 6.723096128553152,
+          "max_ms": 100.32318299636245,
+          "min_ms": 0.0,
+          "p95_ms": 100.32318299636245
+        },
+        "latency_jitter": {
+          "jitter_ms": 51.71729642474516,
+          "stddev_ms": 90.26763610072146
+        },
+        "loss_rate": 0.25,
+        "lost": 5,
+        "path_rssi": {
+          "mean_rssi": -60.666666666666664,
+          "min_rssi": -85,
+          "route": [
+            0,
+            3,
+            8,
+            0,
+            4
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.0,
+        "recollect_count": 1,
+        "route_fallback": false,
+        "route_hops": 4,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 03 -> 08 -> 00 -> 04",
+        "sent": 20,
+        "source": "08",
+        "success": 15,
+        "total_latency_ms": 0.0
+      },
+      "08:05": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 37.72186069691088,
+        "command_downlink_latency_ms": 150.88744278764352,
+        "destination": "05",
+        "end_to_end_avg_latency_ms": 150.88744278764352,
+        "gateway_to_source_ms": 100.90333013795316,
+        "gateway_to_target_ms": 101.052907994017,
+        "last_cost": 13.0,
+        "last_route": [
+          0,
+          3,
+          8,
+          0,
+          5
+        ],
+        "latency": {
+          "avg_ms": 150.88744278764352,
+          "max_ms": 1604.864535620436,
+          "min_ms": 0.0,
+          "p95_ms": 301.1155999265611
+        },
+        "latency_jitter": {
+          "jitter_ms": 74.3391187805794,
+          "stddev_ms": 149.09928987191458
+        },
+        "loss_rate": 0.0,
+        "lost": 0,
+        "path_rssi": {
+          "mean_rssi": -67.0,
+          "min_rssi": -85,
+          "route": [
+            0,
+            3,
+            8,
+            0,
+            5
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.14957785606384277,
+        "recollect_count": 0,
+        "route_fallback": false,
+        "route_hops": 4,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 03 -> 08 -> 00 -> 05",
+        "sent": 20,
+        "source": "08",
+        "success": 20,
+        "total_latency_ms": 0.14957785606384277
+      },
+      "08:06": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 35.11317587302377,
+        "command_downlink_latency_ms": 140.45270349209508,
+        "destination": "06",
+        "end_to_end_avg_latency_ms": 140.45270349209508,
+        "gateway_to_source_ms": 201.39393000863492,
+        "gateway_to_target_ms": 201.28294499590993,
+        "last_cost": 13.0,
+        "last_route": [
+          0,
+          9,
+          8,
+          9,
+          6
+        ],
+        "latency": {
+          "avg_ms": 140.45270349209508,
+          "max_ms": 1404.1923282202333,
+          "min_ms": 0.0,
+          "p95_ms": 1404.1923282202333
+        },
+        "latency_jitter": {
+          "jitter_ms": 190.5105729197139,
+          "stddev_ms": 293.6483662111348
+        },
+        "loss_rate": 0.25,
+        "lost": 5,
+        "path_rssi": {
+          "mean_rssi": -48.0,
+          "min_rssi": -52,
+          "route": [
+            0,
+            9,
+            8,
+            9,
+            6
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.0,
+        "recollect_count": 1,
+        "route_fallback": false,
+        "route_hops": 4,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 09 -> 08 -> 09 -> 06",
+        "sent": 20,
+        "source": "08",
+        "success": 15,
+        "total_latency_ms": 0.0
+      },
+      "08:07": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 10.807386696195373,
+        "command_downlink_latency_ms": 54.03693348097686,
+        "destination": "07",
+        "end_to_end_avg_latency_ms": 54.03693348097686,
+        "gateway_to_source_ms": null,
+        "gateway_to_target_ms": null,
+        "last_cost": 19.0,
+        "last_route": [
+          0,
+          16,
+          8,
+          9,
+          6,
+          7
+        ],
+        "latency": {
+          "avg_ms": 54.03693348097686,
+          "max_ms": 401.43931400962174,
+          "min_ms": 0.0,
+          "p95_ms": 401.43931400962174
+        },
+        "latency_jitter": {
+          "jitter_ms": 153.9741375867658,
+          "stddev_ms": 180.716213469609
+        },
+        "loss_rate": 0.35,
+        "lost": 7,
+        "path_rssi": {
+          "mean_rssi": -56.0,
+          "min_rssi": -76,
+          "route": [
+            0,
+            16,
+            8,
+            9,
+            6,
+            7
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": null,
+        "recollect_count": 1,
+        "route_fallback": false,
+        "route_hops": 5,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 10 -> 08 -> 09 -> 06 -> 07",
+        "sent": 20,
+        "source": "08",
+        "success": 13,
+        "total_latency_ms": null
+      },
+      "08:09": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 8.940322112499013,
+        "command_downlink_latency_ms": 26.820966337497037,
+        "destination": "09",
+        "end_to_end_avg_latency_ms": 26.820966337497037,
+        "gateway_to_source_ms": 100.86624301038682,
+        "gateway_to_target_ms": 101.34803806431592,
+        "last_cost": 1.0,
+        "last_route": [
+          0,
+          3,
+          8,
+          9
+        ],
+        "latency": {
+          "avg_ms": 26.820966337497037,
+          "max_ms": 200.49053197726607,
+          "min_ms": 0.0,
+          "p95_ms": 200.49053197726607
+        },
+        "latency_jitter": {
+          "jitter_ms": 119.14594365904729,
+          "stddev_ms": 171.02546141474906
+        },
+        "loss_rate": 0.25,
+        "lost": 5,
+        "path_rssi": {
+          "mean_rssi": -59.666666666666664,
+          "min_rssi": -85,
+          "route": [
+            0,
+            3,
+            8,
+            9
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.4817950539290905,
+        "recollect_count": 1,
+        "route_fallback": false,
+        "route_hops": 3,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 03 -> 08 -> 09",
+        "sent": 20,
+        "source": "08",
+        "success": 15,
+        "total_latency_ms": 0.4817950539290905
+      },
+      "08:10": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 29.730766774500136,
+        "command_downlink_latency_ms": 89.1923003235004,
+        "destination": "10",
+        "end_to_end_avg_latency_ms": 89.1923003235004,
+        "gateway_to_source_ms": 100.90258601121604,
+        "gateway_to_target_ms": 101.02031799033284,
+        "last_cost": 1.0,
+        "last_route": [
+          0,
+          3,
+          8,
+          16
+        ],
+        "latency": {
+          "avg_ms": 89.1923003235004,
+          "max_ms": 401.3193619903177,
+          "min_ms": 0.0,
+          "p95_ms": 401.3193619903177
+        },
+        "latency_jitter": {
+          "jitter_ms": 130.6708432787142,
+          "stddev_ms": 240.91926339405703
+        },
+        "loss_rate": 0.1,
+        "lost": 2,
+        "path_rssi": {
+          "mean_rssi": -55.0,
+          "min_rssi": -85,
+          "route": [
+            0,
+            3,
+            8,
+            16
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.11773197911679745,
+        "recollect_count": 0,
+        "route_fallback": false,
+        "route_hops": 3,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 03 -> 08 -> 10",
+        "sent": 20,
+        "source": "08",
+        "success": 18,
+        "total_latency_ms": 0.11773197911679745
+      },
+      "09:01": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 10.569325574722729,
+        "command_downlink_latency_ms": 84.55460459778183,
+        "destination": "01",
+        "end_to_end_avg_latency_ms": 84.55460459778183,
+        "gateway_to_source_ms": 101.03822499513626,
+        "gateway_to_target_ms": 101.11495479941368,
+        "last_cost": 21.0,
+        "last_route": [
+          0,
+          3,
+          8,
+          9,
+          16,
+          0,
+          4,
+          2,
+          1
+        ],
+        "latency": {
+          "avg_ms": 84.55460459778183,
+          "max_ms": 501.63163314573467,
+          "min_ms": 0.0,
+          "p95_ms": 501.63163314573467
+        },
+        "latency_jitter": {
+          "jitter_ms": 117.183634511105,
+          "stddev_ms": 150.78810098592814
+        },
+        "loss_rate": 0.05,
+        "lost": 1,
+        "path_rssi": {
+          "mean_rssi": -63.625,
+          "min_rssi": -85,
+          "route": [
+            0,
+            3,
+            8,
+            9,
+            16,
+            0,
+            4,
+            2,
+            1
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.07672980427742004,
+        "recollect_count": 0,
+        "route_fallback": false,
+        "route_hops": 8,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 03 -> 08 -> 09 -> 10 -> 00 -> 04 -> 02 -> 01",
+        "sent": 20,
+        "source": "09",
+        "success": 19,
+        "total_latency_ms": 0.07672980427742004
+      },
+      "09:02": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 12.74867532479148,
+        "command_downlink_latency_ms": 89.24072727354036,
+        "destination": "02",
+        "end_to_end_avg_latency_ms": 89.24072727354036,
+        "gateway_to_source_ms": 101.03803221136332,
+        "gateway_to_target_ms": 100.97199794836342,
+        "last_cost": 9.0,
+        "last_route": [
+          0,
+          3,
+          8,
+          9,
+          16,
+          0,
+          4,
+          2
+        ],
+        "latency": {
+          "avg_ms": 89.24072727354036,
+          "max_ms": 702.1992930676788,
+          "min_ms": 0.0,
+          "p95_ms": 702.1992930676788
+        },
+        "latency_jitter": {
+          "jitter_ms": 186.65461889196214,
+          "stddev_ms": 301.0257022170128
+        },
+        "loss_rate": 0.1,
+        "lost": 2,
+        "path_rssi": {
+          "mean_rssi": -61.57142857142857,
+          "min_rssi": -85,
+          "route": [
+            0,
+            3,
+            8,
+            9,
+            16,
+            0,
+            4,
+            2
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.0,
+        "recollect_count": 0,
+        "route_fallback": false,
+        "route_hops": 7,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 03 -> 08 -> 09 -> 10 -> 00 -> 04 -> 02",
+        "sent": 20,
+        "source": "09",
+        "success": 18,
+        "total_latency_ms": 0.0
+      },
+      "09:03": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 61.35534755109499,
+        "command_downlink_latency_ms": 122.71069510218997,
+        "destination": "03",
+        "end_to_end_avg_latency_ms": 122.71069510218997,
+        "gateway_to_source_ms": null,
+        "gateway_to_target_ms": null,
+        "last_cost": 12.0,
+        "last_route": [
+          0,
+          9,
+          3
+        ],
+        "latency": {
+          "avg_ms": 122.71069510218997,
+          "max_ms": 1104.3462029192597,
+          "min_ms": 0.0,
+          "p95_ms": 1104.3462029192597
+        },
+        "latency_jitter": {
+          "jitter_ms": 207.96727093020036,
+          "stddev_ms": 354.9632683933977
+        },
+        "loss_rate": 0.55,
+        "lost": 11,
+        "path_rssi": {
+          "mean_rssi": -78.0,
+          "min_rssi": -78,
+          "route": [
+            0,
+            9,
+            3
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": null,
+        "recollect_count": 2,
+        "route_fallback": false,
+        "route_hops": 2,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 09 -> 03",
+        "sent": 20,
+        "source": "09",
+        "success": 9,
+        "total_latency_ms": null
+      },
+      "09:04": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 3.9257187505855278,
+        "command_downlink_latency_ms": 11.777156251756583,
+        "destination": "04",
+        "end_to_end_avg_latency_ms": 11.777156251756583,
+        "gateway_to_source_ms": 401.89287601970136,
+        "gateway_to_target_ms": 101.11087607219815,
+        "last_cost": 15.0,
+        "last_route": [
+          0,
+          9,
+          3,
+          4
+        ],
+        "latency": {
+          "avg_ms": 11.777156251756583,
+          "max_ms": 100.35859211347997,
+          "min_ms": 0.0,
+          "p95_ms": 100.35859211347997
+        },
+        "latency_jitter": {
+          "jitter_ms": 51.71729642474516,
+          "stddev_ms": 90.26763610072146
+        },
+        "loss_rate": 0.15,
+        "lost": 3,
+        "path_rssi": {
+          "mean_rssi": -73.5,
+          "min_rssi": -78,
+          "route": [
+            0,
+            9,
+            3,
+            4
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.0,
+        "recollect_count": 0,
+        "route_fallback": false,
+        "route_hops": 3,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 09 -> 03 -> 04",
+        "sent": 20,
+        "source": "09",
+        "success": 17,
+        "total_latency_ms": 0.0
+      },
+      "09:05": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 0.012577244299737847,
+        "command_downlink_latency_ms": 0.025154488599475694,
+        "destination": "05",
+        "end_to_end_avg_latency_ms": 0.025154488599475694,
+        "gateway_to_source_ms": 402.05424814485013,
+        "gateway_to_target_ms": 100.85946507751942,
+        "last_cost": 12.0,
+        "last_route": [
+          0,
+          9,
+          5
+        ],
+        "latency": {
+          "avg_ms": 0.025154488599475694,
+          "max_ms": 0.2128381747752428,
+          "min_ms": 0.0,
+          "p95_ms": 0.2128381747752428
+        },
+        "latency_jitter": {
+          "jitter_ms": 74.3391187805794,
+          "stddev_ms": 149.09928987191458
+        },
+        "loss_rate": 0.15,
+        "lost": 3,
+        "path_rssi": {
+          "mean_rssi": null,
+          "min_rssi": null,
+          "route": [
+            0,
+            9,
+            5
+          ],
+          "source": "unavailable"
+        },
+        "point_to_point_ms": 0.0,
+        "recollect_count": 0,
+        "route_fallback": false,
+        "route_hops": 2,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 09 -> 05",
+        "sent": 20,
+        "source": "09",
+        "success": 17,
+        "total_latency_ms": 0.0
+      },
+      "09:06": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 50.15129137181622,
+        "command_downlink_latency_ms": 100.30258274363244,
+        "destination": "06",
+        "end_to_end_avg_latency_ms": 100.30258274363244,
+        "gateway_to_source_ms": 301.5403288882226,
+        "gateway_to_target_ms": 201.30182290449739,
+        "last_cost": 12.0,
+        "last_route": [
+          0,
+          9,
+          6
+        ],
+        "latency": {
+          "avg_ms": 100.30258274363244,
+          "max_ms": 1203.470863867551,
+          "min_ms": 0.0,
+          "p95_ms": 1203.470863867551
+        },
+        "latency_jitter": {
+          "jitter_ms": 190.5105729197139,
+          "stddev_ms": 293.6483662111348
+        },
+        "loss_rate": 0.15,
+        "lost": 3,
+        "path_rssi": {
+          "mean_rssi": null,
+          "min_rssi": null,
+          "route": [
+            0,
+            9,
+            6
+          ],
+          "source": "unavailable"
+        },
+        "point_to_point_ms": 0.0,
+        "recollect_count": 0,
+        "route_fallback": false,
+        "route_hops": 2,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 09 -> 06",
+        "sent": 20,
+        "source": "09",
+        "success": 17,
+        "total_latency_ms": 0.0
+      },
+      "09:07": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 20.42324583184112,
+        "command_downlink_latency_ms": 61.26973749552336,
+        "destination": "07",
+        "end_to_end_avg_latency_ms": 61.26973749552336,
+        "gateway_to_source_ms": 510.1353609934449,
+        "gateway_to_target_ms": 100.94397305510938,
+        "last_cost": 18.0,
+        "last_route": [
+          0,
+          9,
+          6,
+          7
+        ],
+        "latency": {
+          "avg_ms": 61.26973749552336,
+          "max_ms": 601.5549420844764,
+          "min_ms": 0.0,
+          "p95_ms": 601.5549420844764
+        },
+        "latency_jitter": {
+          "jitter_ms": 153.9741375867658,
+          "stddev_ms": 180.716213469609
+        },
+        "loss_rate": 0.1,
+        "lost": 2,
+        "path_rssi": {
+          "mean_rssi": -76.0,
+          "min_rssi": -76,
+          "route": [
+            0,
+            9,
+            6,
+            7
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.0,
+        "recollect_count": 0,
+        "route_fallback": false,
+        "route_hops": 3,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 09 -> 06 -> 07",
+        "sent": 20,
+        "source": "09",
+        "success": 18,
+        "total_latency_ms": 0.0
+      },
+      "09:08": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 23.60470495049787,
+        "command_downlink_latency_ms": 47.20940990099574,
+        "destination": "08",
+        "end_to_end_avg_latency_ms": 47.20940990099574,
+        "gateway_to_source_ms": 301.4965991023928,
+        "gateway_to_target_ms": 100.67469580098987,
+        "last_cost": 1.0,
+        "last_route": [
+          0,
+          9,
+          8
+        ],
+        "latency": {
+          "avg_ms": 47.20940990099574,
+          "max_ms": 401.76255628466606,
+          "min_ms": 0.0,
+          "p95_ms": 401.76255628466606
+        },
+        "latency_jitter": {
+          "jitter_ms": 121.68417139159095,
+          "stddev_ms": 191.08633823757017
+        },
+        "loss_rate": 0.15,
+        "lost": 3,
+        "path_rssi": {
+          "mean_rssi": -44.0,
+          "min_rssi": -44,
+          "route": [
+            0,
+            9,
+            8
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.0,
+        "recollect_count": 0,
+        "route_fallback": false,
+        "route_hops": 2,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 09 -> 08",
+        "sent": 20,
+        "source": "09",
+        "success": 17,
+        "total_latency_ms": 0.0
+      },
+      "09:10": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 12.53987102973042,
+        "command_downlink_latency_ms": 25.07974205946084,
+        "destination": "10",
+        "end_to_end_avg_latency_ms": 25.07974205946084,
+        "gateway_to_source_ms": 301.4491591602564,
+        "gateway_to_target_ms": 100.9110629092902,
+        "last_cost": 1.0,
+        "last_route": [
+          0,
+          9,
+          16
+        ],
+        "latency": {
+          "avg_ms": 25.07974205946084,
+          "max_ms": 200.58652106672525,
+          "min_ms": 0.0,
+          "p95_ms": 200.58652106672525
+        },
+        "latency_jitter": {
+          "jitter_ms": 130.6708432787142,
+          "stddev_ms": 240.91926339405703
+        },
+        "loss_rate": 0.2,
+        "lost": 4,
+        "path_rssi": {
+          "mean_rssi": -45.0,
+          "min_rssi": -45,
+          "route": [
+            0,
+            9,
+            16
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.0,
+        "recollect_count": 0,
+        "route_fallback": false,
+        "route_hops": 2,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 09 -> 10",
+        "sent": 20,
+        "source": "09",
+        "success": 16,
+        "total_latency_ms": 0.0
+      },
+      "10:01": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 35.078703658655286,
+        "command_downlink_latency_ms": 105.23611097596586,
+        "destination": "01",
+        "end_to_end_avg_latency_ms": 105.23611097596586,
+        "gateway_to_source_ms": 703.0305929947644,
+        "gateway_to_target_ms": 402.03241305425763,
+        "last_cost": 24.0,
+        "last_route": [
+          0,
+          16,
+          2,
+          1
+        ],
+        "latency": {
+          "avg_ms": 105.23611097596586,
+          "max_ms": 501.1981441639364,
+          "min_ms": 0.0,
+          "p95_ms": 401.365552097559
+        },
+        "latency_jitter": {
+          "jitter_ms": 117.183634511105,
+          "stddev_ms": 150.78810098592814
+        },
+        "loss_rate": 0.0,
+        "lost": 0,
+        "path_rssi": {
+          "mean_rssi": -78.0,
+          "min_rssi": -78,
+          "route": [
+            0,
+            16,
+            2,
+            1
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.0,
+        "recollect_count": 0,
+        "route_fallback": false,
+        "route_hops": 3,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 10 -> 02 -> 01",
+        "sent": 20,
+        "source": "10",
+        "success": 20,
+        "total_latency_ms": 0.0
+      },
+      "10:02": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 6.701305873381595,
+        "command_downlink_latency_ms": 13.40261174676319,
+        "destination": "02",
+        "end_to_end_avg_latency_ms": 13.40261174676319,
+        "gateway_to_source_ms": 101.07842390425503,
+        "gateway_to_target_ms": 201.3011579401791,
+        "last_cost": 12.0,
+        "last_route": [
+          0,
+          16,
+          2
+        ],
+        "latency": {
+          "avg_ms": 13.40261174676319,
+          "max_ms": 100.53270403295755,
+          "min_ms": 0.0,
+          "p95_ms": 100.53270403295755
+        },
+        "latency_jitter": {
+          "jitter_ms": 186.65461889196214,
+          "stddev_ms": 301.0257022170128
+        },
+        "loss_rate": 0.25,
+        "lost": 5,
+        "path_rssi": {
+          "mean_rssi": null,
+          "min_rssi": null,
+          "route": [
+            0,
+            16,
+            2
+          ],
+          "source": "unavailable"
+        },
+        "point_to_point_ms": 100.22273403592408,
+        "recollect_count": 0,
+        "route_fallback": false,
+        "route_hops": 2,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 10 -> 02",
+        "sent": 20,
+        "source": "10",
+        "success": 15,
+        "total_latency_ms": 100.22273403592408
+      },
+      "10:03": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 0.011631341961522898,
+        "command_downlink_latency_ms": 0.023262683923045795,
+        "destination": "03",
+        "end_to_end_avg_latency_ms": 0.023262683923045795,
+        "gateway_to_source_ms": 201.23912417329848,
+        "gateway_to_target_ms": 100.8771019987762,
+        "last_cost": 12.0,
+        "last_route": [
+          0,
+          16,
+          3
+        ],
+        "latency": {
+          "avg_ms": 0.023262683923045795,
+          "max_ms": 0.32353331334888935,
+          "min_ms": 0.0,
+          "p95_ms": 0.32353331334888935
+        },
+        "latency_jitter": {
+          "jitter_ms": 207.96727093020036,
+          "stddev_ms": 354.9632683933977
+        },
+        "loss_rate": 0.25,
+        "lost": 5,
+        "path_rssi": {
+          "mean_rssi": -78.0,
+          "min_rssi": -78,
+          "route": [
+            0,
+            16,
+            3
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.0,
+        "recollect_count": 0,
+        "route_fallback": false,
+        "route_hops": 2,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 10 -> 03",
+        "sent": 20,
+        "source": "10",
+        "success": 15,
+        "total_latency_ms": 0.0
+      },
+      "10:04": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 8.377905580952453,
+        "command_downlink_latency_ms": 25.13371674285736,
+        "destination": "04",
+        "end_to_end_avg_latency_ms": 25.13371674285736,
+        "gateway_to_source_ms": 201.49961183778942,
+        "gateway_to_target_ms": 101.08330310322344,
+        "last_cost": 15.0,
+        "last_route": [
+          0,
+          16,
+          3,
+          4
+        ],
+        "latency": {
+          "avg_ms": 25.13371674285736,
+          "max_ms": 100.7700297050178,
+          "min_ms": 0.0,
+          "p95_ms": 100.7700297050178
+        },
+        "latency_jitter": {
+          "jitter_ms": 51.71729642474516,
+          "stddev_ms": 90.26763610072146
+        },
+        "loss_rate": 0.2,
+        "lost": 4,
+        "path_rssi": {
+          "mean_rssi": -73.5,
+          "min_rssi": -78,
+          "route": [
+            0,
+            16,
+            3,
+            4
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.0,
+        "recollect_count": 0,
+        "route_fallback": false,
+        "route_hops": 3,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 10 -> 03 -> 04",
+        "sent": 20,
+        "source": "10",
+        "success": 16,
+        "total_latency_ms": 0.0
+      },
+      "10:05": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 7.709176721385656,
+        "command_downlink_latency_ms": 23.12753016415697,
+        "destination": "05",
+        "end_to_end_avg_latency_ms": 23.12753016415697,
+        "gateway_to_source_ms": null,
+        "gateway_to_target_ms": null,
+        "last_cost": 13.0,
+        "last_route": [
+          0,
+          16,
+          9,
+          5
+        ],
+        "latency": {
+          "avg_ms": 23.12753016415697,
+          "max_ms": 300.53371004760265,
+          "min_ms": 0.0,
+          "p95_ms": 300.53371004760265
+        },
+        "latency_jitter": {
+          "jitter_ms": 74.3391187805794,
+          "stddev_ms": 149.09928987191458
+        },
+        "loss_rate": 0.35,
+        "lost": 7,
+        "path_rssi": {
+          "mean_rssi": -42.0,
+          "min_rssi": -42,
+          "route": [
+            0,
+            16,
+            9,
+            5
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": null,
+        "recollect_count": 0,
+        "route_fallback": false,
+        "route_hops": 3,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 10 -> 09 -> 05",
+        "sent": 20,
+        "source": "10",
+        "success": 13,
+        "total_latency_ms": null
+      },
+      "10:06": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 17.30824773446383,
+        "command_downlink_latency_ms": 34.61649546892766,
+        "destination": "06",
+        "end_to_end_avg_latency_ms": 34.61649546892766,
+        "gateway_to_source_ms": 101.01315495558083,
+        "gateway_to_target_ms": 101.19089903309941,
+        "last_cost": 12.0,
+        "last_route": [
+          0,
+          16,
+          6
+        ],
+        "latency": {
+          "avg_ms": 34.61649546892766,
+          "max_ms": 287.3895501252264,
+          "min_ms": 0.0,
+          "p95_ms": 287.3895501252264
+        },
+        "latency_jitter": {
+          "jitter_ms": 190.5105729197139,
+          "stddev_ms": 293.6483662111348
+        },
+        "loss_rate": 0.15,
+        "lost": 3,
+        "path_rssi": {
+          "mean_rssi": -78.0,
+          "min_rssi": -78,
+          "route": [
+            0,
+            16,
+            6
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.17774407751858234,
+        "recollect_count": 0,
+        "route_fallback": false,
+        "route_hops": 2,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 10 -> 06",
+        "sent": 20,
+        "source": "10",
+        "success": 17,
+        "total_latency_ms": 0.17774407751858234
+      },
+      "10:07": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 21.532134073952744,
+        "command_downlink_latency_ms": 86.12853629581097,
+        "destination": "07",
+        "end_to_end_avg_latency_ms": 86.12853629581097,
+        "gateway_to_source_ms": 1409.5753820147365,
+        "gateway_to_target_ms": 201.3432781677693,
+        "last_cost": 24.0,
+        "last_route": [
+          0,
+          3,
+          16,
+          6,
+          7
+        ],
+        "latency": {
+          "avg_ms": 86.12853629581097,
+          "max_ms": 403.3994700293988,
+          "min_ms": 0.0,
+          "p95_ms": 403.3994700293988
+        },
+        "latency_jitter": {
+          "jitter_ms": 153.9741375867658,
+          "stddev_ms": 180.716213469609
+        },
+        "loss_rate": 0.3,
+        "lost": 6,
+        "path_rssi": {
+          "mean_rssi": -69.25,
+          "min_rssi": -81,
+          "route": [
+            0,
+            3,
+            16,
+            6,
+            7
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.0,
+        "recollect_count": 1,
+        "route_fallback": false,
+        "route_hops": 4,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 03 -> 10 -> 06 -> 07",
+        "sent": 20,
+        "source": "10",
+        "success": 14,
+        "total_latency_ms": 0.0
+      },
+      "10:08": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 15.849571164468664,
+        "command_downlink_latency_ms": 47.54871349340599,
+        "destination": "08",
+        "end_to_end_avg_latency_ms": 47.54871349340599,
+        "gateway_to_source_ms": 502.40205181762576,
+        "gateway_to_target_ms": 100.94985598698258,
+        "last_cost": 1.0,
+        "last_route": [
+          0,
+          3,
+          16,
+          8
+        ],
+        "latency": {
+          "avg_ms": 47.54871349340599,
+          "max_ms": 300.96766096539795,
+          "min_ms": 0.0,
+          "p95_ms": 300.96766096539795
+        },
+        "latency_jitter": {
+          "jitter_ms": 121.68417139159095,
+          "stddev_ms": 191.08633823757017
+        },
+        "loss_rate": 0.05,
+        "lost": 1,
+        "path_rssi": {
+          "mean_rssi": -54.333333333333336,
+          "min_rssi": -81,
+          "route": [
+            0,
+            3,
+            16,
+            8
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.0,
+        "recollect_count": 0,
+        "route_fallback": false,
+        "route_hops": 3,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 03 -> 10 -> 08",
+        "sent": 20,
+        "source": "10",
+        "success": 19,
+        "total_latency_ms": 0.0
+      },
+      "10:09": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 27.98868119457944,
+        "command_downlink_latency_ms": 83.96604358373831,
+        "destination": "09",
+        "end_to_end_avg_latency_ms": 83.96604358373831,
+        "gateway_to_source_ms": 100.89606908150017,
+        "gateway_to_target_ms": 100.88583105243742,
+        "last_cost": 1.0,
+        "last_route": [
+          0,
+          3,
+          16,
+          9
+        ],
+        "latency": {
+          "avg_ms": 83.96604358373831,
+          "max_ms": 401.6915129031986,
+          "min_ms": 0.0,
+          "p95_ms": 401.6915129031986
+        },
+        "latency_jitter": {
+          "jitter_ms": 119.14594365904729,
+          "stddev_ms": 171.02546141474906
+        },
+        "loss_rate": 0.1,
+        "lost": 2,
+        "path_rssi": {
+          "mean_rssi": -55.0,
+          "min_rssi": -81,
+          "route": [
+            0,
+            3,
+            16,
+            9
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.0,
+        "recollect_count": 0,
+        "route_fallback": false,
+        "route_hops": 3,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 03 -> 10 -> 09",
+        "sent": 20,
+        "source": "10",
+        "success": 18,
+        "total_latency_ms": 0.0
+      }
+    },
+    "targets": {
+      "01": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 26.163046227362102,
+        "command_downlink_latency_ms": 78.4891386820863,
+        "destination": "01",
+        "end_to_end_avg_latency_ms": 78.4891386820863,
+        "gateway_to_source_ms": 703.0305929947644,
+        "gateway_to_target_ms": 402.03241305425763,
+        "last_cost": 24.0,
+        "last_route": [
+          0,
+          16,
+          2,
+          1
+        ],
+        "latency": {
+          "avg_ms": 78.4891386820863,
+          "max_ms": 1103.315392974764,
+          "min_ms": 0.0,
+          "p95_ms": 401.4164700638503
+        },
+        "latency_jitter": {
+          "jitter_ms": 117.183634511105,
+          "stddev_ms": 150.78810098592814
+        },
+        "loss_rate": 0.13333333333333333,
+        "lost": 24,
+        "path_rssi": {
+          "mean_rssi": -78.0,
+          "min_rssi": -78,
+          "route": [
+            0,
+            16,
+            2,
+            1
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.0,
+        "route_fallback": false,
+        "route_hops": 3,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 10 -> 02 -> 01",
+        "sent": 180,
+        "source": "00",
+        "success": 156,
+        "total_latency_ms": 0.0
+      },
+      "02": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 65.40651288156843,
+        "command_downlink_latency_ms": 130.81302576313686,
+        "destination": "02",
+        "end_to_end_avg_latency_ms": 130.81302576313686,
+        "gateway_to_source_ms": 101.07842390425503,
+        "gateway_to_target_ms": 201.3011579401791,
+        "last_cost": 12.0,
+        "last_route": [
+          0,
+          16,
+          2
+        ],
+        "latency": {
+          "avg_ms": 130.81302576313686,
+          "max_ms": 1605.138607788831,
+          "min_ms": 0.0,
+          "p95_ms": 802.3119668941945
+        },
+        "latency_jitter": {
+          "jitter_ms": 186.65461889196214,
+          "stddev_ms": 301.0257022170128
+        },
+        "loss_rate": 0.23333333333333334,
+        "lost": 42,
+        "path_rssi": {
+          "mean_rssi": null,
+          "min_rssi": null,
+          "route": [
+            0,
+            16,
+            2
+          ],
+          "source": "unavailable"
+        },
+        "point_to_point_ms": 100.22273403592408,
+        "route_fallback": false,
+        "route_hops": 2,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 10 -> 02",
+        "sent": 180,
+        "source": "00",
+        "success": 138,
+        "total_latency_ms": 100.22273403592408
+      },
+      "03": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 66.4750299839027,
+        "command_downlink_latency_ms": 132.9500599678054,
+        "destination": "03",
+        "end_to_end_avg_latency_ms": 132.9500599678054,
+        "gateway_to_source_ms": 201.23912417329848,
+        "gateway_to_target_ms": 100.8771019987762,
+        "last_cost": 12.0,
+        "last_route": [
+          0,
+          16,
+          3
+        ],
+        "latency": {
+          "avg_ms": 132.9500599678054,
+          "max_ms": 1912.2948569711298,
+          "min_ms": 0.0,
+          "p95_ms": 1103.1355380546302
+        },
+        "latency_jitter": {
+          "jitter_ms": 207.96727093020036,
+          "stddev_ms": 354.9632683933977
+        },
+        "loss_rate": 0.25,
+        "lost": 45,
+        "path_rssi": {
+          "mean_rssi": -78.0,
+          "min_rssi": -78,
+          "route": [
+            0,
+            16,
+            3
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.0,
+        "route_fallback": false,
+        "route_hops": 2,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 10 -> 03",
+        "sent": 180,
+        "source": "00",
+        "success": 135,
+        "total_latency_ms": 0.0
+      },
+      "04": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 12.10868868642079,
+        "command_downlink_latency_ms": 36.32606605926237,
+        "destination": "04",
+        "end_to_end_avg_latency_ms": 36.32606605926237,
+        "gateway_to_source_ms": 201.49961183778942,
+        "gateway_to_target_ms": 101.08330310322344,
+        "last_cost": 15.0,
+        "last_route": [
+          0,
+          16,
+          3,
+          4
+        ],
+        "latency": {
+          "avg_ms": 36.32606605926237,
+          "max_ms": 501.47601240314543,
+          "min_ms": 0.0,
+          "p95_ms": 200.76174684800208
+        },
+        "latency_jitter": {
+          "jitter_ms": 51.71729642474516,
+          "stddev_ms": 90.26763610072146
+        },
+        "loss_rate": 0.07777777777777778,
+        "lost": 14,
+        "path_rssi": {
+          "mean_rssi": -73.5,
+          "min_rssi": -78,
+          "route": [
+            0,
+            16,
+            3,
+            4
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.0,
+        "route_fallback": false,
+        "route_hops": 3,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 10 -> 03 -> 04",
+        "sent": 180,
+        "source": "00",
+        "success": 166,
+        "total_latency_ms": 0.0
+      },
+      "05": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 14.739617529336273,
+        "command_downlink_latency_ms": 44.21885258800882,
+        "destination": "05",
+        "end_to_end_avg_latency_ms": 44.21885258800882,
+        "gateway_to_source_ms": null,
+        "gateway_to_target_ms": null,
+        "last_cost": 13.0,
+        "last_route": [
+          0,
+          16,
+          9,
+          5
+        ],
+        "latency": {
+          "avg_ms": 44.21885258800882,
+          "max_ms": 1604.864535620436,
+          "min_ms": 0.0,
+          "p95_ms": 300.73782592080534
+        },
+        "latency_jitter": {
+          "jitter_ms": 74.3391187805794,
+          "stddev_ms": 149.09928987191458
+        },
+        "loss_rate": 0.06666666666666667,
+        "lost": 12,
+        "path_rssi": {
+          "mean_rssi": -42.0,
+          "min_rssi": -42,
+          "route": [
+            0,
+            16,
+            9,
+            5
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": null,
+        "route_fallback": false,
+        "route_hops": 3,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 10 -> 09 -> 05",
+        "sent": 180,
+        "source": "00",
+        "success": 168,
+        "total_latency_ms": null
+      },
+      "06": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 58.1714826728823,
+        "command_downlink_latency_ms": 116.3429653457646,
+        "destination": "06",
+        "end_to_end_avg_latency_ms": 116.3429653457646,
+        "gateway_to_source_ms": 101.01315495558083,
+        "gateway_to_target_ms": 101.19089903309941,
+        "last_cost": 12.0,
+        "last_route": [
+          0,
+          16,
+          6
+        ],
+        "latency": {
+          "avg_ms": 116.3429653457646,
+          "max_ms": 1504.9040680751204,
+          "min_ms": 0.0,
+          "p95_ms": 603.739962913096
+        },
+        "latency_jitter": {
+          "jitter_ms": 190.5105729197139,
+          "stddev_ms": 293.6483662111348
+        },
+        "loss_rate": 0.20555555555555555,
+        "lost": 37,
+        "path_rssi": {
+          "mean_rssi": -78.0,
+          "min_rssi": -78,
+          "route": [
+            0,
+            16,
+            6
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.17774407751858234,
+        "route_fallback": false,
+        "route_hops": 2,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 10 -> 06",
+        "sent": 180,
+        "source": "00",
+        "success": 143,
+        "total_latency_ms": 0.17774407751858234
+      },
+      "07": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 23.650949722597968,
+        "command_downlink_latency_ms": 94.60379889039187,
+        "destination": "07",
+        "end_to_end_avg_latency_ms": 94.60379889039187,
+        "gateway_to_source_ms": 1409.5753820147365,
+        "gateway_to_target_ms": 201.3432781677693,
+        "last_cost": 24.0,
+        "last_route": [
+          0,
+          3,
+          16,
+          6,
+          7
+        ],
+        "latency": {
+          "avg_ms": 94.60379889039187,
+          "max_ms": 1404.4089789967984,
+          "min_ms": 0.0,
+          "p95_ms": 402.77968696318567
+        },
+        "latency_jitter": {
+          "jitter_ms": 153.9741375867658,
+          "stddev_ms": 180.716213469609
+        },
+        "loss_rate": 0.23333333333333334,
+        "lost": 42,
+        "path_rssi": {
+          "mean_rssi": -69.25,
+          "min_rssi": -81,
+          "route": [
+            0,
+            3,
+            16,
+            6,
+            7
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.0,
+        "route_fallback": false,
+        "route_hops": 4,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 03 -> 10 -> 06 -> 07",
+        "sent": 180,
+        "source": "00",
+        "success": 138,
+        "total_latency_ms": 0.0
+      },
+      "08": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 23.80043376609285,
+        "command_downlink_latency_ms": 71.40130129827855,
+        "destination": "08",
+        "end_to_end_avg_latency_ms": 71.40130129827855,
+        "gateway_to_source_ms": 502.40205181762576,
+        "gateway_to_target_ms": 100.94985598698258,
+        "last_cost": 1.0,
+        "last_route": [
+          0,
+          3,
+          16,
+          8
+        ],
+        "latency": {
+          "avg_ms": 71.40130129827855,
+          "max_ms": 1404.772148001939,
+          "min_ms": 0.0,
+          "p95_ms": 301.2972038704902
+        },
+        "latency_jitter": {
+          "jitter_ms": 121.68417139159095,
+          "stddev_ms": 191.08633823757017
+        },
+        "loss_rate": 0.13333333333333333,
+        "lost": 24,
+        "path_rssi": {
+          "mean_rssi": -54.333333333333336,
+          "min_rssi": -81,
+          "route": [
+            0,
+            3,
+            16,
+            8
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.0,
+        "route_fallback": false,
+        "route_hops": 3,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 03 -> 10 -> 08",
+        "sent": 180,
+        "source": "00",
+        "success": 156,
+        "total_latency_ms": 0.0
+      },
+      "09": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 24.818208983484613,
+        "command_downlink_latency_ms": 74.45462695045384,
+        "destination": "09",
+        "end_to_end_avg_latency_ms": 74.45462695045384,
+        "gateway_to_source_ms": 100.89606908150017,
+        "gateway_to_target_ms": 100.88583105243742,
+        "last_cost": 1.0,
+        "last_route": [
+          0,
+          3,
+          16,
+          9
+        ],
+        "latency": {
+          "avg_ms": 74.45462695045384,
+          "max_ms": 1103.5191069822758,
+          "min_ms": 0.0,
+          "p95_ms": 301.2970890849829
+        },
+        "latency_jitter": {
+          "jitter_ms": 119.14594365904729,
+          "stddev_ms": 171.02546141474906
+        },
+        "loss_rate": 0.16111111111111112,
+        "lost": 29,
+        "path_rssi": {
+          "mean_rssi": -55.0,
+          "min_rssi": -81,
+          "route": [
+            0,
+            3,
+            16,
+            9
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.0,
+        "route_fallback": false,
+        "route_hops": 3,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 03 -> 10 -> 09",
+        "sent": 180,
+        "source": "00",
+        "success": 151,
+        "total_latency_ms": 0.0
+      },
+      "10": {
+        "algorithm_compute_latency_ms": 0.8506919257342815,
+        "avg_single_hop_latency_ms": 45.49603572270522,
+        "command_downlink_latency_ms": 90.99207144541045,
+        "destination": "10",
+        "end_to_end_avg_latency_ms": 90.99207144541045,
+        "gateway_to_source_ms": 301.4491591602564,
+        "gateway_to_target_ms": 100.9110629092902,
+        "last_cost": 1.0,
+        "last_route": [
+          0,
+          9,
+          16
+        ],
+        "latency": {
+          "avg_ms": 90.99207144541045,
+          "max_ms": 1907.119587995112,
+          "min_ms": 0.0,
+          "p95_ms": 401.3193619903177
+        },
+        "latency_jitter": {
+          "jitter_ms": 130.6708432787142,
+          "stddev_ms": 240.91926339405703
+        },
+        "loss_rate": 0.16666666666666666,
+        "lost": 30,
+        "path_rssi": {
+          "mean_rssi": -45.0,
+          "min_rssi": -45,
+          "route": [
+            0,
+            9,
+            16
+          ],
+          "source": "real_rssi"
+        },
+        "point_to_point_ms": 0.0,
+        "route_fallback": false,
+        "route_hops": 2,
+        "route_mode": "baseline_dijkstra",
+        "route_path": "00 -> 09 -> 10",
+        "sent": 180,
+        "source": "00",
+        "success": 150,
+        "total_latency_ms": 0.0
+      }
+    },
+    "topology_recollect_count": 35,
+    "total": {
+      "latency": {
+        "avg_ms": 84.8941280254331,
+        "max_ms": 1912.2948569711298,
+        "min_ms": 0.0,
+        "p95_ms": 401.43931400962174
+      },
+      "loss_rate": 0.1661111111111111,
+      "lost": 299,
+      "sent": 1800,
+      "success": 1501
+    }
+  },
+  "routing_params": {
+    "algorithm": "dijkstra",
+    "edge_direction": "src_to_neighbor",
+    "gateway": "00",
+    "graph_display": "undirected visual presentation; routing calculation keeps directed src_to_neighbor edges",
+    "node_route_storage": "nodes do not store a fixed gateway route; paths are task-scoped",
+    "path_downlink_format": "SEND <dst> <path_len> <addr0> ... <payload>",
+    "route_mode": "baseline_dijkstra",
+    "rssi_weight": [
+      {
+        "max_rssi": null,
+        "min_rssi": -55,
+        "weight": 1
+      },
+      {
+        "max_rssi": -56,
+        "min_rssi": -65,
+        "weight": 3
+      },
+      {
+        "max_rssi": -66,
+        "min_rssi": -75,
+        "weight": 6
+      },
+      {
+        "max_rssi": -76,
+        "min_rssi": -85,
+        "weight": 12
+      },
+      {
+        "max_rssi": -86,
+        "min_rssi": null,
+        "routing": "filtered",
+        "weight": null
+      }
+    ],
+    "weak_link_recording": "RSSI below -85 is kept in raw logs but excluded from Dijkstra"
+  },
+  "run_id": "benchmark",
+  "schema": "hardware_test_record.v1",
+  "source_log_dir": "app/广播组网上位机/app/logs/dijkstra_hw/第1次测试",
+  "test_config": {
+    "commands": {
+      "ack_format": "ACK <dst> <seq>",
+      "ack_timeout_s": 2.0,
+      "boot_wait_s": 5.0,
+      "command_interval_s": 0.5,
+      "matrix_mode": "source in sources, target in nodes-source",
+      "optimization_target": {
+        "ack_timeout_s": 2.0,
+        "loss_rate_max": 0.06,
+        "loss_rate_min": 0.04
+      },
+      "payload_bytes": 3,
+      "payload_hex": "AABBCC",
+      "recollect_consecutive_failures": 3,
+      "rounds_per_source_target_pair": 20,
+      "rounds_per_target": 20,
+      "route_mode": "baseline_dijkstra",
+      "rssi_collect_seconds": 0.0,
+      "rssi_command": "RSSI_REQ",
+      "rssi_requests": 5,
+      "send_format": "SEND <dst> <path_len> <path...> <hex_payload>",
+      "two_send_latency_policy": "first SEND gateway->source, second SEND gateway->source->target; point_to_point_ms=second_ack_ms-first_ack_ms"
+    },
+    "nodes": {
+      "gateway": "00",
+      "sources": [
+        "01",
+        "02",
+        "03",
+        "04",
+        "05",
+        "06",
+        "07",
+        "08",
+        "09",
+        "10"
+      ],
+      "targets": [
+        "01",
+        "02",
+        "03",
+        "04",
+        "05",
+        "06",
+        "07",
+        "08",
+        "09",
+        "10"
+      ]
+    },
+    "serial": {
+      "baud": 115200,
+      "data_bits": 8,
+      "dtr": false,
+      "parity": "N",
+      "port": "/dev/ttyUSB0",
+      "rts": false,
+      "stop_bits": 1
+    }
+  },
+  "topology_summary": {
+    "edges": [
+      {
+        "direction": "src_to_neighbor",
+        "dst": 2,
+        "rssi": -79,
+        "samples": [
+          -79
+        ],
+        "source": "real_rssi",
+        "src": 0,
+        "updated_at": 1779990088.2041297,
+        "weight": 12
+      },
+      {
+        "direction": "src_to_neighbor",
+        "dst": 3,
+        "rssi": -42,
+        "samples": [
+          -42
+        ],
+        "source": "real_rssi",
+        "src": 0,
+        "updated_at": 1779990088.2041297,
+        "weight": 1
+      },
+      {
+        "direction": "src_to_neighbor",
+        "dst": 4,
+        "rssi": -55,
+        "samples": [
+          -55
+        ],
+        "source": "real_rssi",
+        "src": 0,
+        "updated_at": 1779990088.2041297,
+        "weight": 1
+      },
+      {
+        "direction": "src_to_neighbor",
+        "dst": 5,
+        "rssi": -74,
+        "samples": [
+          -74
+        ],
+        "source": "real_rssi",
+        "src": 0,
+        "updated_at": 1779990088.2041297,
+        "weight": 6
+      },
+      {
+        "direction": "src_to_neighbor",
+        "dst": 8,
+        "rssi": -81,
+        "samples": [
+          -81
+        ],
+        "source": "real_rssi",
+        "src": 0,
+        "updated_at": 1779990088.2041297,
+        "weight": 12
+      },
+      {
+        "direction": "src_to_neighbor",
+        "dst": 2,
+        "rssi": -66,
+        "samples": [
+          -66
+        ],
+        "source": "real_rssi",
+        "src": 1,
+        "updated_at": 1779990088.204593,
+        "weight": 6
+      },
+      {
+        "direction": "src_to_neighbor",
+        "dst": 3,
+        "rssi": -76,
+        "samples": [
+          -76
+        ],
+        "source": "real_rssi",
+        "src": 1,
+        "updated_at": 1779990088.204593,
+        "weight": 12
+      },
+      {
+        "direction": "src_to_neighbor",
+        "dst": 5,
+        "rssi": -82,
+        "samples": [
+          -82
+        ],
+        "source": "real_rssi",
+        "src": 1,
+        "updated_at": 1779990088.204593,
+        "weight": 12
+      },
+      {
+        "direction": "src_to_neighbor",
+        "dst": 6,
+        "rssi": -81,
+        "samples": [
+          -81
+        ],
+        "source": "real_rssi",
+        "src": 1,
+        "updated_at": 1779990088.204593,
+        "weight": 12
+      },
+      {
+        "direction": "src_to_neighbor",
+        "dst": 1,
+        "rssi": -78,
+        "samples": [
+          -78
+        ],
+        "source": "real_rssi",
+        "src": 2,
+        "updated_at": 1779990088.2037683,
+        "weight": 12
+      },
+      {
+        "direction": "src_to_neighbor",
+        "dst": 3,
+        "rssi": -70,
+        "samples": [
+          -70
+        ],
+        "source": "real_rssi",
+        "src": 2,
+        "updated_at": 1779990088.2037683,
+        "weight": 6
+      },
+      {
+        "direction": "src_to_neighbor",
+        "dst": 5,
+        "rssi": -85,
+        "samples": [
+          -85
+        ],
+        "source": "real_rssi",
+        "src": 2,
+        "updated_at": 1779990088.2037683,
+        "weight": 12
+      },
+      {
+        "direction": "src_to_neighbor",
+        "dst": 6,
+        "rssi": -80,
+        "samples": [
+          -80
+        ],
+        "source": "real_rssi",
+        "src": 2,
+        "updated_at": 1779990088.2037683,
+        "weight": 12
+      },
+      {
+        "direction": "src_to_neighbor",
+        "dst": 8,
+        "rssi": -84,
+        "samples": [
+          -84
+        ],
+        "source": "real_rssi",
+        "src": 2,
+        "updated_at": 1779990088.2037683,
+        "weight": 12
+      },
+      {
+        "direction": "src_to_neighbor",
+        "dst": 0,
+        "rssi": -60,
+        "samples": [
+          -60
+        ],
+        "source": "real_rssi",
+        "src": 3,
+        "updated_at": 1779990088.200017,
+        "weight": 3
+      },
+      {
+        "direction": "src_to_neighbor",
+        "dst": 2,
+        "rssi": -78,
+        "samples": [
+          -78
+        ],
+        "source": "real_rssi",
+        "src": 3,
+        "updated_at": 1779990088.200017,
+        "weight": 12
+      },
+      {
+        "direction": "src_to_neighbor",
+        "dst": 4,
+        "rssi": -69,
+        "samples": [
+          -69
+        ],
+        "source": "real_rssi",
+        "src": 3,
+        "updated_at": 1779990088.200017,
+        "weight": 6
+      },
+      {
+        "direction": "src_to_neighbor",
+        "dst": 5,
+        "rssi": -81,
+        "samples": [
+          -81
+        ],
+        "source": "real_rssi",
+        "src": 3,
+        "updated_at": 1779990088.200017,
+        "weight": 12
+      },
+      {
+        "direction": "src_to_neighbor",
+        "dst": 6,
+        "rssi": -80,
+        "samples": [
+          -80
+        ],
+        "source": "real_rssi",
+        "src": 3,
+        "updated_at": 1779990088.200017,
+        "weight": 12
+      },
+      {
+        "direction": "src_to_neighbor",
+        "dst": 8,
+        "rssi": -85,
+        "samples": [
+          -85
+        ],
+        "source": "real_rssi",
+        "src": 3,
+        "updated_at": 1779990088.200017,
+        "weight": 12
+      },
+      {
+        "direction": "src_to_neighbor",
+        "dst": 16,
+        "rssi": -81,
+        "samples": [
+          -81
+        ],
+        "source": "real_rssi",
+        "src": 3,
+        "updated_at": 1779990088.200017,
+        "weight": 12
+      },
+      {
+        "direction": "src_to_neighbor",
+        "dst": 0,
+        "rssi": -60,
+        "samples": [
+          -60
+        ],
+        "source": "real_rssi",
+        "src": 4,
+        "updated_at": 1779990088.2016366,
+        "weight": 3
+      },
+      {
+        "direction": "src_to_neighbor",
+        "dst": 2,
+        "rssi": -73,
+        "samples": [
+          -73
+        ],
+        "source": "real_rssi",
+        "src": 4,
+        "updated_at": 1779990088.2016366,
+        "weight": 6
+      },
+      {
+        "direction": "src_to_neighbor",
+        "dst": 3,
+        "rssi": -46,
+        "samples": [
+          -46
+        ],
+        "source": "real_rssi",
+        "src": 4,
+        "updated_at": 1779990088.2016366,
+        "weight": 1
+      },
+      {
+        "direction": "src_to_neighbor",
+        "dst": 8,
+        "rssi": -85,
+        "samples": [
+          -85
+        ],
+        "source": "real_rssi",
+        "src": 4,
+        "updated_at": 1779990088.2016366,
+        "weight": 12
+      },
+      {
+        "direction": "src_to_neighbor",
+        "dst": 16,
+        "rssi": -83,
+        "samples": [
+          -83
+        ],
+        "source": "real_rssi",
+        "src": 4,
+        "updated_at": 1779990088.2016366,
+        "weight": 12
+      },
+      {
+        "direction": "src_to_neighbor",
+        "dst": 2,
+        "rssi": -83,
+        "samples": [
+          -83
+        ],
+        "source": "real_rssi",
+        "src": 5,
+        "updated_at": 1779990088.2019618,
+        "weight": 12
+      },
+      {
+        "direction": "src_to_neighbor",
+        "dst": 3,
+        "rssi": -70,
+        "samples": [
+          -70
+        ],
+        "source": "real_rssi",
+        "src": 5,
+        "updated_at": 1779990088.2019618,
+        "weight": 6
+      },
+      {
+        "direction": "src_to_neighbor",
+        "dst": 0,
+        "rssi": -77,
+        "samples": [
+          -77
+        ],
+        "source": "real_rssi",
+        "src": 6,
+        "updated_at": 1779990088.2030437,
+        "weight": 12
+      },
+      {
+        "direction": "src_to_neighbor",
+        "dst": 2,
+        "rssi": -80,
+        "samples": [
+          -80
+        ],
+        "source": "real_rssi",
+        "src": 6,
+        "updated_at": 1779990088.2030437,
+        "weight": 12
+      },
+      {
+        "direction": "src_to_neighbor",
+        "dst": 3,
+        "rssi": -78,
+        "samples": [
+          -78
+        ],
+        "source": "real_rssi",
+        "src": 6,
+        "updated_at": 1779990088.2030437,
+        "weight": 12
+      },
+      {
+        "direction": "src_to_neighbor",
+        "dst": 5,
+        "rssi": -84,
+        "samples": [
+          -84
+        ],
+        "source": "real_rssi",
+        "src": 6,
+        "updated_at": 1779990088.2030437,
+        "weight": 12
+      },
+      {
+        "direction": "src_to_neighbor",
+        "dst": 7,
+        "rssi": -76,
+        "samples": [
+          -76
+        ],
+        "source": "real_rssi",
+        "src": 6,
+        "updated_at": 1779990088.2030437,
+        "weight": 12
+      },
+      {
+        "direction": "src_to_neighbor",
+        "dst": 2,
+        "rssi": -84,
+        "samples": [
+          -84
+        ],
+        "source": "real_rssi",
+        "src": 7,
+        "updated_at": 1779990088.202724,
+        "weight": 12
+      },
+      {
+        "direction": "src_to_neighbor",
+        "dst": 3,
+        "rssi": -85,
+        "samples": [
+          -85
+        ],
+        "source": "real_rssi",
+        "src": 7,
+        "updated_at": 1779990088.202724,
+        "weight": 12
+      },
+      {
+        "direction": "src_to_neighbor",
+        "dst": 6,
+        "rssi": -65,
+        "samples": [
+          -65
+        ],
+        "source": "real_rssi",
+        "src": 7,
+        "updated_at": 1779990088.202724,
+        "weight": 3
+      },
+      {
+        "direction": "src_to_neighbor",
+        "dst": 8,
+        "rssi": -82,
+        "samples": [
+          -82
+        ],
+        "source": "real_rssi",
+        "src": 7,
+        "updated_at": 1779990088.202724,
+        "weight": 12
+      },
+      {
+        "direction": "src_to_neighbor",
+        "dst": 16,
+        "rssi": -82,
+        "samples": [
+          -82
+        ],
+        "source": "real_rssi",
+        "src": 7,
+        "updated_at": 1779990088.202724,
+        "weight": 12
+      },
+      {
+        "direction": "src_to_neighbor",
+        "dst": 3,
+        "rssi": -82,
+        "samples": [
+          -82
+        ],
+        "source": "real_rssi",
+        "src": 8,
+        "updated_at": 1779990088.2021902,
+        "weight": 12
+      },
+      {
+        "direction": "src_to_neighbor",
+        "dst": 9,
+        "rssi": -52,
+        "samples": [
+          -52
+        ],
+        "source": "real_rssi",
+        "src": 8,
+        "updated_at": 1779990088.2021902,
+        "weight": 1
+      },
+      {
+        "direction": "src_to_neighbor",
+        "dst": 16,
+        "rssi": -38,
+        "samples": [
+          -38
+        ],
+        "source": "real_rssi",
+        "src": 8,
+        "updated_at": 1779990088.2021902,
+        "weight": 1
+      },
+      {
+        "direction": "src_to_neighbor",
+        "dst": 3,
+        "rssi": -78,
+        "samples": [
+          -78
+        ],
+        "source": "real_rssi",
+        "src": 9,
+        "updated_at": 1779990088.203416,
+        "weight": 12
+      },
+      {
+        "direction": "src_to_neighbor",
+        "dst": 8,
+        "rssi": -44,
+        "samples": [
+          -44
+        ],
+        "source": "real_rssi",
+        "src": 9,
+        "updated_at": 1779990088.203416,
+        "weight": 1
+      },
+      {
+        "direction": "src_to_neighbor",
+        "dst": 16,
+        "rssi": -45,
+        "samples": [
+          -45
+        ],
+        "source": "real_rssi",
+        "src": 9,
+        "updated_at": 1779990088.203416,
+        "weight": 1
+      },
+      {
+        "direction": "src_to_neighbor",
+        "dst": 0,
+        "rssi": -79,
+        "samples": [
+          -79
+        ],
+        "source": "real_rssi",
+        "src": 16,
+        "updated_at": 1779990088.202426,
+        "weight": 12
+      },
+      {
+        "direction": "src_to_neighbor",
+        "dst": 3,
+        "rssi": -78,
+        "samples": [
+          -78
+        ],
+        "source": "real_rssi",
+        "src": 16,
+        "updated_at": 1779990088.202426,
+        "weight": 12
+      },
+      {
+        "direction": "src_to_neighbor",
+        "dst": 6,
+        "rssi": -78,
+        "samples": [
+          -78
+        ],
+        "source": "real_rssi",
+        "src": 16,
+        "updated_at": 1779990088.202426,
+        "weight": 12
+      },
+      {
+        "direction": "src_to_neighbor",
+        "dst": 8,
+        "rssi": -40,
+        "samples": [
+          -40
+        ],
+        "source": "real_rssi",
+        "src": 16,
+        "updated_at": 1779990088.202426,
+        "weight": 1
+      },
+      {
+        "direction": "src_to_neighbor",
+        "dst": 9,
+        "rssi": -42,
+        "samples": [
+          -42
+        ],
+        "source": "real_rssi",
+        "src": 16,
+        "updated_at": 1779990088.202426,
+        "weight": 1
+      }
+    ],
+    "nodes": [
+      "00",
+      "01",
+      "02",
+      "03",
+      "04",
+      "05",
+      "06",
+      "07",
+      "08",
+      "09",
+      "10"
+    ],
+    "routes": {
+      "00:01": {
+        "cost": 19.0,
+        "dst": 1,
+        "path": [
+          0,
+          4,
+          2,
+          1
+        ],
+        "src": 0,
+        "status": "valid"
+      },
+      "00:02": {
+        "cost": 7.0,
+        "dst": 2,
+        "path": [
+          0,
+          4,
+          2
+        ],
+        "src": 0,
+        "status": "valid"
+      },
+      "00:03": {
+        "cost": 1.0,
+        "dst": 3,
+        "path": [
+          0,
+          3
+        ],
+        "src": 0,
+        "status": "valid"
+      },
+      "00:04": {
+        "cost": 1.0,
+        "dst": 4,
+        "path": [
+          0,
+          4
+        ],
+        "src": 0,
+        "status": "valid"
+      },
+      "00:05": {
+        "cost": 6.0,
+        "dst": 5,
+        "path": [
+          0,
+          5
+        ],
+        "src": 0,
+        "status": "valid"
+      },
+      "00:06": {
+        "cost": 13.0,
+        "dst": 6,
+        "path": [
+          0,
+          3,
+          6
+        ],
+        "src": 0,
+        "status": "valid"
+      },
+      "00:07": {
+        "cost": 25.0,
+        "dst": 7,
+        "path": [
+          0,
+          3,
+          6,
+          7
+        ],
+        "src": 0,
+        "status": "valid"
+      },
+      "00:08": {
+        "cost": 12.0,
+        "dst": 8,
+        "path": [
+          0,
+          8
+        ],
+        "src": 0,
+        "status": "valid"
+      },
+      "00:09": {
+        "cost": 13.0,
+        "dst": 9,
+        "path": [
+          0,
+          8,
+          9
+        ],
+        "src": 0,
+        "status": "valid"
+      },
+      "00:10": {
+        "cost": 13.0,
+        "dst": 16,
+        "path": [
+          0,
+          3,
+          16
+        ],
+        "src": 0,
+        "status": "valid"
+      },
+      "01:00": {
+        "cost": 15.0,
+        "dst": 0,
+        "path": [
+          1,
+          3,
+          0
+        ],
+        "src": 1,
+        "status": "valid"
+      },
+      "01:02": {
+        "cost": 6.0,
+        "dst": 2,
+        "path": [
+          1,
+          2
+        ],
+        "src": 1,
+        "status": "valid"
+      },
+      "01:03": {
+        "cost": 12.0,
+        "dst": 3,
+        "path": [
+          1,
+          3
+        ],
+        "src": 1,
+        "status": "valid"
+      },
+      "01:04": {
+        "cost": 16.0,
+        "dst": 4,
+        "path": [
+          1,
+          3,
+          0,
+          4
+        ],
+        "src": 1,
+        "status": "valid"
+      },
+      "01:05": {
+        "cost": 12.0,
+        "dst": 5,
+        "path": [
+          1,
+          5
+        ],
+        "src": 1,
+        "status": "valid"
+      },
+      "01:06": {
+        "cost": 12.0,
+        "dst": 6,
+        "path": [
+          1,
+          6
+        ],
+        "src": 1,
+        "status": "valid"
+      },
+      "01:07": {
+        "cost": 24.0,
+        "dst": 7,
+        "path": [
+          1,
+          6,
+          7
+        ],
+        "src": 1,
+        "status": "valid"
+      },
+      "01:08": {
+        "cost": 18.0,
+        "dst": 8,
+        "path": [
+          1,
+          2,
+          8
+        ],
+        "src": 1,
+        "status": "valid"
+      },
+      "01:09": {
+        "cost": 19.0,
+        "dst": 9,
+        "path": [
+          1,
+          2,
+          8,
+          9
+        ],
+        "src": 1,
+        "status": "valid"
+      },
+      "01:10": {
+        "cost": 19.0,
+        "dst": 16,
+        "path": [
+          1,
+          2,
+          8,
+          16
+        ],
+        "src": 1,
+        "status": "valid"
+      },
+      "02:00": {
+        "cost": 9.0,
+        "dst": 0,
+        "path": [
+          2,
+          3,
+          0
+        ],
+        "src": 2,
+        "status": "valid"
+      },
+      "02:01": {
+        "cost": 12.0,
+        "dst": 1,
+        "path": [
+          2,
+          1
+        ],
+        "src": 2,
+        "status": "valid"
+      },
+      "02:03": {
+        "cost": 6.0,
+        "dst": 3,
+        "path": [
+          2,
+          3
+        ],
+        "src": 2,
+        "status": "valid"
+      },
+      "02:04": {
+        "cost": 10.0,
+        "dst": 4,
+        "path": [
+          2,
+          3,
+          0,
+          4
+        ],
+        "src": 2,
+        "status": "valid"
+      },
+      "02:05": {
+        "cost": 12.0,
+        "dst": 5,
+        "path": [
+          2,
+          5
+        ],
+        "src": 2,
+        "status": "valid"
+      },
+      "02:06": {
+        "cost": 12.0,
+        "dst": 6,
+        "path": [
+          2,
+          6
+        ],
+        "src": 2,
+        "status": "valid"
+      },
+      "02:07": {
+        "cost": 24.0,
+        "dst": 7,
+        "path": [
+          2,
+          6,
+          7
+        ],
+        "src": 2,
+        "status": "valid"
+      },
+      "02:08": {
+        "cost": 12.0,
+        "dst": 8,
+        "path": [
+          2,
+          8
+        ],
+        "src": 2,
+        "status": "valid"
+      },
+      "02:09": {
+        "cost": 13.0,
+        "dst": 9,
+        "path": [
+          2,
+          8,
+          9
+        ],
+        "src": 2,
+        "status": "valid"
+      },
+      "02:10": {
+        "cost": 13.0,
+        "dst": 16,
+        "path": [
+          2,
+          8,
+          16
+        ],
+        "src": 2,
+        "status": "valid"
+      },
+      "03:00": {
+        "cost": 3.0,
+        "dst": 0,
+        "path": [
+          3,
+          0
+        ],
+        "src": 3,
+        "status": "valid"
+      },
+      "03:01": {
+        "cost": 22.0,
+        "dst": 1,
+        "path": [
+          3,
+          0,
+          4,
+          2,
+          1
+        ],
+        "src": 3,
+        "status": "valid"
+      },
+      "03:02": {
+        "cost": 10.0,
+        "dst": 2,
+        "path": [
+          3,
+          0,
+          4,
+          2
+        ],
+        "src": 3,
+        "status": "valid"
+      },
+      "03:04": {
+        "cost": 4.0,
+        "dst": 4,
+        "path": [
+          3,
+          0,
+          4
+        ],
+        "src": 3,
+        "status": "valid"
+      },
+      "03:05": {
+        "cost": 9.0,
+        "dst": 5,
+        "path": [
+          3,
+          0,
+          5
+        ],
+        "src": 3,
+        "status": "valid"
+      },
+      "03:06": {
+        "cost": 12.0,
+        "dst": 6,
+        "path": [
+          3,
+          6
+        ],
+        "src": 3,
+        "status": "valid"
+      },
+      "03:07": {
+        "cost": 24.0,
+        "dst": 7,
+        "path": [
+          3,
+          6,
+          7
+        ],
+        "src": 3,
+        "status": "valid"
+      },
+      "03:08": {
+        "cost": 12.0,
+        "dst": 8,
+        "path": [
+          3,
+          8
+        ],
+        "src": 3,
+        "status": "valid"
+      },
+      "03:09": {
+        "cost": 13.0,
+        "dst": 9,
+        "path": [
+          3,
+          8,
+          9
+        ],
+        "src": 3,
+        "status": "valid"
+      },
+      "03:10": {
+        "cost": 12.0,
+        "dst": 16,
+        "path": [
+          3,
+          16
+        ],
+        "src": 3,
+        "status": "valid"
+      },
+      "04:00": {
+        "cost": 3.0,
+        "dst": 0,
+        "path": [
+          4,
+          0
+        ],
+        "src": 4,
+        "status": "valid"
+      },
+      "04:01": {
+        "cost": 18.0,
+        "dst": 1,
+        "path": [
+          4,
+          2,
+          1
+        ],
+        "src": 4,
+        "status": "valid"
+      },
+      "04:02": {
+        "cost": 6.0,
+        "dst": 2,
+        "path": [
+          4,
+          2
+        ],
+        "src": 4,
+        "status": "valid"
+      },
+      "04:03": {
+        "cost": 1.0,
+        "dst": 3,
+        "path": [
+          4,
+          3
+        ],
+        "src": 4,
+        "status": "valid"
+      },
+      "04:05": {
+        "cost": 9.0,
+        "dst": 5,
+        "path": [
+          4,
+          0,
+          5
+        ],
+        "src": 4,
+        "status": "valid"
+      },
+      "04:06": {
+        "cost": 13.0,
+        "dst": 6,
+        "path": [
+          4,
+          3,
+          6
+        ],
+        "src": 4,
+        "status": "valid"
+      },
+      "04:07": {
+        "cost": 25.0,
+        "dst": 7,
+        "path": [
+          4,
+          3,
+          6,
+          7
+        ],
+        "src": 4,
+        "status": "valid"
+      },
+      "04:08": {
+        "cost": 12.0,
+        "dst": 8,
+        "path": [
+          4,
+          8
+        ],
+        "src": 4,
+        "status": "valid"
+      },
+      "04:09": {
+        "cost": 13.0,
+        "dst": 9,
+        "path": [
+          4,
+          8,
+          9
+        ],
+        "src": 4,
+        "status": "valid"
+      },
+      "04:10": {
+        "cost": 12.0,
+        "dst": 16,
+        "path": [
+          4,
+          16
+        ],
+        "src": 4,
+        "status": "valid"
+      },
+      "05:00": {
+        "cost": 9.0,
+        "dst": 0,
+        "path": [
+          5,
+          3,
+          0
+        ],
+        "src": 5,
+        "status": "valid"
+      },
+      "05:01": {
+        "cost": 24.0,
+        "dst": 1,
+        "path": [
+          5,
+          2,
+          1
+        ],
+        "src": 5,
+        "status": "valid"
+      },
+      "05:02": {
+        "cost": 12.0,
+        "dst": 2,
+        "path": [
+          5,
+          2
+        ],
+        "src": 5,
+        "status": "valid"
+      },
+      "05:03": {
+        "cost": 6.0,
+        "dst": 3,
+        "path": [
+          5,
+          3
+        ],
+        "src": 5,
+        "status": "valid"
+      },
+      "05:04": {
+        "cost": 10.0,
+        "dst": 4,
+        "path": [
+          5,
+          3,
+          0,
+          4
+        ],
+        "src": 5,
+        "status": "valid"
+      },
+      "05:06": {
+        "cost": 18.0,
+        "dst": 6,
+        "path": [
+          5,
+          3,
+          6
+        ],
+        "src": 5,
+        "status": "valid"
+      },
+      "05:07": {
+        "cost": 30.0,
+        "dst": 7,
+        "path": [
+          5,
+          3,
+          6,
+          7
+        ],
+        "src": 5,
+        "status": "valid"
+      },
+      "05:08": {
+        "cost": 18.0,
+        "dst": 8,
+        "path": [
+          5,
+          3,
+          8
+        ],
+        "src": 5,
+        "status": "valid"
+      },
+      "05:09": {
+        "cost": 19.0,
+        "dst": 9,
+        "path": [
+          5,
+          3,
+          8,
+          9
+        ],
+        "src": 5,
+        "status": "valid"
+      },
+      "05:10": {
+        "cost": 18.0,
+        "dst": 16,
+        "path": [
+          5,
+          3,
+          16
+        ],
+        "src": 5,
+        "status": "valid"
+      },
+      "06:00": {
+        "cost": 12.0,
+        "dst": 0,
+        "path": [
+          6,
+          0
+        ],
+        "src": 6,
+        "status": "valid"
+      },
+      "06:01": {
+        "cost": 24.0,
+        "dst": 1,
+        "path": [
+          6,
+          2,
+          1
+        ],
+        "src": 6,
+        "status": "valid"
+      },
+      "06:02": {
+        "cost": 12.0,
+        "dst": 2,
+        "path": [
+          6,
+          2
+        ],
+        "src": 6,
+        "status": "valid"
+      },
+      "06:03": {
+        "cost": 12.0,
+        "dst": 3,
+        "path": [
+          6,
+          3
+        ],
+        "src": 6,
+        "status": "valid"
+      },
+      "06:04": {
+        "cost": 13.0,
+        "dst": 4,
+        "path": [
+          6,
+          0,
+          4
+        ],
+        "src": 6,
+        "status": "valid"
+      },
+      "06:05": {
+        "cost": 12.0,
+        "dst": 5,
+        "path": [
+          6,
+          5
+        ],
+        "src": 6,
+        "status": "valid"
+      },
+      "06:07": {
+        "cost": 12.0,
+        "dst": 7,
+        "path": [
+          6,
+          7
+        ],
+        "src": 6,
+        "status": "valid"
+      },
+      "06:08": {
+        "cost": 24.0,
+        "dst": 8,
+        "path": [
+          6,
+          0,
+          8
+        ],
+        "src": 6,
+        "status": "valid"
+      },
+      "06:09": {
+        "cost": 25.0,
+        "dst": 9,
+        "path": [
+          6,
+          0,
+          8,
+          9
+        ],
+        "src": 6,
+        "status": "valid"
+      },
+      "06:10": {
+        "cost": 24.0,
+        "dst": 16,
+        "path": [
+          6,
+          3,
+          16
+        ],
+        "src": 6,
+        "status": "valid"
+      },
+      "07:00": {
+        "cost": 15.0,
+        "dst": 0,
+        "path": [
+          7,
+          6,
+          0
+        ],
+        "src": 7,
+        "status": "valid"
+      },
+      "07:01": {
+        "cost": 24.0,
+        "dst": 1,
+        "path": [
+          7,
+          2,
+          1
+        ],
+        "src": 7,
+        "status": "valid"
+      },
+      "07:02": {
+        "cost": 12.0,
+        "dst": 2,
+        "path": [
+          7,
+          2
+        ],
+        "src": 7,
+        "status": "valid"
+      },
+      "07:03": {
+        "cost": 12.0,
+        "dst": 3,
+        "path": [
+          7,
+          3
+        ],
+        "src": 7,
+        "status": "valid"
+      },
+      "07:04": {
+        "cost": 16.0,
+        "dst": 4,
+        "path": [
+          7,
+          6,
+          0,
+          4
+        ],
+        "src": 7,
+        "status": "valid"
+      },
+      "07:05": {
+        "cost": 15.0,
+        "dst": 5,
+        "path": [
+          7,
+          6,
+          5
+        ],
+        "src": 7,
+        "status": "valid"
+      },
+      "07:06": {
+        "cost": 3.0,
+        "dst": 6,
+        "path": [
+          7,
+          6
+        ],
+        "src": 7,
+        "status": "valid"
+      },
+      "07:08": {
+        "cost": 12.0,
+        "dst": 8,
+        "path": [
+          7,
+          8
+        ],
+        "src": 7,
+        "status": "valid"
+      },
+      "07:09": {
+        "cost": 13.0,
+        "dst": 9,
+        "path": [
+          7,
+          8,
+          9
+        ],
+        "src": 7,
+        "status": "valid"
+      },
+      "07:10": {
+        "cost": 12.0,
+        "dst": 16,
+        "path": [
+          7,
+          16
+        ],
+        "src": 7,
+        "status": "valid"
+      },
+      "08:00": {
+        "cost": 13.0,
+        "dst": 0,
+        "path": [
+          8,
+          16,
+          0
+        ],
+        "src": 8,
+        "status": "valid"
+      },
+      "08:01": {
+        "cost": 32.0,
+        "dst": 1,
+        "path": [
+          8,
+          16,
+          0,
+          4,
+          2,
+          1
+        ],
+        "src": 8,
+        "status": "valid"
+      },
+      "08:02": {
+        "cost": 20.0,
+        "dst": 2,
+        "path": [
+          8,
+          16,
+          0,
+          4,
+          2
+        ],
+        "src": 8,
+        "status": "valid"
+      },
+      "08:03": {
+        "cost": 12.0,
+        "dst": 3,
+        "path": [
+          8,
+          3
+        ],
+        "src": 8,
+        "status": "valid"
+      },
+      "08:04": {
+        "cost": 14.0,
+        "dst": 4,
+        "path": [
+          8,
+          16,
+          0,
+          4
+        ],
+        "src": 8,
+        "status": "valid"
+      },
+      "08:05": {
+        "cost": 19.0,
+        "dst": 5,
+        "path": [
+          8,
+          16,
+          0,
+          5
+        ],
+        "src": 8,
+        "status": "valid"
+      },
+      "08:06": {
+        "cost": 13.0,
+        "dst": 6,
+        "path": [
+          8,
+          16,
+          6
+        ],
+        "src": 8,
+        "status": "valid"
+      },
+      "08:07": {
+        "cost": 25.0,
+        "dst": 7,
+        "path": [
+          8,
+          16,
+          6,
+          7
+        ],
+        "src": 8,
+        "status": "valid"
+      },
+      "08:09": {
+        "cost": 1.0,
+        "dst": 9,
+        "path": [
+          8,
+          9
+        ],
+        "src": 8,
+        "status": "valid"
+      },
+      "08:10": {
+        "cost": 1.0,
+        "dst": 16,
+        "path": [
+          8,
+          16
+        ],
+        "src": 8,
+        "status": "valid"
+      },
+      "09:00": {
+        "cost": 13.0,
+        "dst": 0,
+        "path": [
+          9,
+          16,
+          0
+        ],
+        "src": 9,
+        "status": "valid"
+      },
+      "09:01": {
+        "cost": 32.0,
+        "dst": 1,
+        "path": [
+          9,
+          16,
+          0,
+          4,
+          2,
+          1
+        ],
+        "src": 9,
+        "status": "valid"
+      },
+      "09:02": {
+        "cost": 20.0,
+        "dst": 2,
+        "path": [
+          9,
+          16,
+          0,
+          4,
+          2
+        ],
+        "src": 9,
+        "status": "valid"
+      },
+      "09:03": {
+        "cost": 12.0,
+        "dst": 3,
+        "path": [
+          9,
+          3
+        ],
+        "src": 9,
+        "status": "valid"
+      },
+      "09:04": {
+        "cost": 14.0,
+        "dst": 4,
+        "path": [
+          9,
+          16,
+          0,
+          4
+        ],
+        "src": 9,
+        "status": "valid"
+      },
+      "09:05": {
+        "cost": 19.0,
+        "dst": 5,
+        "path": [
+          9,
+          16,
+          0,
+          5
+        ],
+        "src": 9,
+        "status": "valid"
+      },
+      "09:06": {
+        "cost": 13.0,
+        "dst": 6,
+        "path": [
+          9,
+          16,
+          6
+        ],
+        "src": 9,
+        "status": "valid"
+      },
+      "09:07": {
+        "cost": 25.0,
+        "dst": 7,
+        "path": [
+          9,
+          16,
+          6,
+          7
+        ],
+        "src": 9,
+        "status": "valid"
+      },
+      "09:08": {
+        "cost": 1.0,
+        "dst": 8,
+        "path": [
+          9,
+          8
+        ],
+        "src": 9,
+        "status": "valid"
+      },
+      "09:10": {
+        "cost": 1.0,
+        "dst": 16,
+        "path": [
+          9,
+          16
+        ],
+        "src": 9,
+        "status": "valid"
+      },
+      "10:00": {
+        "cost": 12.0,
+        "dst": 0,
+        "path": [
+          16,
+          0
+        ],
+        "src": 16,
+        "status": "valid"
+      },
+      "10:01": {
+        "cost": 31.0,
+        "dst": 1,
+        "path": [
+          16,
+          0,
+          4,
+          2,
+          1
+        ],
+        "src": 16,
+        "status": "valid"
+      },
+      "10:02": {
+        "cost": 19.0,
+        "dst": 2,
+        "path": [
+          16,
+          0,
+          4,
+          2
+        ],
+        "src": 16,
+        "status": "valid"
+      },
+      "10:03": {
+        "cost": 12.0,
+        "dst": 3,
+        "path": [
+          16,
+          3
+        ],
+        "src": 16,
+        "status": "valid"
+      },
+      "10:04": {
+        "cost": 13.0,
+        "dst": 4,
+        "path": [
+          16,
+          0,
+          4
+        ],
+        "src": 16,
+        "status": "valid"
+      },
+      "10:05": {
+        "cost": 18.0,
+        "dst": 5,
+        "path": [
+          16,
+          0,
+          5
+        ],
+        "src": 16,
+        "status": "valid"
+      },
+      "10:06": {
+        "cost": 12.0,
+        "dst": 6,
+        "path": [
+          16,
+          6
+        ],
+        "src": 16,
+        "status": "valid"
+      },
+      "10:07": {
+        "cost": 24.0,
+        "dst": 7,
+        "path": [
+          16,
+          6,
+          7
+        ],
+        "src": 16,
+        "status": "valid"
+      },
+      "10:08": {
+        "cost": 1.0,
+        "dst": 8,
+        "path": [
+          16,
+          8
+        ],
+        "src": 16,
+        "status": "valid"
+      },
+      "10:09": {
+        "cost": 1.0,
+        "dst": 9,
+        "path": [
+          16,
+          9
+        ],
+        "src": 16,
+        "status": "valid"
+      }
+    }
+  }
+}

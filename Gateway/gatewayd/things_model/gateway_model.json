@@ -1,0 +1,173 @@
+{
+  "properties": [
+    {
+      "functionName": "网络类型",
+      "identifier": "network_type",
+      "functionType": "properties",
+      "accessMode": "r",
+      "specs": {
+        "dataType": {
+          "type": "TEXT",
+          "specs": {}
+        }
+      },
+      "extensionDesc": null
+    },
+    {
+      "functionName": "网络接口",
+      "identifier": "network_ifname",
+      "functionType": "properties",
+      "accessMode": "r",
+      "specs": {
+        "dataType": {
+          "type": "TEXT",
+          "specs": {}
+        }
+      },
+      "extensionDesc": null
+    },
+    {
+      "functionName": "云端连接状态",
+      "identifier": "cloud_connected",
+      "functionType": "properties",
+      "accessMode": "r",
+      "specs": {
+        "dataType": {
+          "type": "ENUM",
+          "specsList": [
+            {
+              "value": 0,
+              "name": "断开",
+              "dataType": "ENUM"
+            },
+            {
+              "value": 1,
+              "name": "已连接",
+              "dataType": "ENUM"
+            }
+          ]
+        }
+      },
+      "extensionDesc": null
+    },
+    {
+      "functionName": "设备数量",
+      "identifier": "device_count",
+      "functionType": "properties",
+      "accessMode": "r",
+      "specs": {
+        "dataType": {
+          "type": "INT",
+          "specs": {
+            "unit": "count"
+          }
+        }
+      },
+      "extensionDesc": null
+    },
+    {
+      "functionName": "缓存数量",
+      "identifier": "cache_count",
+      "functionType": "properties",
+      "accessMode": "r",
+      "specs": {
+        "dataType": {
+          "type": "INT",
+          "specs": {
+            "unit": "count"
+          }
+        }
+      },
+      "extensionDesc": null
+    },
+    {
+      "functionName": "网关版本",
+      "identifier": "gateway_version",
+      "functionType": "properties",
+      "accessMode": "r",
+      "specs": {
+        "dataType": {
+          "type": "TEXT",
+          "specs": {}
+        }
+      },
+      "extensionDesc": null
+    }
+  ],
+  "events": [],
+  "services": [
+    {
+      "functionName": "重启网关",
+      "identifier": "reboot",
+      "functionType": "services",
+      "callType": "ASYNC",
+      "inputData": [],
+      "outputData": [
+        {
+          "functionName": "执行结果",
+          "identifier": "result",
+          "dataType": {
+            "type": "ENUM",
+            "specsList": [
+              {
+                "value": 0,
+                "name": "失败",
+                "dataType": "ENUM"
+              },
+              {
+                "value": 1,
+                "name": "成功",
+                "dataType": "ENUM"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "functionName": "固件升级",
+      "identifier": "ota_upgrade",
+      "functionType": "services",
+      "callType": "ASYNC",
+      "inputData": [
+        {
+          "functionName": "固件地址",
+          "identifier": "url",
+          "dataType": {
+            "type": "TEXT",
+            "specs": {}
+          }
+        },
+        {
+          "functionName": "版本号",
+          "identifier": "version",
+          "dataType": {
+            "type": "TEXT",
+            "specs": {}
+          }
+        }
+      ],
+      "outputData": [
+        {
+          "functionName": "执行结果",
+          "identifier": "result",
+          "dataType": {
+            "type": "ENUM",
+            "specsList": [
+              {
+                "value": 0,
+                "name": "失败",
+                "dataType": "ENUM"
+              },
+              {
+                "value": 1,
+                "name": "成功",
+                "dataType": "ENUM"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

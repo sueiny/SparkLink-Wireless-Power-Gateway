@@ -1,0 +1,34 @@
+{
+  "products": [
+    {
+      "productId": "rk3506_gateway",
+      "productName": "DTU网关v1",
+      "modelFile": "gateway_model.json",
+      "devices": ["dtu网关"]
+    },
+    {
+      "productId": "single_phase_meter",
+      "productName": "单相电表",
+      "modelFile": "single_phase_meter_model.json",
+      "devices": ["METER_001", "METER_002", "METER_003", "METER_004", "METER_005", "METER_006", "METER_007"]
+    },
+    {
+      "productId": "env_sensor",
+      "productName": "温湿度变送器",
+      "modelFile": "env_sensor_model.json",
+      "devices": ["ENV_001", "ENV_002"]
+    },
+    {
+      "productId": "relay_device",
+      "productName": "继电器",
+      "modelFile": "relay_device_model.json",
+      "devices": ["RELAY_001", "RELAY_002"]
+    },
+    {
+      "productId": "dtu_node",
+      "productName": "DTU节点",
+      "modelFile": "dtu_node_model.json",
+      "devices": ["DTU_001", "DTU_002", "DTU_003", "DTU_004", "DTU_005", "DTU_006", "DTU_007", "DTU_008", "DTU_009", "DTU_010", "DTU_011"]
+    }
+  ]
+}

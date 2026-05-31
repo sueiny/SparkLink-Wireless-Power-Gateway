@@ -1,0 +1,113 @@
+#===============================================================================
+# @file     Kconfig
+# @brief    DTU项目Kconfig配置菜单
+# @details  本文件定义了DTU项目的可配置参数，通过make menuconfig进行配置。
+#           配置参数会在编译时生成CONFIG_*宏定义，供代码使用。
+#
+# @version  2.0
+# @date     2026-05-20
+#
+# @par 使用说明：
+#       - 运行make menuconfig打开配置菜单
+#       - 在"DTU Configuration"菜单下修改参数
+#       - 保存配置后重新编译项目
+#       - 配置会保存在.config文件中
+#
+# @par 配置项说明：
+#       - DTU_TRACE_LOG：控制详细日志输出
+#       - DTU_DEVICE_NAME：设备名称配置
+#       - DTU_FIXED_MAC：固定MAC地址配置
+#
+# Copyright (c) HiSilicon (Shanghai) Technologies Co., Ltd. 2023-2023. All rights reserved.
+#===============================================================================
+
+#===============================================================================
+# DTU详细日志开关
+# @brief 控制DTU系统的详细日志输出
+# @details 启用后会输出详细的trace日志和RX性能统计信息
+#          默认关闭，避免高频接收路径打印拖慢系统
+#
+# @par 影响范围：
+#       - dtu_log模块：启用trace日志输出
+#       - dtu_service模块：启用RX批量统计
+#       - dtu_channel_uart模块：启用UART接收统计
+#
+# @par 性能影响：
+#       - 启用会增加CPU负载和串口输出
+#       - 生产环境建议关闭
+#       - 开发调试时可打开
+#===============================================================================
+config DTU_TRACE_LOG
+    bool
+    prompt "Enable DTU trace log."
+    default n
+    help
+        Enable detailed DTU trace and RX performance logs.
+
+#===============================================================================
+# DTU设备名称配置
+# @brief 配置DTU设备的唯一标识名称
+# @details 设备名称用于BLE广播和READ_DEV_INFO响应
+#          未配置时使用默认名称"DTU_N01"
+#
+# @par 使用场景：
+#       - BLE广播：设备发现时显示的名称
+#       - READ_DEV_INFO：返回设备信息中的设备名
+#       - 日志输出：标识不同设备
+#
+# @par 配置格式：
+#       - 字符串格式，最大长度31字节
+#       - 支持字母、数字、下划线
+#       - 建议使用有意义的名称，便于识别
+#===============================================================================
+config DTU_DEVICE_NAME
+    string
+    prompt "DTU device name."
+    default "DTU_N01"
+    help
+        Configure the DTU device name used by BLE advertising and
+        READ_DEV_INFO response. If not configured, the DTU sample
+        falls back to "DTU_N01".
+
+config DTU_FORCE_MENUCONFIG_MAC
+    bool
+    prompt "Prefer menuconfig fixed MAC over AT/system MAC."
+    default n
+    help
+        Prefer DTU_FIXED_MAC as the first MAC source.
+        If disabled, DTU first uses the MAC written by AT+EFUSEMAC
+        to the system SLE MAC storage, and falls back to DTU_FIXED_MAC
+        only when the AT/system MAC is unavailable.
+
+#===============================================================================
+# DTU固定MAC地址配置
+# @brief 配置DTU设备的固定MAC地址
+# @details MAC地址用于设备身份标识，支持两种格式。
+#          默认作为最低优先级兜底值；只有打开DTU_FORCE_MENUCONFIG_MAC时才优先生效。
+#
+# @par 使用场景：
+#       - BLE广播：设备标识
+#       - READ_DEV_INFO：返回设备信息中的MAC地址
+#       - 白名单管理：设备身份识别
+#
+# @par 配置格式：
+#       - 格式1：AABBCCDDEEFF（连续12位十六进制）
+#       - 格式2：AA:BB:CC:DD:EE:FF（冒号分隔）
+#       - 大小写不敏感
+#       - 留空或格式错误时使用默认值
+#
+# @par 注意事项：
+#       - MAC地址是设备唯一标识
+#       - 修改后会影响设备在网络中的身份
+#       - 建议使用固定的、可追溯的MAC地址
+#===============================================================================
+config DTU_FIXED_MAC
+    string
+    prompt "DTU fixed MAC address."
+    default "A1:A2:A3:A4:A5:A6"
+    help
+        Configure a fixed DTU MAC address for BLE advertising and
+        READ_DEV_INFO response. Supported formats are
+        "AABBCCDDEEFF" and "AA:BB:CC:DD:EE:FF".
+        If not configured, the DTU sample falls back to
+        "A1:A2:A3:A4:A5:A6".

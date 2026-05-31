@@ -1,0 +1,388 @@
+{
+  "properties": [
+    {
+      "functionName": "电压",
+      "identifier": "voltage",
+      "functionType": "properties",
+      "accessMode": "r",
+      "specs": {
+        "dataType": {
+          "type": "DOUBLE",
+          "specs": {
+            "unit": "V"
+          }
+        }
+      },
+      "extensionDesc": null
+    },
+    {
+      "functionName": "电流",
+      "identifier": "current",
+      "functionType": "properties",
+      "accessMode": "r",
+      "specs": {
+        "dataType": {
+          "type": "DOUBLE",
+          "specs": {
+            "unit": "A"
+          }
+        }
+      },
+      "extensionDesc": null
+    },
+    {
+      "functionName": "有功功率",
+      "identifier": "active_power",
+      "functionType": "properties",
+      "accessMode": "r",
+      "specs": {
+        "dataType": {
+          "type": "DOUBLE",
+          "specs": {
+            "unit": "W"
+          }
+        }
+      },
+      "extensionDesc": null
+    },
+    {
+      "functionName": "功率因数",
+      "identifier": "power_factor",
+      "functionType": "properties",
+      "accessMode": "r",
+      "specs": {
+        "dataType": {
+          "type": "DOUBLE",
+          "specs": {}
+        }
+      },
+      "extensionDesc": null
+    },
+    {
+      "functionName": "频率",
+      "identifier": "frequency",
+      "functionType": "properties",
+      "accessMode": "r",
+      "specs": {
+        "dataType": {
+          "type": "DOUBLE",
+          "specs": {
+            "unit": "Hz"
+          }
+        }
+      },
+      "extensionDesc": null
+    },
+    {
+      "functionName": "总有功电能",
+      "identifier": "energy",
+      "functionType": "properties",
+      "accessMode": "r",
+      "specs": {
+        "dataType": {
+          "type": "DOUBLE",
+          "specs": {
+            "unit": "kWh"
+          }
+        }
+      },
+      "extensionDesc": null
+    },
+    {
+      "functionName": "拉合闸状态",
+      "identifier": "relay_status",
+      "functionType": "properties",
+      "accessMode": "rw",
+      "specs": {
+        "dataType": {
+          "type": "ENUM",
+          "specsList": [
+            {
+              "value": 0,
+              "name": "拉闸",
+              "dataType": "ENUM"
+            },
+            {
+              "value": 1,
+              "name": "合闸",
+              "dataType": "ENUM"
+            }
+          ]
+        }
+      },
+      "extensionDesc": null
+    },
+    {
+      "functionName": "电表角色",
+      "identifier": "meter_role",
+      "functionType": "properties",
+      "accessMode": "r",
+      "specs": {
+        "dataType": {
+          "type": "ENUM",
+          "specsList": [
+            {
+              "value": 0,
+              "name": "支表",
+              "dataType": "ENUM"
+            },
+            {
+              "value": 1,
+              "name": "总表",
+              "dataType": "ENUM"
+            }
+          ]
+        }
+      },
+      "extensionDesc": null
+    },
+    {
+      "functionName": "父级电表ID",
+      "identifier": "parent_meter_id",
+      "functionType": "properties",
+      "accessMode": "r",
+      "specs": {
+        "dataType": {
+          "type": "TEXT",
+          "specs": {
+            "length": 64
+          }
+        }
+      },
+      "extensionDesc": null
+    },
+    {
+      "functionName": "支表功率合计",
+      "identifier": "branch_power_sum",
+      "functionType": "properties",
+      "accessMode": "r",
+      "specs": {
+        "dataType": {
+          "type": "DOUBLE",
+          "specs": {
+            "unit": "W"
+          }
+        }
+      },
+      "extensionDesc": null
+    },
+    {
+      "functionName": "线损功率",
+      "identifier": "power_loss",
+      "functionType": "properties",
+      "accessMode": "r",
+      "specs": {
+        "dataType": {
+          "type": "DOUBLE",
+          "specs": {
+            "unit": "W"
+          }
+        }
+      },
+      "extensionDesc": null
+    },
+    {
+      "functionName": "线损率",
+      "identifier": "loss_rate",
+      "functionType": "properties",
+      "accessMode": "r",
+      "specs": {
+        "dataType": {
+          "type": "DOUBLE",
+          "specs": {
+            "unit": "%"
+          }
+        }
+      },
+      "extensionDesc": null
+    },
+    {
+      "functionName": "在线状态",
+      "identifier": "online",
+      "functionType": "properties",
+      "accessMode": "r",
+      "specs": {
+        "dataType": {
+          "type": "ENUM",
+          "specsList": [
+            {
+              "value": 0,
+              "name": "离线",
+              "dataType": "ENUM"
+            },
+            {
+              "value": 1,
+              "name": "在线",
+              "dataType": "ENUM"
+            }
+          ]
+        }
+      },
+      "extensionDesc": null
+    }
+  ],
+  "events": [
+    {
+      "functionName": "过压告警",
+      "identifier": "over_voltage",
+      "functionType": "events",
+      "eventType": "ALERT",
+      "outputData": [
+        {
+          "functionName": "当前电压",
+          "identifier": "voltage",
+          "dataType": {
+            "type": "DOUBLE",
+            "specs": {
+              "unit": "V"
+            }
+          }
+        },
+        {
+          "functionName": "阈值",
+          "identifier": "threshold",
+          "dataType": {
+            "type": "DOUBLE",
+            "specs": {
+              "unit": "V"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "functionName": "欠压告警",
+      "identifier": "under_voltage",
+      "functionType": "events",
+      "eventType": "ALERT",
+      "outputData": [
+        {
+          "functionName": "当前电压",
+          "identifier": "voltage",
+          "dataType": {
+            "type": "DOUBLE",
+            "specs": {
+              "unit": "V"
+            }
+          }
+        },
+        {
+          "functionName": "阈值",
+          "identifier": "threshold",
+          "dataType": {
+            "type": "DOUBLE",
+            "specs": {
+              "unit": "V"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "functionName": "过流告警",
+      "identifier": "over_current",
+      "functionType": "events",
+      "eventType": "ALERT",
+      "outputData": [
+        {
+          "functionName": "当前电流",
+          "identifier": "current",
+          "dataType": {
+            "type": "DOUBLE",
+            "specs": {
+              "unit": "A"
+            }
+          }
+        },
+        {
+          "functionName": "阈值",
+          "identifier": "threshold",
+          "dataType": {
+            "type": "DOUBLE",
+            "specs": {
+              "unit": "A"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "services": [
+    {
+      "functionName": "拉合闸控制",
+      "identifier": "set_relay",
+      "functionType": "services",
+      "callType": "ASYNC",
+      "inputData": [
+        {
+          "functionName": "目标状态",
+          "identifier": "state",
+          "dataType": {
+            "type": "ENUM",
+            "specsList": [
+              {
+                "value": 0,
+                "name": "拉闸",
+                "dataType": "ENUM"
+              },
+              {
+                "value": 1,
+                "name": "合闸",
+                "dataType": "ENUM"
+              }
+            ]
+          }
+        }
+      ],
+      "outputData": [
+        {
+          "functionName": "执行结果",
+          "identifier": "result",
+          "dataType": {
+            "type": "ENUM",
+            "specsList": [
+              {
+                "value": 0,
+                "name": "失败",
+                "dataType": "ENUM"
+              },
+              {
+                "value": 1,
+                "name": "成功",
+                "dataType": "ENUM"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "functionName": "电量清零",
+      "identifier": "clear_energy",
+      "functionType": "services",
+      "callType": "ASYNC",
+      "inputData": [],
+      "outputData": [
+        {
+          "functionName": "执行结果",
+          "identifier": "result",
+          "dataType": {
+            "type": "ENUM",
+            "specsList": [
+              {
+                "value": 0,
+                "name": "失败",
+                "dataType": "ENUM"
+              },
+              {
+                "value": 1,
+                "name": "成功",
+                "dataType": "ENUM"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
