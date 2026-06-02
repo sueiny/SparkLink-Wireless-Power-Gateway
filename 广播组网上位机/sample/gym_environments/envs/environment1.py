@@ -1,9 +1,49 @@
 import gc
+import heapq
 import json
 import os
 import random
 from itertools import islice
 from pathlib import Path
+
+
+def _rssi_to_weight(rssi):
+    if rssi >= -55:
+        return 1
+    if rssi >= -65:
+        return 3
+    if rssi >= -75:
+        return 6
+    if rssi >= -85:
+        return 12
+    return None
+
+
+def _weighted_k_shortest_paths(graph, src, dst, k):
+    adj = {}
+    for u, v, data in graph.edges(data=True):
+        rssi = float(data.get("rssi", -85.0))
+        w = _rssi_to_weight(rssi)
+        if w is None:
+            continue
+        adj.setdefault(u, []).append((v, w))
+        adj.setdefault(v, []).append((u, w))
+    paths = []
+    seen = set()
+    queue = [(0.0, [src])]
+    while queue and len(paths) < k:
+        cost, path = heapq.heappop(queue)
+        current = path[-1]
+        if tuple(path) in seen:
+            continue
+        seen.add(tuple(path))
+        if current == dst:
+            paths.append(path)
+            continue
+        for neighbor, weight in adj.get(current, []):
+            if neighbor not in path:
+                heapq.heappush(queue, (cost + weight, path + [neighbor]))
+    return paths
 
 import gym
 import matplotlib.pyplot as plt
@@ -268,11 +308,7 @@ class Env1(gym.Env):
         source_str, destination_str = path_key.split(":")
         src = int(source_str)
         dst = int(destination_str)
-        try:
-            path_generator = nx.shortest_simple_paths(self.graph, source=src, target=dst)
-            paths = list(islice(path_generator, self.K))
-        except nx.NetworkXNoPath:
-            paths = []
+        paths = _weighted_k_shortest_paths(self.graph, src, dst, self.K)
         return sorted(paths, key=lambda item: (len(item), item))[: self.K]
 
     def num_shortest_path(self, topology):
@@ -298,11 +334,7 @@ class Env1(gym.Env):
                     continue
 
                 key = f"{src}:{dst}"
-                try:
-                    path_generator = nx.shortest_simple_paths(self.graph, source=src, target=dst)
-                    paths = list(islice(path_generator, self.K))
-                except nx.NetworkXNoPath:
-                    paths = []
+                paths = _weighted_k_shortest_paths(self.graph, src, dst, self.K)
                 paths = sorted(paths, key=lambda item: (len(item), item))
                 self.allPaths[key] = paths[: self.K]
 

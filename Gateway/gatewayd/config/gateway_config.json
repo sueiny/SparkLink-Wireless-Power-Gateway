@@ -9,7 +9,7 @@
     "host": "thingskit.aiotcomm.com.cn",
     "port": 11883,
     "client_id": "46dc3ebf25bf4cdb9cd01deb6092b7ef",
-    "credential_mode": "access_token",
+    "credential_mode": "mqtt_basic",
     "access_token": "8bc6c9a44c44fc498b419b455894e76824ef29efc1917b1a91dad4e2ade56155",
     "mqtt_basic": {
       "client_id": "46dc3ebf25bf4cdb9cd01deb6092b7ef",
@@ -24,25 +24,9 @@
     "cloud_test_host": "thingskit.aiotcomm.com.cn",
     "cloud_test_port": 11883,
     "priority": ["ethernet", "wifi", "cellular"],
-    "ethernet": {
-      "enable": true,
-      "ifname": "eth0"
-    },
-    "wifi": {
-      "enable": true,
-      "ifname": "wlan0",
-      "ssid": "Bdi1003",
-      "password": "sztubdi1003",
-      "country": "CN"
-    },
-    "cellular": {
-      "enable": true,
-      "ifname": "ppp0",
-      "module": "L610",
-      "serial_device": "/dev/ttyS1",
-      "baudrate": 115200,
-      "apn": "cmnet"
-    }
+    "ethernet": {"enable": true, "ifname": "eth0"},
+    "wifi": {"enable": true, "ifname": "wlan0", "ssid": "Bdi1003", "password": "sztubdi1003", "country": "CN"},
+    "cellular": {"enable": true, "ifname": "ppp0", "module": "L610", "serial_device": "/dev/ttyS1", "baudrate": 115200, "apn": "cmnet"}
   },
   "publish": {
     "interval_ms": 5000,
@@ -50,217 +34,37 @@
     "cache_ttl_ms": 604800000,
     "enable_cache": true
   },
-  "log": {
-    "dir": "/userdata/gateway/data/log",
-    "level": "info"
+  "log": {"dir": "/userdata/gateway/data/log", "level": "info"},
+  "mock": {"voltage_base": 220.0, "frequency_base": 50.0, "temperature_base": 28.0, "humidity_base": 60.0},
+  "sle": {
+    "enable": true,
+    "data_socket": "/var/run/gateway/sle_data.sock",
+    "cmd_socket": "/var/run/gateway/sle_cmd.sock",
+    "roots": [{"node_id": 1}]
   },
   "devices": [
-    {
-      "device_id": "METER_001",
-      "product_id": "single_phase_meter",
-      "name": "METER_001",
-      "type": "single_phase_meter",
-      "meter_role": "main",
-      "parent_meter_id": ""
-    },
-    {
-      "device_id": "METER_002",
-      "product_id": "single_phase_meter",
-      "name": "METER_002",
-      "type": "single_phase_meter",
-      "meter_role": "branch",
-      "parent_meter_id": "METER_001"
-    },
-    {
-      "device_id": "METER_003",
-      "product_id": "single_phase_meter",
-      "name": "METER_003",
-      "type": "single_phase_meter",
-      "meter_role": "branch",
-      "parent_meter_id": "METER_001"
-    },
-    {
-      "device_id": "METER_004",
-      "product_id": "single_phase_meter",
-      "name": "METER_004",
-      "type": "single_phase_meter",
-      "meter_role": "branch",
-      "parent_meter_id": "METER_002"
-    },
-    {
-      "device_id": "METER_005",
-      "product_id": "single_phase_meter",
-      "name": "METER_005",
-      "type": "single_phase_meter",
-      "meter_role": "branch",
-      "parent_meter_id": "METER_002"
-    },
-    {
-      "device_id": "METER_006",
-      "product_id": "single_phase_meter",
-      "name": "METER_006",
-      "type": "single_phase_meter",
-      "meter_role": "branch",
-      "parent_meter_id": "METER_003"
-    },
-    {
-      "device_id": "METER_007",
-      "product_id": "single_phase_meter",
-      "name": "METER_007",
-      "type": "single_phase_meter",
-      "meter_role": "branch",
-      "parent_meter_id": "METER_003"
-    },
-    {
-      "device_id": "ENV_001",
-      "product_id": "env_sensor",
-      "name": "ENV_001",
-      "type": "env_sensor"
-    },
-    {
-      "device_id": "ENV_002",
-      "product_id": "env_sensor",
-      "name": "ENV_002",
-      "type": "env_sensor"
-    },
-    {
-      "device_id": "RELAY_001",
-      "product_id": "relay_device",
-      "name": "RELAY_001",
-      "type": "relay_device"
-    },
-    {
-      "device_id": "RELAY_002",
-      "product_id": "relay_device",
-      "name": "RELAY_002",
-      "type": "relay_device"
-    },
-    {
-      "device_id": "DTU_001",
-      "product_id": "dtu_node",
-      "name": "DTU_001",
-      "type": "dtu_node",
-      "mac": "AA:BB:CC:DD:01:01",
-      "parent_mac": "00:11:22:33:44:55",
-      "child_macs": "AA:BB:CC:DD:02:01,AA:BB:CC:DD:03:01",
-      "modbus_addr": 1,
-      "modbus_type": 2
-    },
-    {
-      "device_id": "DTU_002",
-      "product_id": "dtu_node",
-      "name": "DTU_002",
-      "type": "dtu_node",
-      "mac": "AA:BB:CC:DD:02:01",
-      "parent_mac": "AA:BB:CC:DD:01:01",
-      "child_macs": "AA:BB:CC:DD:04:01,AA:BB:CC:DD:05:01",
-      "modbus_addr": 1,
-      "modbus_type": 2
-    },
-    {
-      "device_id": "DTU_003",
-      "product_id": "dtu_node",
-      "name": "DTU_003",
-      "type": "dtu_node",
-      "mac": "AA:BB:CC:DD:03:01",
-      "parent_mac": "AA:BB:CC:DD:01:01",
-      "child_macs": "AA:BB:CC:DD:06:01,AA:BB:CC:DD:07:01",
-      "modbus_addr": 1,
-      "modbus_type": 2
-    },
-    {
-      "device_id": "DTU_004",
-      "product_id": "dtu_node",
-      "name": "DTU_004",
-      "type": "dtu_node",
-      "mac": "AA:BB:CC:DD:04:01",
-      "parent_mac": "AA:BB:CC:DD:02:01",
-      "child_macs": "",
-      "modbus_addr": 1,
-      "modbus_type": 2
-    },
-    {
-      "device_id": "DTU_005",
-      "product_id": "dtu_node",
-      "name": "DTU_005",
-      "type": "dtu_node",
-      "mac": "AA:BB:CC:DD:05:01",
-      "parent_mac": "AA:BB:CC:DD:02:01",
-      "child_macs": "",
-      "modbus_addr": 1,
-      "modbus_type": 2
-    },
-    {
-      "device_id": "DTU_006",
-      "product_id": "dtu_node",
-      "name": "DTU_006",
-      "type": "dtu_node",
-      "mac": "AA:BB:CC:DD:06:01",
-      "parent_mac": "AA:BB:CC:DD:03:01",
-      "child_macs": "",
-      "modbus_addr": 1,
-      "modbus_type": 2
-    },
-    {
-      "device_id": "DTU_007",
-      "product_id": "dtu_node",
-      "name": "DTU_007",
-      "type": "dtu_node",
-      "mac": "AA:BB:CC:DD:07:01",
-      "parent_mac": "AA:BB:CC:DD:03:01",
-      "child_macs": "",
-      "modbus_addr": 1,
-      "modbus_type": 2
-    },
-    {
-      "device_id": "DTU_008",
-      "product_id": "dtu_node",
-      "name": "DTU_008",
-      "type": "dtu_node",
-      "mac": "AA:BB:CC:DD:08:01",
-      "parent_mac": "00:11:22:33:44:55",
-      "child_macs": "",
-      "modbus_addr": 1,
-      "modbus_type": 3
-    },
-    {
-      "device_id": "DTU_009",
-      "product_id": "dtu_node",
-      "name": "DTU_009",
-      "type": "dtu_node",
-      "mac": "AA:BB:CC:DD:09:01",
-      "parent_mac": "00:11:22:33:44:55",
-      "child_macs": "",
-      "modbus_addr": 1,
-      "modbus_type": 3
-    },
-    {
-      "device_id": "DTU_010",
-      "product_id": "dtu_node",
-      "name": "DTU_010",
-      "type": "dtu_node",
-      "mac": "AA:BB:CC:DD:10:01",
-      "parent_mac": "00:11:22:33:44:55",
-      "child_macs": "",
-      "modbus_addr": 1,
-      "modbus_type": 4
-    },
-    {
-      "device_id": "DTU_011",
-      "product_id": "dtu_node",
-      "name": "DTU_011",
-      "type": "dtu_node",
-      "mac": "AA:BB:CC:DD:11:01",
-      "parent_mac": "00:11:22:33:44:55",
-      "child_macs": "",
-      "modbus_addr": 1,
-      "modbus_type": 4
-    }
-  ],
-  "mock": {
-    "voltage_base": 220.0,
-    "frequency_base": 50.0,
-    "temperature_base": 28.0,
-    "humidity_base": 60.0
-  }
+    {"device_id": "METER_001", "product_id": "single_phase_meter", "name": "METER_001", "type": "single_phase_meter", "station_id": 1, "dtu_id": 38, "modbus_addr": 1, "modbus_type": 2},
+    {"device_id": "METER_002", "product_id": "single_phase_meter", "name": "METER_002", "type": "single_phase_meter", "station_id": 2, "dtu_id": 39, "modbus_addr": 1, "modbus_type": 2},
+    {"device_id": "METER_003", "product_id": "single_phase_meter", "name": "METER_003", "type": "single_phase_meter", "station_id": 3, "dtu_id": 42, "modbus_addr": 1, "modbus_type": 2},
+    {"device_id": "METER_004", "product_id": "single_phase_meter", "name": "METER_004", "type": "single_phase_meter", "station_id": 4, "dtu_id": 43, "modbus_addr": 1, "modbus_type": 2},
+    {"device_id": "METER_005", "product_id": "single_phase_meter", "name": "METER_005", "type": "single_phase_meter", "station_id": 5, "dtu_id": 58, "modbus_addr": 1, "modbus_type": 2},
+    {"device_id": "METER_006", "product_id": "single_phase_meter", "name": "METER_006", "type": "single_phase_meter", "station_id": 6, "dtu_id": 48, "modbus_addr": 1, "modbus_type": 2},
+    {"device_id": "METER_007", "product_id": "single_phase_meter", "name": "METER_007", "type": "single_phase_meter", "station_id": 7, "dtu_id": 63, "modbus_addr": 1, "modbus_type": 2},
+    {"device_id": "ENV_001", "product_id": "env_sensor", "name": "ENV_001", "type": "env_sensor", "station_id": 1, "dtu_id": 32, "modbus_addr": 1, "modbus_type": 3},
+    {"device_id": "ENV_002", "product_id": "env_sensor", "name": "ENV_002", "type": "env_sensor", "station_id": 2, "dtu_id": 47, "modbus_addr": 1, "modbus_type": 3},
+    {"device_id": "RELAY_001", "product_id": "relay_device", "name": "RELAY_001", "type": "relay_device", "station_id": 1, "dtu_id": 54, "modbus_addr": 1, "modbus_type": 4},
+    {"device_id": "RELAY_002", "product_id": "relay_device", "name": "RELAY_002", "type": "relay_device", "station_id": 2, "dtu_id": 57, "modbus_addr": 1, "modbus_type": 4},
+    {"device_id": "DTU_036", "type": "dtu_node", "node_id": 36, "parent_id": 1, "child_ids": "39,42"},
+    {"device_id": "DTU_039", "type": "dtu_node", "node_id": 39, "parent_id": 36, "child_ids": "38,48,63"},
+    {"device_id": "DTU_042", "type": "dtu_node", "node_id": 42, "parent_id": 36, "child_ids": "43,58"},
+    {"device_id": "DTU_043", "type": "dtu_node", "node_id": 43, "parent_id": 42, "child_ids": "34,61"},
+    {"device_id": "DTU_058", "type": "dtu_node", "node_id": 58, "parent_id": 42, "child_ids": "50,52"},
+    {"device_id": "DTU_048", "type": "dtu_node", "node_id": 48, "parent_id": 39, "child_ids": "32,47,54,57,68"},
+    {"device_id": "DTU_063", "type": "dtu_node", "node_id": 63, "parent_id": 39, "child_ids": ""},
+    {"device_id": "DTU_038", "type": "dtu_node", "node_id": 38, "parent_id": 39, "child_ids": ""},
+    {"device_id": "DTU_032", "type": "dtu_node", "node_id": 32, "parent_id": 48, "child_ids": ""},
+    {"device_id": "DTU_047", "type": "dtu_node", "node_id": 47, "parent_id": 48, "child_ids": ""},
+    {"device_id": "DTU_054", "type": "dtu_node", "node_id": 54, "parent_id": 48, "child_ids": ""},
+    {"device_id": "DTU_057", "type": "dtu_node", "node_id": 57, "parent_id": 48, "child_ids": ""}
+  ]
 }

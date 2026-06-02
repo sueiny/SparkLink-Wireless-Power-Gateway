@@ -5,6 +5,7 @@
 #include "app/network_worker.h"
 #include "app/publish_manager.h"
 #include "app/publish_types.h"
+#include "app/sle_ipc_worker.h"
 #include "cloud/mqtt_cloud_client.h"
 #include "command/thing_model_service_registry.h"
 #include "common/blocking_queue.h"
@@ -12,7 +13,9 @@
 #include "config/config_manager.h"
 #include "codec/thingskit_codec.h"
 #include "datasource/mock_data_source.h"
+#include "datasource/sle_data_source.h"
 #include "network/net_manager.h"
+#include "datasource/route_table.h"
 #include "state/device_state_store.h"
 #include "storage/cache_store.h"
 
@@ -50,13 +53,16 @@ private:
     config::ConfigManager config_manager_;
     log::Logger logger_;
     network::NetManager net_manager_;
-    std::unique_ptr<datasource::MockDataSource> data_source_;
+    datasource::RouteTable route_table_;
+    std::unique_ptr<datasource::MockDataSource> mock_data_source_;
+    std::unique_ptr<datasource::SleDataSource> sle_data_source_;
     std::unique_ptr<cloud::MqttCloudClient> gateway_cloud_client_;
     std::unique_ptr<storage::CacheStore> cache_store_;
 
     command::ThingModelServiceRegistry service_registry_;
     std::shared_ptr<state::DeviceStateStore> state_store_;
     std::unique_ptr<CollectWorker> collect_worker_;
+    std::unique_ptr<SleIpcWorker> sle_ipc_worker_;
     std::unique_ptr<NetworkWorker> network_worker_;
     std::unique_ptr<PublishManager> publish_manager_;
     std::unique_ptr<CommandManager> command_manager_;

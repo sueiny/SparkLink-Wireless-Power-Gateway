@@ -127,6 +127,28 @@ def run_training(args: argparse.Namespace) -> int:
     best_reward = float("-inf")
     start_iteration = 0
 
+    # Auto-resume from latest checkpoint if it exists and has remaining iterations
+    latest_path = output_dir / "latest.pt"
+    if latest_path.exists():
+        try:
+            checkpoint = torch.load(latest_path, map_location="cpu")
+            prev_iteration = checkpoint.get("training_iteration", 0)
+            if prev_iteration < args.iterations - 1:
+                agent.primary_network.load_state_dict(checkpoint["model_state_dict"])
+                agent.target_network.load_state_dict(checkpoint["target_model_state_dict"])
+                agent.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+                start_iteration = prev_iteration + 1
+                best_reward = checkpoint.get("eval_reward") or float("-inf")
+                for _ in range(start_iteration):
+                    if _ > 30 and agent.epsilon > agent.epsilon_min:
+                        agent.epsilon *= agent.epsilon_decay
+                print(f"Auto-resume from iteration {start_iteration}, epsilon={agent.epsilon:.4f}")
+            else:
+                print(f"Checkpoint already at iteration {prev_iteration}, training complete")
+                return 0
+        except Exception as e:
+            print(f"Failed to load checkpoint, starting fresh: {e}")
+
     if getattr(args, "resume", None):
         print(f"Resuming from checkpoint: {args.resume}")
         checkpoint = torch.load(args.resume, map_location="cpu")

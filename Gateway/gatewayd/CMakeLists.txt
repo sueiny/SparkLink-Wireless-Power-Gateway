@@ -82,6 +82,12 @@ add_executable(gatewayd
     src/command/command_validator.cpp
     src/command/thing_model_service_registry.cpp
     src/datasource/mock_data_source.cpp
+    src/datasource/sle_data_source.cpp
+    src/app/sle_ipc_worker.cpp
+    src/datasource/ipc_receiver.cpp
+    src/datasource/route_table.cpp
+    src/codec/sle_frame_parser.cpp
+    src/codec/modbus_parser.cpp
     src/state/device_state_store.cpp
     src/state/state_patch_codec.cpp
     src/storage/cache_store.cpp
@@ -91,6 +97,7 @@ add_executable(gatewayd
     src/network/i_network_provider.cpp
     src/network/net_manager.cpp
     src/network/network_utils.cpp
+    src/network/netlink_utils.cpp
     src/network/wifi_provider.cpp
 )
 

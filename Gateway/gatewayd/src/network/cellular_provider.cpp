@@ -39,7 +39,10 @@ bool CellularProvider::hasIp() const
 
 bool CellularProvider::canReachCloud(const std::string &host, int port) const
 {
-    return defaultCanReachCloud(host, port);
+    // 使用 ifname() 检测实际存在的接口（ppp0/usb0/wwan0），而非硬编码 ppp0
+    std::string name = ifname();
+    if (name.empty()) name = "ppp0";
+    return defaultCanReachCloud(host, port, name);
 }
 
 std::vector<std::string> CellularProvider::candidateIfnames() const

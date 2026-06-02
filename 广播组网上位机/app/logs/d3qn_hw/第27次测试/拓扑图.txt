@@ -1,0 +1,110 @@
+D3QN_MPNN RSSI Topology
+Gateway: 00
+Edge direction: src_to_neighbor
+
+D3QN selected paths:
+  00 -> 01: 00 -> 0A -> 01 (action=0, hops=2, loss=11.11%, min_rssi=-81)
+    00 -> 0A quality=弱 RSSI=-81dBm weight=12
+  00 -> 02: 00 -> 0A -> 02 (action=0, hops=2, loss=5.56%, min_rssi=-81)
+    00 -> 0A quality=弱 RSSI=-81dBm weight=12
+    0A -> 02 quality=中 RSSI=-74dBm weight=6
+  00 -> 03: 00 -> 0A -> 03 (action=0, hops=2, loss=11.11%, min_rssi=-85)
+    00 -> 0A quality=弱 RSSI=-81dBm weight=12
+    0A -> 03 quality=弱 RSSI=-85dBm weight=12
+  00 -> 04: 00 -> 0A -> 00 -> 04 (action=0, hops=3, loss=16.67%, min_rssi=-81)
+    00 -> 0A quality=弱 RSSI=-81dBm weight=12
+    00 -> 04 quality=中 RSSI=-66dBm weight=6
+  00 -> 05: 00 -> 0A -> 05 (action=0, hops=2, loss=16.67%, min_rssi=-81)
+    00 -> 0A quality=弱 RSSI=-81dBm weight=12
+    0A -> 05 quality=弱 RSSI=-79dBm weight=12
+  00 -> 06: 00 -> 0A -> 06 (action=0, hops=2, loss=16.67%, min_rssi=-81)
+    00 -> 0A quality=弱 RSSI=-81dBm weight=12
+    0A -> 06 quality=中 RSSI=-72dBm weight=6
+  00 -> 07: 00 -> 0A -> 07 (action=0, hops=2, loss=22.22%, min_rssi=-81)
+    00 -> 0A quality=弱 RSSI=-81dBm weight=12
+    0A -> 07 quality=弱 RSSI=-80dBm weight=12
+  00 -> 08: 00 -> 0A -> 08 (action=0, hops=2, loss=22.22%, min_rssi=-84)
+    00 -> 0A quality=弱 RSSI=-81dBm weight=12
+    0A -> 08 quality=弱 RSSI=-84dBm weight=12
+  00 -> 09: 00 -> 0A -> 09 (action=0, hops=2, loss=0.00%, min_rssi=-81)
+    00 -> 0A quality=弱 RSSI=-81dBm weight=12
+    0A -> 09 quality=弱 RSSI=-76dBm weight=12
+  00 -> 0A: 00 -> 09 -> 0A (action=0, hops=2, loss=11.11%, min_rssi=-78)
+    00 -> 09 quality=弱 RSSI=-76dBm weight=12
+    09 -> 0A quality=弱 RSSI=-78dBm weight=12
+
+Edges:
+  00 -> 02 RSSI=-82dBm weight=12 source=real_rssi
+  00 -> 03 RSSI=-72dBm weight=6 source=real_rssi
+  00 -> 04 RSSI=-66dBm weight=6 source=real_rssi
+  00 -> 05 RSSI=-76dBm weight=12 source=real_rssi
+  00 -> 07 RSSI=-82dBm weight=12 source=real_rssi
+  00 -> 08 RSSI=-70dBm weight=6 source=real_rssi
+  00 -> 09 RSSI=-76dBm weight=12 source=real_rssi
+  00 -> 0A RSSI=-81dBm weight=12 source=real_rssi
+  01 -> 02 RSSI=-83dBm weight=12 source=real_rssi
+  01 -> 03 RSSI=-71dBm weight=6 source=real_rssi
+  01 -> 05 RSSI=-71dBm weight=6 source=real_rssi
+  01 -> 06 RSSI=-75dBm weight=6 source=real_rssi
+  01 -> 07 RSSI=-77dBm weight=12 source=real_rssi
+  01 -> 08 RSSI=-72dBm weight=6 source=real_rssi
+  01 -> 09 RSSI=-69dBm weight=6 source=real_rssi
+  01 -> 0A RSSI=-81dBm weight=12 source=real_rssi
+  02 -> 03 RSSI=-74dBm weight=6 source=real_rssi
+  02 -> 05 RSSI=-72dBm weight=6 source=real_rssi
+  02 -> 06 RSSI=-79dBm weight=12 source=real_rssi
+  02 -> 07 RSSI=-82dBm weight=12 source=real_rssi
+  02 -> 08 RSSI=-83dBm weight=12 source=real_rssi
+  02 -> 09 RSSI=-79dBm weight=12 source=real_rssi
+  02 -> 0A RSSI=-73dBm weight=6 source=real_rssi
+  03 -> 01 RSSI=-81dBm weight=12 source=real_rssi
+  03 -> 02 RSSI=-78dBm weight=12 source=real_rssi
+  03 -> 04 RSSI=-79dBm weight=12 source=real_rssi
+  03 -> 05 RSSI=-84dBm weight=12 source=real_rssi
+  03 -> 06 RSSI=-84dBm weight=12 source=real_rssi
+  03 -> 07 RSSI=-68dBm weight=6 source=real_rssi
+  03 -> 08 RSSI=-76dBm weight=12 source=real_rssi
+  03 -> 09 RSSI=-76dBm weight=12 source=real_rssi
+  04 -> 02 RSSI=-76dBm weight=12 source=real_rssi
+  04 -> 03 RSSI=-67dBm weight=6 source=real_rssi
+  04 -> 05 RSSI=-79dBm weight=12 source=real_rssi
+  04 -> 06 RSSI=-80dBm weight=12 source=real_rssi
+  04 -> 07 RSSI=-81dBm weight=12 source=real_rssi
+  04 -> 08 RSSI=-77dBm weight=12 source=real_rssi
+  04 -> 09 RSSI=-78dBm weight=12 source=real_rssi
+  05 -> 02 RSSI=-73dBm weight=6 source=real_rssi
+  05 -> 03 RSSI=-78dBm weight=12 source=real_rssi
+  05 -> 06 RSSI=-71dBm weight=6 source=real_rssi
+  05 -> 07 RSSI=-82dBm weight=12 source=real_rssi
+  05 -> 0A RSSI=-78dBm weight=12 source=real_rssi
+  06 -> 02 RSSI=-85dBm weight=12 source=real_rssi
+  06 -> 05 RSSI=-69dBm weight=6 source=real_rssi
+  06 -> 07 RSSI=-80dBm weight=12 source=real_rssi
+  06 -> 08 RSSI=-78dBm weight=12 source=real_rssi
+  06 -> 0A RSSI=-76dBm weight=12 source=real_rssi
+  07 -> 02 RSSI=-83dBm weight=12 source=real_rssi
+  07 -> 03 RSSI=-62dBm weight=3 source=real_rssi
+  07 -> 05 RSSI=-79dBm weight=12 source=real_rssi
+  07 -> 06 RSSI=-74dBm weight=6 source=real_rssi
+  07 -> 08 RSSI=-84dBm weight=12 source=real_rssi
+  07 -> 09 RSSI=-75dBm weight=6 source=real_rssi
+  08 -> 03 RSSI=-72dBm weight=6 source=real_rssi
+  08 -> 05 RSSI=-70dBm weight=6 source=real_rssi
+  08 -> 07 RSSI=-77dBm weight=12 source=real_rssi
+  08 -> 09 RSSI=-85dBm weight=12 source=real_rssi
+  08 -> 0A RSSI=-85dBm weight=12 source=real_rssi
+  09 -> 01 RSSI=-78dBm weight=12 source=real_rssi
+  09 -> 02 RSSI=-85dBm weight=12 source=real_rssi
+  09 -> 03 RSSI=-69dBm weight=6 source=real_rssi
+  09 -> 05 RSSI=-82dBm weight=12 source=real_rssi
+  09 -> 06 RSSI=-80dBm weight=12 source=real_rssi
+  09 -> 07 RSSI=-79dBm weight=12 source=real_rssi
+  09 -> 08 RSSI=-75dBm weight=6 source=real_rssi
+  09 -> 0A RSSI=-78dBm weight=12 source=real_rssi
+  0A -> 02 RSSI=-74dBm weight=6 source=real_rssi
+  0A -> 03 RSSI=-85dBm weight=12 source=real_rssi
+  0A -> 05 RSSI=-79dBm weight=12 source=real_rssi
+  0A -> 06 RSSI=-72dBm weight=6 source=real_rssi
+  0A -> 07 RSSI=-80dBm weight=12 source=real_rssi
+  0A -> 08 RSSI=-84dBm weight=12 source=real_rssi
+  0A -> 09 RSSI=-76dBm weight=12 source=real_rssi

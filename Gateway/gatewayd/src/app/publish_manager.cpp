@@ -2,6 +2,7 @@
 
 #include "codec/thingskit_topics.h"
 #include "common/time_utils.h"
+#include "network/network_utils.h"
 
 #include <chrono>
 #include <thread>
@@ -201,6 +202,17 @@ bool PublishManager::ensureCloudConnected()
     }
 
     command_topics_subscribed_ = false;
+
+    // 在 MQTT 连接前，确保默认路由走选中的网络接口。
+    // mosquitto 内部创建 socket 时使用系统默认路由，
+    // 必须在 connect 之前把路由切到正确的接口。
+    const auto ns = network_worker_.state();
+    if (ns.available) {
+        cloud_client_.setBindInterface(ns.ifname);
+        // 强制设置默认路由走选中接口
+        network::setDefaultRouteVia(ns.ifname);
+    }
+
     if (!cloud_client_.connect())
         return false;
 

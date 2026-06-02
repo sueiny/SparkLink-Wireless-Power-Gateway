@@ -1,6 +1,15 @@
 {
   "properties": [
     {
+      "functionName": "DTU挂载ID",
+      "identifier": "dtu_id",
+      "functionType": "properties",
+      "accessMode": "r",
+      "specs": {
+        "dataType": {"type": "INT", "specs": {}}
+      }
+    },
+    {
       "functionName": "继电器状态",
       "identifier": "relay_state",
       "functionType": "properties",
@@ -9,44 +18,11 @@
         "dataType": {
           "type": "ENUM",
           "specsList": [
-            {
-              "value": 0,
-              "name": "关",
-              "dataType": "ENUM"
-            },
-            {
-              "value": 1,
-              "name": "开",
-              "dataType": "ENUM"
-            }
+            {"value": 0, "name": "关", "dataType": "ENUM"},
+            {"value": 1, "name": "开", "dataType": "ENUM"}
           ]
         }
-      },
-      "extensionDesc": null
-    },
-    {
-      "functionName": "控制模式",
-      "identifier": "control_mode",
-      "functionType": "properties",
-      "accessMode": "rw",
-      "specs": {
-        "dataType": {
-          "type": "ENUM",
-          "specsList": [
-            {
-              "value": 0,
-              "name": "自动",
-              "dataType": "ENUM"
-            },
-            {
-              "value": 1,
-              "name": "手动",
-              "dataType": "ENUM"
-            }
-          ]
-        }
-      },
-      "extensionDesc": null
+      }
     },
     {
       "functionName": "在线状态",
@@ -55,22 +31,13 @@
       "accessMode": "r",
       "specs": {
         "dataType": {
-          "type": "ENUM",
-          "specsList": [
-            {
-              "value": 0,
-              "name": "离线",
-              "dataType": "ENUM"
-            },
-            {
-              "value": 1,
-              "name": "在线",
-              "dataType": "ENUM"
-            }
-          ]
+          "type": "BOOL",
+          "specs": {
+            "boolClose": "离线",
+            "boolOpen": "在线"
+          }
         }
-      },
-      "extensionDesc": null
+      }
     }
   ],
   "events": [],
@@ -87,16 +54,8 @@
           "dataType": {
             "type": "ENUM",
             "specsList": [
-              {
-                "value": 0,
-                "name": "关",
-                "dataType": "ENUM"
-              },
-              {
-                "value": 1,
-                "name": "开",
-                "dataType": "ENUM"
-              }
+              {"value": 0, "name": "关", "dataType": "ENUM"},
+              {"value": 1, "name": "开", "dataType": "ENUM"}
             ]
           }
         }
@@ -108,64 +67,8 @@
           "dataType": {
             "type": "ENUM",
             "specsList": [
-              {
-                "value": 0,
-                "name": "失败",
-                "dataType": "ENUM"
-              },
-              {
-                "value": 1,
-                "name": "成功",
-                "dataType": "ENUM"
-              }
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "functionName": "模式切换",
-      "identifier": "set_mode",
-      "functionType": "services",
-      "callType": "ASYNC",
-      "inputData": [
-        {
-          "functionName": "目标模式",
-          "identifier": "mode",
-          "dataType": {
-            "type": "ENUM",
-            "specsList": [
-              {
-                "value": 0,
-                "name": "自动",
-                "dataType": "ENUM"
-              },
-              {
-                "value": 1,
-                "name": "手动",
-                "dataType": "ENUM"
-              }
-            ]
-          }
-        }
-      ],
-      "outputData": [
-        {
-          "functionName": "执行结果",
-          "identifier": "result",
-          "dataType": {
-            "type": "ENUM",
-            "specsList": [
-              {
-                "value": 0,
-                "name": "失败",
-                "dataType": "ENUM"
-              },
-              {
-                "value": 1,
-                "name": "成功",
-                "dataType": "ENUM"
-              }
+              {"value": 0, "name": "失败", "dataType": "ENUM"},
+              {"value": 1, "name": "成功", "dataType": "ENUM"}
             ]
           }
         }

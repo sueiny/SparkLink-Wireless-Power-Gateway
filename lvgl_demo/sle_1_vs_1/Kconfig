@@ -1,0 +1,15 @@
+config ENABLE_SLE_SERVER
+    bool
+    prompt "Support SLE_SERVER Sample."
+    default n
+    depends on AIOTCOMM_SAMPLES_ENABLE
+    help
+        This option means support SLE_SERVER Sample.
+
+config ENABLE_SLE_CLIENT
+    bool
+    prompt "Support SLE_CLIENT Sample."
+    default n
+    depends on AIOTCOMM_SAMPLES_ENABLE
+    help
+        This option means support SLE_CLIENT Sample.

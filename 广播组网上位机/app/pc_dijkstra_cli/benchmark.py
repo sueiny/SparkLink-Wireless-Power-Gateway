@@ -42,7 +42,11 @@ class RoundResult:
     gateway_to_target_ms: float | None = None
     point_to_point_ms: float | None = None
     total_latency_ms: float | None = None
+    inference_ms: float | None = None
+    source_to_target_ms: float | None = None
     topology_recollected: bool = False
+    ack1_monotonic: float | None = None
+    send2_monotonic: float | None = None
 
 
 class BenchmarkLogger:
@@ -167,8 +171,8 @@ def _drain_messages(client: SerialClient, logger: BenchmarkLogger, duration: flo
 def _drain_messages_until_quiet(
     client: SerialClient,
     logger: BenchmarkLogger,
-    idle_timeout: float = 0.35,
-    max_seconds: float = 2.5,
+    idle_timeout: float = 1.0,
+    max_seconds: float = 10.0,
 ) -> list[object]:
     deadline = time.monotonic() + max_seconds
     idle_deadline = time.monotonic() + idle_timeout
@@ -199,13 +203,14 @@ def collect_topology(
     gateway: int,
     dongle_addr: int | None = None,
     min_rssi: int = -85,
+    max_hops: int = 4,
 ) -> Topology:
     relay_excluded = {dongle_addr} if dongle_addr is not None else set()
-    topology = Topology(stale_seconds=None, edge_direction="src_to_neighbor", gateway=gateway, relay_excluded=relay_excluded, min_rssi=min_rssi)
+    topology = Topology(stale_seconds=None, edge_direction="src_to_neighbor", gateway=gateway, relay_excluded=relay_excluded, min_rssi=min_rssi, max_hops=max_hops)
     for index in range(1, requests + 1):
         command = client.send_rssi_req()
         logger.event("send_command", command=command.rstrip(), request=index)
-        for message in _drain_messages_until_quiet(client, logger):
+        for message in _drain_messages_until_quiet(client, logger, idle_timeout=1.0, max_seconds=10.0):
             if isinstance(message, RssiReport):
                 updated = topology.update_from_rssi_report(message)
                 logger.event(
@@ -226,7 +231,47 @@ def _combine_gateway_path(gateway_route: list[int], pair_route: list[int]) -> li
         return []
     if gateway_route[-1] != pair_route[0]:
         return []
-    return list(gateway_route) + list(pair_route[1:])
+    # A2: 去重防环 - 将网关路径和配对路径合并，去除重复节点
+    combined = list(gateway_route)
+    for node in pair_route[1:]:
+        # 如果节点已在路径中，截断到该节点之前
+        if node in combined:
+            idx = combined.index(node)
+            combined = combined[:idx]
+        combined.append(node)
+    return combined
+
+
+def _send_and_wait_ack_with_retry(
+    client: SerialClient,
+    logger: BenchmarkLogger,
+    topology: Topology,
+    *,
+    dst: int,
+    path: list[int],
+    payload: str,
+    ack_timeout: float,
+    event_payload: dict,
+    max_retries: int = 2,
+    retry_interval: float = 0.5,
+) -> tuple[bool, float | None, int | None, str | None, str, int, float | None]:
+    """B1+B2: ACK 超时自动重传"""
+    for attempt in range(max_retries + 1):
+        success, latency_ms, ack_seq, ack_ts, send_ts, ack_monotonic = _send_and_wait_ack(
+            client, logger, topology,
+            dst=dst, path=path, payload=payload,
+            ack_timeout=ack_timeout, event_payload=event_payload,
+        )
+        if success:
+            return success, latency_ms, ack_seq, ack_ts, send_ts, attempt, ack_monotonic
+        
+        # 还有重试机会
+        if attempt < max_retries:
+            logger.event("retry", attempt=attempt+1, max_retries=max_retries, dst=dst, **event_payload)
+            time.sleep(retry_interval)
+    
+    # 所有重试都失败
+    return False, None, None, None, send_ts, max_retries, None
 
 
 def _send_and_wait_ack(
@@ -239,7 +284,7 @@ def _send_and_wait_ack(
     payload: str,
     ack_timeout: float,
     event_payload: dict,
-) -> tuple[bool, float | None, int | None, str | None, str]:
+) -> tuple[bool, float | None, int | None, str | None, str, float | None]:
     command = build_send_command(dst, path, payload)
     send_ts = datetime.now().isoformat(timespec="milliseconds")
     logger.event("round_send", command=command.rstrip(), **event_payload)
@@ -249,6 +294,7 @@ def _send_and_wait_ack(
     latency_ms = None
     ack_seq = None
     ack_ts = None
+    ack_monotonic = None
     deadline = started + ack_timeout
     while time.monotonic() < deadline:
         for message in client.read_available():
@@ -260,7 +306,8 @@ def _send_and_wait_ack(
                 logger.event("ack_observed", src=message.src_addr, seq=message.seq)
                 if message.src_addr == dst:
                     success = True
-                    latency_ms = (time.monotonic() - started) * 1000.0
+                    ack_monotonic = time.monotonic()
+                    latency_ms = (ack_monotonic - started) * 1000.0
                     ack_seq = message.seq
                     ack_ts = datetime.now().isoformat(timespec="milliseconds")
                     logger.event("round_ack", ack_target=dst, seq=ack_seq, latency_ms=latency_ms, **event_payload)
@@ -269,7 +316,7 @@ def _send_and_wait_ack(
             break
     if not success:
         logger.event("round_timeout", ack_target=dst, timeout_s=ack_timeout, **event_payload)
-    return success, latency_ms, ack_seq, ack_ts, send_ts
+    return success, latency_ms, ack_seq, ack_ts, send_ts, ack_monotonic
 
 
 def _latency_stats(values: list[float]) -> dict:
@@ -326,12 +373,16 @@ def summarize(results: Iterable[RoundResult], nodes: list[int], sources: list[in
             "ack_timeout_loss": len([result for result in pair_results if _is_ack_timeout(result)]),
             "route_failed_rate": len([result for result in pair_results if result.status == "unreachable"]) / len(pair_results) if pair_results else None,
             "latency": _latency_stats(latencies),
+            "inference_latency": _latency_stats([float(result.inference_ms) for result in pair_results if result.inference_ms is not None]),
+            "source_to_target_latency": _latency_stats([float(result.source_to_target_ms) for result in success_results if result.source_to_target_ms is not None]),
             "last_route": last.route if last else [],
             "last_cost": last.cost if last else None,
             "gateway_to_source_ms": last.gateway_to_source_ms if last else None,
             "gateway_to_target_ms": last.gateway_to_target_ms if last else None,
             "point_to_point_ms": last.point_to_point_ms if last else None,
             "total_latency_ms": last.total_latency_ms if last else None,
+            "inference_ms": last.inference_ms if last else None,
+            "source_to_target_ms": last.source_to_target_ms if last else None,
             "route_mode": last.route_mode if last else BASELINE_ROUTE_MODE,
             "route_fallback": last.route_fallback if last else False,
             "recollect_count": len([result for result in pair_results if result.topology_recollected]),
@@ -362,12 +413,16 @@ def summarize(results: Iterable[RoundResult], nodes: list[int], sources: list[in
             "ack_timeout_loss": len([result for result in node_results if _is_ack_timeout(result)]),
             "route_failed_rate": len([result for result in node_results if result.status == "unreachable"]) / len(node_results) if node_results else None,
             "latency": _latency_stats(latencies),
+            "inference_latency": _latency_stats([float(result.inference_ms) for result in node_results if result.inference_ms is not None]),
+            "source_to_target_latency": _latency_stats([float(result.source_to_target_ms) for result in success_results if result.source_to_target_ms is not None]),
             "last_route": node_results[-1].route if node_results else [],
             "last_cost": node_results[-1].cost if node_results else None,
             "gateway_to_source_ms": node_results[-1].gateway_to_source_ms if node_results else None,
             "gateway_to_target_ms": node_results[-1].gateway_to_target_ms if node_results else None,
             "point_to_point_ms": node_results[-1].point_to_point_ms if node_results else None,
             "total_latency_ms": node_results[-1].total_latency_ms if node_results else None,
+            "inference_ms": node_results[-1].inference_ms if node_results else None,
+            "source_to_target_ms": node_results[-1].source_to_target_ms if node_results else None,
             "route_mode": node_results[-1].route_mode if node_results else BASELINE_ROUTE_MODE,
             "route_fallback": node_results[-1].route_fallback if node_results else False,
             "path_rssi": {
@@ -380,6 +435,8 @@ def summarize(results: Iterable[RoundResult], nodes: list[int], sources: list[in
     total_sent = len([result for result in result_list if _counts_as_transmission(result)])
     total_success = len([result for result in result_list if result.success])
     all_latencies = [float(_result_latency_ms(result)) for result in result_list if result.success and _result_latency_ms(result) is not None]
+    all_inference = [float(result.inference_ms) for result in result_list if result.inference_ms is not None]
+    all_source_to_target = [float(result.source_to_target_ms) for result in result_list if result.success and result.source_to_target_ms is not None]
     return {
         "total": {
             "sent": total_sent,
@@ -387,6 +444,8 @@ def summarize(results: Iterable[RoundResult], nodes: list[int], sources: list[in
             "lost": total_sent - total_success,
             "loss_rate": (total_sent - total_success) / total_sent if total_sent else None,
             "latency": _latency_stats(all_latencies),
+            "inference_latency": _latency_stats(all_inference),
+            "source_to_target_latency": _latency_stats(all_source_to_target),
             "planned_rounds": len(result_list),
             "route_failed": len([result for result in result_list if result.status == "unreachable"]),
             "ack_timeout_loss": len([result for result in result_list if _is_ack_timeout(result)]),
@@ -477,7 +536,7 @@ def _path_key(path: list[int]) -> tuple[int, ...]:
     return tuple(int(item) for item in path)
 
 
-def _candidate_paths(graph: dict[int, dict[int, float]], src: int, dst: int, limit: int = 5) -> list[list[int]]:
+def _candidate_paths(graph: dict[int, dict[int, float]], src: int, dst: int, limit: int = 5, max_hops: int = 4) -> list[list[int]]:
     if src == dst:
         return [[src]]
     queue: list[tuple[float, tuple[int, ...]]] = [(0.0, (src,))]
@@ -491,6 +550,8 @@ def _candidate_paths(graph: dict[int, dict[int, float]], src: int, dst: int, lim
         current = path_tuple[-1]
         if current == dst:
             paths.append(list(path_tuple))
+            continue
+        if len(path_tuple) - 1 >= max_hops:
             continue
         for neighbor, weight in sorted(graph.get(current, {}).items()):
             if neighbor in path_tuple:
@@ -542,19 +603,23 @@ def _select_dijkstra_pair_route(
     window: int,
     avoid_nodes: set[int] | None = None,
     candidate_limit: int = 5,
+    max_hops: int = 4,
 ):
     graph = topology.graph(route_mode=route_mode)
     fallback_used = False
-    paths = _candidate_paths(graph, source, target, candidate_limit)
+    paths = _candidate_paths(graph, source, target, candidate_limit, max_hops=max_hops)
     if not paths and route_mode != BASELINE_ROUTE_MODE:
         graph = topology.graph(route_mode=BASELINE_ROUTE_MODE)
-        paths = _candidate_paths(graph, source, target, candidate_limit)
+        paths = _candidate_paths(graph, source, target, candidate_limit, max_hops=max_hops)
         fallback_used = bool(paths)
     if not paths:
         return topology.route(source, target, route_mode=route_mode, fallback=False), fallback_used, None
-    avoid_nodes = set(avoid_nodes or set())
     scored = []
     for path in paths:
+        # A4: 跳过包含环路的路径
+        if len(path) != len(set(path)):
+            continue
+        
         history_key = (source, target, _path_key(path))
         penalty, reason = _history_penalty(
             path_history.get(history_key, []),
@@ -562,13 +627,32 @@ def _select_dijkstra_pair_route(
             avg_latency_threshold_ms=avg_latency_threshold_ms,
             window=window,
         )
-        overlap_penalty = len(set(path[1:]) & avoid_nodes) * 4.0
-        hop_penalty = max(0, len(path) - 2) * 0.25
-        scored.append((_path_base_cost(graph, path) + penalty + hop_penalty + overlap_penalty, path, reason))
+        # A1: 移除 avoid_nodes 惩罚
+        # A3: 增加跳数惩罚权重 (0.25 -> 2.0)
+        hop_penalty = max(0, len(path) - 2) * 2.0
+        
+        # 计算路径中弱 RSSI 链路的惩罚
+        weak_rssi_penalty = 0.0
+        min_rssi_in_path = 0
+        for src, dst in zip(path[:-1], path[1:]):
+            edge = topology.edges.get(f"{src:02X}:{dst:02X}")
+            if edge is not None:
+                if edge.rssi < -80:
+                    weak_rssi_penalty += 10.0  # 强惩罚弱链路
+                elif edge.rssi < -75:
+                    weak_rssi_penalty += 5.0   # 中等惩罚
+                if min_rssi_in_path == 0 or edge.rssi < min_rssi_in_path:
+                    min_rssi_in_path = edge.rssi
+        
+        total_cost = _path_base_cost(graph, path) + penalty + hop_penalty + weak_rssi_penalty
+        scored.append((total_cost, path, reason, min_rssi_in_path))
+    
+    if not scored:
+        return Route(source, target, [], float("inf"), "unreachable"), fallback_used, "no_valid_path"
+    
+    # 按总成本排序，优先选择成本低、跳数少、RSSI 强的路径
     scored.sort(key=lambda item: (item[0], len(item[1]), item[1]))
-    cost, path, reason = scored[0]
-    if reason is None and avoid_nodes and not (set(path[1:]) & avoid_nodes):
-        reason = "gateway_overlap_avoided"
+    cost, path, reason, min_rssi = scored[0]
     return Route(source, target, path, cost, "valid"), fallback_used, reason
 
 
@@ -583,12 +667,38 @@ def _recollect_topology(
     gateway: int,
     dongle_addr: int | None = None,
     min_rssi: int = -85,
+    max_hops: int = 4,
     route_mode: str,
     reason: str,
+    old_topology: Topology | None = None,
 ) -> tuple[Topology, float, float]:
     logger.event("topology_recollect_start", reason=reason)
     started = time.perf_counter()
-    topology = collect_topology(client, logger, rssi_seconds, rssi_requests, nodes, gateway, dongle_addr=dongle_addr, min_rssi=min_rssi)
+    new_topology = collect_topology(client, logger, rssi_seconds, rssi_requests, nodes, gateway, dongle_addr=dongle_addr, min_rssi=min_rssi, max_hops=max_hops)
+    
+    # 拓扑稳定性检查：如果新拓扑质量下降，保留旧拓扑
+    if old_topology is not None:
+        old_edges = len(old_topology.edges)
+        new_edges = len(new_topology.edges)
+        old_reachable = sum(1 for node in nodes if old_topology.route(gateway, node).status == "valid")
+        new_reachable = sum(1 for node in nodes if new_topology.route(gateway, node).status == "valid")
+        
+        # 如果新拓扑边数减少超过30%或可达节点减少，保留旧拓扑
+        if new_edges < old_edges * 0.7 or new_reachable < old_reachable:
+            logger.event(
+                "topology_recollect_rejected",
+                reason="quality_degradation",
+                old_edges=old_edges,
+                new_edges=new_edges,
+                old_reachable=old_reachable,
+                new_reachable=new_reachable,
+            )
+            topology = old_topology
+        else:
+            topology = new_topology
+    else:
+        topology = new_topology
+    
     save_topology(_json_dir(log_path) / "state.json", topology)
     route_compute_ms = _write_routes_json(log_path, topology, route_mode)
     elapsed_ms = (time.perf_counter() - started) * 1000.0
@@ -618,26 +728,41 @@ def _resolve_healthy_matrix_routes(
     loss_threshold: float,
     avg_latency_threshold_ms: float,
     window: int,
+    max_hops: int = 4,
 ):
     gateway_route = topology.route(gateway, source, route_mode=route_mode, fallback=False)
     avoid_nodes = set(gateway_route.path[:-1]) - {target}
-    pair_route, route_fallback, health_reason = _select_dijkstra_pair_route(
-        topology,
-        source,
-        target,
-        route_mode,
-        path_history,
-        loss_threshold=loss_threshold,
-        avg_latency_threshold_ms=avg_latency_threshold_ms,
-        window=window,
-        avoid_nodes=avoid_nodes,
-    )
-    full_path = _combine_gateway_path(gateway_route.path, pair_route.path)
+    
+    # 尝试从网关开始搜索到目标的直接路径
+    gateway_to_target_route = topology.route(gateway, target, route_mode=route_mode, fallback=False)
+    
+    # 如果网关到目标的路径存在且包含源节点，直接使用
+    if gateway_to_target_route.status == "valid" and source in gateway_to_target_route.path:
+        pair_route = gateway_to_target_route
+        full_path = gateway_to_target_route.path
+        route_fallback = False
+        health_reason = None
+    else:
+        # 否则，从源节点开始搜索到目标的路径
+        pair_route, route_fallback, health_reason = _select_dijkstra_pair_route(
+            topology,
+            source,
+            target,
+            route_mode,
+            path_history,
+            loss_threshold=loss_threshold,
+            avg_latency_threshold_ms=avg_latency_threshold_ms,
+            window=window,
+            avoid_nodes=avoid_nodes,
+            max_hops=max_hops,
+        )
+        full_path = _combine_gateway_path(gateway_route.path, pair_route.path)
     return gateway_route, pair_route, full_path, route_fallback, health_reason
 
 
 def write_report(log_dir: Path, summary: dict, topology: Topology) -> None:
     routes = routes_to_dict(topology.routes())
+    metrics = summary.get("metrics", {})
     lines = [
         "# Dijkstra Hardware Benchmark Report",
         "",
@@ -647,6 +772,8 @@ def write_report(log_dir: Path, summary: dict, topology: Topology) -> None:
         f"- Planned rounds: {summary['total'].get('planned_rounds')}",
         f"- Route failed/unreachable: {summary['total'].get('route_failed')}",
         f"- Total loss rate: {summary['total']['loss_rate']:.2%}" if summary["total"]["loss_rate"] is not None else "- Total loss rate: n/a",
+        f"- Inference time avg: {_fmt_ms(metrics.get('inference_latency', {}).get('avg_ms'))}",
+        f"- Source-to-target latency avg: {_fmt_ms(metrics.get('source_to_target_latency', {}).get('avg_ms'))}",
         "",
         "## Routes",
     ]
@@ -657,10 +784,13 @@ def write_report(log_dir: Path, summary: dict, topology: Topology) -> None:
     for node, item in sorted(_summary_items(summary).items()):
         latency = item["latency"]
         loss_rate = item["loss_rate"]
+        inference = item.get("inference_latency", {})
+        source_to_target = item.get("source_to_target_latency", {})
         lines.append(
             f"- {item.get('source', '00')}->{item.get('destination', node)}: sent={item['sent']} success={item['success']} "
             f"ack_timeout={item.get('ack_timeout_loss')} route_failed={item.get('route_failed')} loss={_fmt_rate(loss_rate)} avg={_fmt_ms(latency['avg_ms'])} "
             f"min={_fmt_ms(latency['min_ms'])} max={_fmt_ms(latency['max_ms'])} p95={_fmt_ms(latency['p95_ms'])} "
+            f"inference={_fmt_ms(inference.get('avg_ms'))} source_to_target={_fmt_ms(source_to_target.get('avg_ms'))} total={_fmt_ms(item.get('total_latency_ms'))} "
             f"route={' -> '.join(f'{addr:02X}' for addr in item['last_route'])} "
             f"min_rssi={item.get('path_rssi', {}).get('min_rssi')}"
         )
@@ -1395,6 +1525,7 @@ def run_benchmark(
     gateway: int = 0x00,
     dongle_addr: int | None = None,
     min_rssi: int = -85,
+    max_hops: int = 4,
     route_mode: str = BASELINE_ROUTE_MODE,
     optimization_target: dict | None = None,
     sources: list[int] | None = None,
@@ -1425,7 +1556,15 @@ def run_benchmark(
             matrix_mode=True,
         )
         _drain_messages(client, logger, boot_wait)
-        topology = collect_topology(client, logger, rssi_seconds, rssi_requests, nodes, gateway, dongle_addr=dongle_addr, min_rssi=min_rssi)
+        topology = collect_topology(client, logger, rssi_seconds, rssi_requests, nodes, gateway, dongle_addr=dongle_addr, min_rssi=min_rssi, max_hops=max_hops)
+        # 验证路由表包含所有节点
+        expected_nodes = set(nodes)
+        actual_nodes = set(topology.nodes)
+        if not expected_nodes.issubset(actual_nodes):
+            missing = expected_nodes - actual_nodes
+            missing_hex = [f"0x{n:02X}" for n in sorted(missing)]
+            logger.event("route_table_incomplete", missing=missing_hex, expected=len(expected_nodes), actual=len(actual_nodes))
+            raise RuntimeError(f"failed: 路由表缺少节点 {missing_hex}，测试终止")
         json_path = _json_dir(log_path)
         save_topology(json_path / "state.json", topology)
         route_compute_ms = _write_routes_json(log_path, topology, route_mode)
@@ -1448,8 +1587,10 @@ def run_benchmark(
                         gateway=gateway,
                         dongle_addr=dongle_addr,
                         min_rssi=min_rssi,
+                        max_hops=max_hops,
                         route_mode=route_mode,
                         reason=f"consecutive_failures:{source:02X}:{target:02X}",
+                        old_topology=topology,
                     )
                     routes = routes_to_dict(topology.routes(route_mode=route_mode))
                     _reset_recollect_counter(consecutive_failures, source, target)
@@ -1465,6 +1606,7 @@ def run_benchmark(
                     loss_threshold=path_loss_degrade_threshold,
                     avg_latency_threshold_ms=path_avg_degrade_ms,
                     window=path_health_window,
+                    max_hops=max_hops,
                 )
                 if health_reason:
                     logger.event(
@@ -1498,7 +1640,7 @@ def run_benchmark(
                     _drain_messages(client, logger, interval)
                     continue
 
-                gateway_success, gateway_to_source_ms, _, _, gateway_send_ts = _send_and_wait_ack(
+                gateway_success, gateway_to_source_ms, _, _, gateway_send_ts, gateway_retries, ack1_monotonic = _send_and_wait_ack_with_retry(
                     client,
                     logger,
                     topology,
@@ -1506,6 +1648,8 @@ def run_benchmark(
                     path=gateway_route.path,
                     payload=payload,
                     ack_timeout=ack_timeout,
+                    max_retries=1,
+                    retry_interval=0.5,
                     event_payload={
                         "phase": "gateway_to_source",
                         "source": source,
@@ -1548,7 +1692,7 @@ def run_benchmark(
                     _drain_messages(client, logger, interval)
                     continue
 
-                target_success, gateway_to_target_ms, ack_seq, ack_ts, send_ts = _send_and_wait_ack(
+                target_success, gateway_to_target_ms, ack_seq, ack_ts, send_ts, target_retries, ack2_monotonic = _send_and_wait_ack_with_retry(
                     client,
                     logger,
                     topology,
@@ -1556,6 +1700,8 @@ def run_benchmark(
                     path=full_path,
                     payload=payload,
                     ack_timeout=ack_timeout,
+                    max_retries=1,
+                    retry_interval=0.5,
                     event_payload={
                         "phase": "gateway_to_target_via_source",
                         "source": source,
@@ -1573,6 +1719,18 @@ def run_benchmark(
                 point_to_point_ms = None
                 if gateway_to_source_ms is not None and gateway_to_target_ms is not None:
                     point_to_point_ms = max(0.0, gateway_to_target_ms - gateway_to_source_ms)
+                
+                # 推理时间 = Dijkstra路由计算耗时
+                inference_ms = locals().get("route_compute_ms")
+                
+                # 源到目标延时 = 下发路径→收到目标ACK的时间 - 网关到源的时间
+                source_to_target_ms = None
+                total_latency_ms = None
+                if gateway_to_source_ms is not None and gateway_to_target_ms is not None:
+                    source_to_target_ms = max(0.0, gateway_to_target_ms - gateway_to_source_ms)
+                    if inference_ms is not None:
+                        total_latency_ms = inference_ms + source_to_target_ms
+                
                 success = target_success and point_to_point_ms is not None
                 result = RoundResult(
                     target=target,
@@ -1596,8 +1754,12 @@ def run_benchmark(
                     gateway_to_source_ms=gateway_to_source_ms,
                     gateway_to_target_ms=gateway_to_target_ms,
                     point_to_point_ms=point_to_point_ms,
-                    total_latency_ms=point_to_point_ms,
+                    total_latency_ms=total_latency_ms,
+                    inference_ms=inference_ms,
+                    source_to_target_ms=source_to_target_ms,
                     topology_recollected=topology_recollected,
+                    ack1_monotonic=ack1_monotonic,
+                    send2_monotonic=send2_monotonic,
                 )
                 results.append(result)
                 logger.round(result)

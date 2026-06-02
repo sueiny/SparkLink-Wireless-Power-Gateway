@@ -1,0 +1,86 @@
+{
+  "algorithm": "dijkstra",
+  "field_sources": {
+    "default": "not directly measurable on current hardware",
+    "derived": "computed from real benchmark records",
+    "real_ack": "derived from real ACK success and timeout counts",
+    "real_ack_latency": "derived from SEND write time to ACK receive time",
+    "real_rssi": "derived from RSSI_REQ and RSSI_REPORT"
+  },
+  "metrics": {
+    "congested_link_ratio": {
+      "source": "default",
+      "unit": "ratio",
+      "value": 0.0
+    },
+    "decomposed_total_delay": {
+      "source": "derived",
+      "unit": "seconds",
+      "value": 0.2841127234156981
+    },
+    "global_link_utilization": {
+      "source": "default",
+      "unit": "ratio",
+      "value": 0.0
+    },
+    "link_utilization": {
+      "source": "default",
+      "unit": "ratio",
+      "value": 0.0
+    },
+    "max_link_utilization": {
+      "source": "default",
+      "unit": "ratio",
+      "value": 0.0
+    },
+    "mean_delay_per_hop": {
+      "source": "derived",
+      "unit": "seconds_per_hop",
+      "value": 0.1217625957495849
+    },
+    "packet_loss_rate": {
+      "source": "real_ack",
+      "unit": "ratio",
+      "value": 0.0
+    },
+    "propagation_delay": {
+      "source": "default",
+      "unit": "seconds",
+      "value": 0.0
+    },
+    "queueing_delay": {
+      "source": "default",
+      "unit": "seconds",
+      "value": 0.0
+    },
+    "route_distance": {
+      "source": "default",
+      "unit": "distance_proxy",
+      "value": 0.0
+    },
+    "route_length_hops": {
+      "source": "derived",
+      "unit": "hops",
+      "value": 2.3333333333333335
+    },
+    "total_delay": {
+      "source": "real_ack_latency",
+      "unit": "seconds",
+      "value": 0.2841127234156981
+    },
+    "train_score": {
+      "source": "derived",
+      "unit": "score",
+      "value": 0.2841127234156981
+    },
+    "transmission_delay": {
+      "source": "default",
+      "unit": "seconds",
+      "value": 0.0
+    }
+  },
+  "run_id": "benchmark",
+  "schema": "simulation_aligned_metrics.v1",
+  "source_log_dir": "/home/sueiny/rk3506_linux6.1_v1.2.0/app/广播组网上位机/app/logs/dijkstra_hw/第22次测试",
+  "step": 0
+}

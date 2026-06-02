@@ -24,7 +24,7 @@ class Edge:
 
 
 class Topology:
-    def __init__(self, stale_seconds: float | None = 30.0, edge_direction: str = "neighbor_to_src", gateway: int | None = None, relay_excluded: set[int] | None = None, min_rssi: int = -85):
+    def __init__(self, stale_seconds: float | None = 30.0, edge_direction: str = "neighbor_to_src", gateway: int | None = None, relay_excluded: set[int] | None = None, min_rssi: int = -85, max_hops: int = 4):
         if edge_direction not in {"neighbor_to_src", "src_to_neighbor"}:
             raise ValueError(f"unsupported edge direction: {edge_direction}")
         self.stale_seconds = stale_seconds
@@ -32,6 +32,7 @@ class Topology:
         self.gateway = gateway
         self.relay_excluded = relay_excluded or set()
         self.min_rssi = min_rssi
+        self.max_hops = max_hops
         self.edges: Dict[str, Edge] = {}
         self.nodes: set[int] = set()
 
@@ -88,13 +89,13 @@ class Topology:
         return graph
 
     def route(self, src: int, dst: int, route_mode: str = BASELINE_ROUTE_MODE, fallback: bool = True) -> Route:
-        route = dijkstra(self.graph(route_mode=route_mode, min_rssi=self.min_rssi), src, dst)
+        route = dijkstra(self.graph(route_mode=route_mode, min_rssi=self.min_rssi), src, dst, max_hops=self.max_hops)
         if route.status != "valid" and route_mode != BASELINE_ROUTE_MODE and fallback:
-            return dijkstra(self.graph(route_mode=BASELINE_ROUTE_MODE, min_rssi=self.min_rssi), src, dst)
+            return dijkstra(self.graph(route_mode=BASELINE_ROUTE_MODE, min_rssi=self.min_rssi), src, dst, max_hops=self.max_hops)
         return route
 
     def routes(self, route_mode: str = BASELINE_ROUTE_MODE) -> Dict[str, Route]:
-        return build_route_table(self.graph(route_mode=route_mode, min_rssi=self.min_rssi), self.nodes)
+        return build_route_table(self.graph(route_mode=route_mode, min_rssi=self.min_rssi), self.nodes, max_hops=self.max_hops)
 
     def to_dict(self) -> dict:
         return {
@@ -103,13 +104,14 @@ class Topology:
             "gateway": self.gateway,
             "relay_excluded": sorted(self.relay_excluded),
             "min_rssi": self.min_rssi,
+            "max_hops": self.max_hops,
             "nodes": sorted(self.nodes),
             "edges": [asdict(edge) for edge in sorted(self.edges.values(), key=lambda item: (item.src, item.dst))],
         }
 
     @classmethod
     def from_dict(cls, data: dict) -> "Topology":
-        topology = cls(stale_seconds=data.get("stale_seconds", 30.0), edge_direction=data.get("edge_direction", "neighbor_to_src"), gateway=data.get("gateway"), relay_excluded=set(data.get("relay_excluded", [])), min_rssi=data.get("min_rssi", -85))
+        topology = cls(stale_seconds=data.get("stale_seconds", 30.0), edge_direction=data.get("edge_direction", "neighbor_to_src"), gateway=data.get("gateway"), relay_excluded=set(data.get("relay_excluded", [])), min_rssi=data.get("min_rssi", -85), max_hops=data.get("max_hops", 4))
         topology.nodes = {int(node) for node in data.get("nodes", [])}
         for edge_data in data.get("edges", []):
             edge = Edge(

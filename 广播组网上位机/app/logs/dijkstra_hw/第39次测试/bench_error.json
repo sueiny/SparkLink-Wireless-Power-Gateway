@@ -1,0 +1,7 @@
+{
+  "algorithm": "dijkstra",
+  "error": "failed: 路由表缺少节点 ['0x09']，测试终止",
+  "log_dir": "/home/sueiny/rk3506_linux6.1_v1.2.0/app/广播组网上位机/app/logs/dijkstra_hw/第39次测试",
+  "status": "error",
+  "ts": "2026-06-02T01:07:12.202"
+}

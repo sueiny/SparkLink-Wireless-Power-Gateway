@@ -131,10 +131,11 @@ def format_addr(addr: int) -> str:
 def parse_addr(value: str) -> int:
     text = value.strip().lower()
     if text.startswith("0x"):
-        text = text[2:]
-    if not text:
-        raise ProtocolError("empty address")
-    addr = int(text, 16)
+        # 十六进制格式
+        addr = int(text, 16)
+    else:
+        # 十进制格式
+        addr = int(text, 10)
     if not 0 <= addr <= 0xFF:
         raise ProtocolError(f"address out of range: {value}")
     return addr
@@ -148,7 +149,8 @@ def build_send_command(dst: int, path: Iterable[int], payload: str) -> str:
         raise ProtocolError("path must end with dst")
 
     payload_hex = normalize_hex_payload(payload)
-    fields = ["SEND", format_addr(dst), str(len(path_list))]
+    # 目标地址用十进制格式（1-10），路径用十六进制格式（01-0A）
+    fields = ["SEND", str(int(dst)), str(len(path_list))]
     fields.extend(format_addr(addr) for addr in path_list)
     fields.append(payload_hex)
     return " ".join(fields) + "\r\n"

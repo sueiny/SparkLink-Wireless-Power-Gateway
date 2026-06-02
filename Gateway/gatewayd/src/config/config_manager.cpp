@@ -16,15 +16,24 @@ model::DeviceInfo parseDevice(const nlohmann::json &item)
     device.product_id = item.value("product_id", "");
     device.name = item.value("name", "");
     device.type = model::deviceTypeFromString(item.value("type", "gateway"));
-    device.meter_role = model::meterRoleFromString(item.value("meter_role", ""));
-    device.parent_meter_id = item.value("parent_meter_id", "");
-    device.mac = item.value("mac", "");
-    device.parent_mac = item.value("parent_mac", "");
-    device.child_macs = item.value("child_macs", "");
+    device.station_id = item.value("station_id", 0);
+    device.dtu_id = item.value("dtu_id", 0);
     device.modbus_addr = item.value("modbus_addr", 0);
     device.modbus_type = item.value("modbus_type", 0);
     device.online = item.value("online", true);
+    // V1 兼容
+    device.dtu_node_id = item.value("dtu_node_id", 0);
     return device;
+}
+
+model::DtuDeviceInfo parseDtuDevice(const nlohmann::json &item)
+{
+    model::DtuDeviceInfo dtu;
+    dtu.device_id = item.value("device_id", "");
+    dtu.node_id = item.value("node_id", 0);
+    dtu.parent_id = item.value("parent_id", 0);
+    dtu.child_ids = item.value("child_ids", "");
+    return dtu;
 }
 
 } // namespace
@@ -123,9 +132,26 @@ bool ConfigManager::load(const std::string &path, std::string *error)
     cfg.mock.temperature_base = mock.value("temperature_base", 28.0);
     cfg.mock.humidity_base = mock.value("humidity_base", 60.0);
 
+    const auto sle = root.value("sle", nlohmann::json::object());
+    cfg.sle.enable = sle.value("enable", false);
+    cfg.sle.data_socket = sle.value("data_socket", "/var/run/gateway/sle_data.sock");
+    cfg.sle.cmd_socket = sle.value("cmd_socket", "/var/run/gateway/sle_cmd.sock");
+    cfg.sle.roots.clear();
+    for (const auto &root_item : sle.value("roots", nlohmann::json::array())) {
+        config::SleRootConfig rc;
+        rc.node_id = root_item.value("node_id", 0);
+        cfg.sle.roots.push_back(rc);
+    }
+
     cfg.devices.clear();
-    for (const auto &item : root.value("devices", nlohmann::json::array()))
-        cfg.devices.push_back(parseDevice(item));
+    cfg.dtu_devices.clear();
+    for (const auto &item : root.value("devices", nlohmann::json::array())) {
+        std::string type = item.value("type", "gateway");
+        if (type == "dtu_node")
+            cfg.dtu_devices.push_back(parseDtuDevice(item));
+        else
+            cfg.devices.push_back(parseDevice(item));
+    }
 
     if (!validate(cfg, error))
         return false;

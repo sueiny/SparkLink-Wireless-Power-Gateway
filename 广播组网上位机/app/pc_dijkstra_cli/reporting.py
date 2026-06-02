@@ -117,7 +117,7 @@ def enrich_summary_with_metrics(summary: dict, topology: Topology, route_compute
             item["route_path"] = path_text(route)
             item["algorithm_compute_latency_ms"] = route_compute_ms
             item["command_downlink_latency_ms"] = latency
-            item["end_to_end_avg_latency_ms"] = latency
+            item["end_to_end_avg_latency_ms"] = item.get("total_latency_ms") or latency
             item["avg_single_hop_latency_ms"] = (latency / hops) if latency is not None and hops > 0 else None
             item["latency_jitter"] = latency_jitter(
                 [
@@ -134,6 +134,8 @@ def enrich_summary_with_metrics(summary: dict, topology: Topology, route_compute
                     per_hop_delays.append(item["avg_single_hop_latency_ms"])
     summary["metrics"] = {
         "algorithm_compute_latency_ms": route_compute_ms,
+        "inference_latency": summary["total"].get("inference_latency", {}),
+        "source_to_target_latency": summary["total"].get("source_to_target_latency", {}),
         "command_downlink_latency_ms": summary["total"]["latency"]["avg_ms"],
         "end_to_end_avg_latency_ms": summary["total"]["latency"]["avg_ms"],
         "global_avg_loss_rate": summary["total"]["loss_rate"],
@@ -160,6 +162,8 @@ def write_excel_summary(path: str | Path, summary: dict, topology: Topology, con
         "P95ms",
         "网关到源节点ms",
         "网关到目标节点ms",
+        "推理时间ms",
+        "源到目标延时ms",
         "总延时ms",
         "重采次数",
         "最弱RSSI",
@@ -179,6 +183,8 @@ def write_excel_summary(path: str | Path, summary: dict, topology: Topology, con
             latency.get("p95_ms"),
             item.get("gateway_to_source_ms"),
             item.get("gateway_to_target_ms"),
+            item.get("inference_ms"),
+            item.get("source_to_target_ms"),
             item.get("total_latency_ms"),
             item.get("recollect_count"),
             item.get("path_rssi", {}).get("min_rssi"),
@@ -189,6 +195,8 @@ def write_excel_summary(path: str | Path, summary: dict, topology: Topology, con
     metric_rows = [
         ["指标", "值", "单位", "说明"],
         ["算法计算延时", metrics.get("algorithm_compute_latency_ms"), "ms", "网关/上位机算出 Dijkstra 路由路径的耗时"],
+        ["推理时间", metrics.get("inference_latency", {}).get("avg_ms"), "ms", "网关收到源ACK到下发路径的时间"],
+        ["源到目标延时", metrics.get("source_to_target_latency", {}).get("avg_ms"), "ms", "网关下发路径到收到目标ACK的时间"],
         ["指令下发延时", metrics.get("command_downlink_latency_ms"), "ms", "当前硬件无中间节点时间戳，第一版用 SEND 到 ACK 总延时近似记录"],
         ["端到端实际传输平均延时", metrics.get("end_to_end_avg_latency_ms"), "ms", "现有统计总 ACK 时延"],
         ["全局平均丢包率", metrics.get("global_avg_loss_rate"), "ratio", "总 timeout / 总发送"],
@@ -208,8 +216,9 @@ def write_excel_summary(path: str | Path, summary: dict, topology: Topology, con
         "单路径丢包率",
         "平均单跳传输耗时ms",
         "算法计算延时ms",
-        "指令下发延时ms",
-        "端到端平均延时ms",
+        "推理时间ms",
+        "源到目标延时ms",
+        "总延时ms",
         "时延抖动ms",
         "RSSI均值",
         "最弱RSSI",
@@ -228,8 +237,9 @@ def write_excel_summary(path: str | Path, summary: dict, topology: Topology, con
             item.get("loss_rate"),
             item.get("avg_single_hop_latency_ms"),
             item.get("algorithm_compute_latency_ms"),
-            item.get("command_downlink_latency_ms"),
-            item.get("end_to_end_avg_latency_ms"),
+            item.get("inference_ms"),
+            item.get("source_to_target_ms"),
+            item.get("total_latency_ms"),
             item.get("latency_jitter", {}).get("jitter_ms"),
             item.get("path_rssi", {}).get("mean_rssi"),
             item.get("path_rssi", {}).get("min_rssi"),

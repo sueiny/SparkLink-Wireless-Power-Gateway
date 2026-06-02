@@ -115,6 +115,7 @@ def cmd_bench(args: argparse.Namespace) -> int:
         path_p95_degrade_ms=args.path_p95_degrade_ms,
         path_avg_degrade_ms=args.path_avg_degrade_ms,
         path_health_window=args.path_health_window,
+        send_mode=args.send_mode,
     )
     print(
         f"D3QN bench complete: sent={summary['total']['sent']} "
@@ -259,7 +260,7 @@ def build_parser() -> argparse.ArgumentParser:
     bench.add_argument("--log-dir", default=str(DEFAULT_LOG_ROOT))
     bench.add_argument("--checkpoint", default=str(LATEST_CHECKPOINT))
     bench.add_argument("--gateway", default="00")
-    bench.add_argument("--dongle-addr", default=None, help="dongle address to exclude from routing (e.g. 10)")
+    bench.add_argument("--dongle-addr", default=None, help="dongle address to exclude from routing (decimal: 16 or hex: 0x10)")
     bench.add_argument("--boot-wait", type=float, default=5.0)
     bench.add_argument("--rssi-requests", type=int, default=5)
     bench.add_argument("--ack-timeout", type=float, default=2.0)
@@ -270,6 +271,7 @@ def build_parser() -> argparse.ArgumentParser:
     bench.add_argument("--path-p95-degrade-ms", type=float, default=700.0)
     bench.add_argument("--path-avg-degrade-ms", type=float, default=220.0)
     bench.add_argument("--path-health-window", type=int, default=5)
+    bench.add_argument("--send-mode", default="single_send", choices=["single_send", "two_send"], help="single_send: gateway->target direct, two_send: gateway->source->target")
     bench.set_defaults(func=cmd_bench)
 
     bench10 = subparsers.add_parser("bench10", help="run repeated D3QN hardware benchmark and aggregate results")

@@ -120,6 +120,8 @@ def enrich_summary(summary: dict, topology: Topology, model_compute_ms: float | 
     ]
     summary["metrics"] = {
         "algorithm_compute_latency_ms": model_compute_ms,
+        "inference_latency": summary["total"].get("inference_latency", {}),
+        "source_to_target_latency": summary["total"].get("source_to_target_latency", {}),
         "command_downlink_latency_ms": summary["total"]["latency"]["avg_ms"],
         "end_to_end_avg_latency_ms": summary["total"]["latency"]["avg_ms"],
         "global_avg_loss_rate": summary["total"]["loss_rate"],
@@ -249,7 +251,7 @@ def write_excel_summary(path: str | Path, summary: dict, topology: Topology, con
         for row in rows:
             ws.append(row)
 
-    result_rows = [["出发点", "目标点", "路径", "D3QN动作", "成功/实际SEND", "计划轮次", "ACK timeout", "D3QN路由失败", "丢包率", "点到点平均ms", "点到点P95ms", "推理平均ms", "D3QN总耗时平均ms", "重采次数", "路径切换次数", "最弱RSSI"]]
+    result_rows = [["出发点", "目标点", "路径", "D3QN动作", "成功/实际SEND", "计划轮次", "ACK timeout", "D3QN路由失败", "丢包率", "点到点平均ms", "点到点P95ms", "推理平均ms", "源到目标平均ms", "总延时平均ms", "重采次数", "路径切换次数", "最弱RSSI"]]
     for key, item in sorted(_summary_items(summary).items()):
         latency = item.get("latency", {})
         result_rows.append([
@@ -265,7 +267,8 @@ def write_excel_summary(path: str | Path, summary: dict, topology: Topology, con
             latency.get("avg_ms"),
             latency.get("p95_ms"),
             item.get("inference_latency", {}).get("avg_ms"),
-            item.get("d3qn_total_latency", {}).get("avg_ms"),
+            item.get("source_to_target_latency", {}).get("avg_ms"),
+            item.get("total_latency_ms"),
             item.get("recollect_count"),
             item.get("path_switch_count"),
             item.get("path_rssi", {}).get("min_rssi"),
@@ -277,6 +280,8 @@ def write_excel_summary(path: str | Path, summary: dict, topology: Topology, con
     metric_rows = [
         ["指标", "值", "单位", "说明"],
         ["算法计算延时", metrics.get("algorithm_compute_latency_ms"), "ms", "上位机加载 D3QN 并选择路径的平均耗时"],
+        ["推理时间", metrics.get("inference_latency", {}).get("avg_ms"), "ms", "网关收到源ACK到下发路径的时间"],
+        ["源到目标延时", metrics.get("source_to_target_latency", {}).get("avg_ms"), "ms", "网关下发路径到收到目标ACK的时间"],
         ["指令下发延时", metrics.get("command_downlink_latency_ms"), "ms", "当前按 SEND 到 ACK 总时延近似"],
         ["端到端实际传输平均延时", metrics.get("end_to_end_avg_latency_ms"), "ms", "现有统计总 ACK 时延"],
         ["全局平均丢包率", metrics.get("global_avg_loss_rate"), "ratio", "总 timeout / 总发送"],
@@ -291,7 +296,7 @@ def write_excel_summary(path: str | Path, summary: dict, topology: Topology, con
         ["时延标准差", jitter.get("stddev_ms"), "ms", "成功 ACK 延时标准差"],
     ]
 
-    path_rows = [["出发点", "目标点", "D3QN动作", "候选路径数", "路由跳数", "单路径丢包率", "平均单跳传输耗时ms", "路径切换原因", "RSSI均值", "最弱RSSI"]]
+    path_rows = [["出发点", "目标点", "D3QN动作", "候选路径数", "路由跳数", "单路径丢包率", "平均单跳传输耗时ms", "推理时间ms", "源到目标延时ms", "总延时ms", "路径切换原因", "RSSI均值", "最弱RSSI"]]
     for key, item in sorted(_summary_items(summary).items()):
         path_rows.append([
             item.get("source", "00"),
@@ -301,6 +306,9 @@ def write_excel_summary(path: str | Path, summary: dict, topology: Topology, con
             item.get("route_hops"),
             item.get("loss_rate"),
             item.get("avg_single_hop_latency_ms"),
+            item.get("inference_latency", {}).get("avg_ms"),
+            item.get("source_to_target_latency", {}).get("avg_ms"),
+            item.get("total_latency_ms"),
             ", ".join(item.get("path_switch_reasons", [])),
             item.get("path_rssi", {}).get("mean_rssi"),
             item.get("path_rssi", {}).get("min_rssi"),
@@ -342,6 +350,7 @@ def build_report(summary: dict, hardware_record: dict, log_dir: str | Path) -> s
         "- 地址说明：CLI 按十六进制地址解析，因此目标 `10` 表示地址 `0x10`。",
         f"- 计划轮次：`{total.get('planned_rounds')}`，实际SEND：`{total['sent']}`，成功：`{total['success']}`，ACK timeout：`{total.get('ack_timeout_loss')}`，D3QN路由失败：`{total.get('route_failed')}`，实际丢包率：`{_fmt_rate(total['loss_rate'])}`",
         f"- 端到端平均延时：`{_fmt_ms(total['latency'].get('avg_ms'))}`，P95：`{_fmt_ms(total['latency'].get('p95_ms'))}`，最小/最大：`{_fmt_ms(total['latency'].get('min_ms'))}` / `{_fmt_ms(total['latency'].get('max_ms'))}`",
+        f"- 推理时间平均：`{_fmt_ms(metrics.get('inference_latency', {}).get('avg_ms'))}`，源到目标平均：`{_fmt_ms(metrics.get('source_to_target_latency', {}).get('avg_ms'))}`",
         f"- 时延抖动均值：`{_fmt_ms(jitter.get('jitter_ms'))}`，时延标准差：`{_fmt_ms(jitter.get('stddev_ms'))}`",
         f"- D3QN 路由失败次数：`{metrics.get('d3qn_route_failures')}`",
         "",
@@ -351,17 +360,17 @@ def build_report(summary: dict, hardware_record: dict, log_dir: str | Path) -> s
         "",
         "## 测试结果",
         "",
-        "| 出发点 | 目标点 | 路径 | D3QN动作 | 成功/实际SEND | ACK timeout | 路由失败 | 丢包率 | 点到点平均 | P95 | 推理平均 | D3QN总耗时 | 重采 | 切换 | 最弱 RSSI |",
-        "|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
+        "| 出发点 | 目标点 | 路径 | D3QN动作 | 成功/实际SEND | ACK timeout | 路由失败 | 丢包率 | 点到点平均 | P95 | 推理平均 | 源到目标平均 | 总延时 | 重采 | 切换 | 最弱 RSSI |",
+        "|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
     ]
     for key, item in sorted(_summary_items(summary).items()):
         latency = item["latency"]
         inference = item.get("inference_latency", {})
-        d3qn_total = item.get("d3qn_total_latency", {})
+        source_to_target = item.get("source_to_target_latency", {})
         lines.append(
             f"| `{item.get('source', '00')}` | `{item.get('destination', key)}` | `{item.get('route_path')}` | `{item.get('last_action')}` | `{item['success']}/{item['sent']}` | "
             f"`{item.get('ack_timeout_loss', 0)}` | `{item.get('d3qn_route_failures', 0)}` | `{_fmt_rate(item['loss_rate'])}` | `{_fmt_ms(latency['avg_ms'])}` | `{_fmt_ms(latency['p95_ms'])}` | "
-            f"`{_fmt_ms(inference.get('avg_ms'))}` | `{_fmt_ms(d3qn_total.get('avg_ms'))}` | `{item.get('recollect_count')}` | `{item.get('path_switch_count')}` | `{item.get('path_rssi', {}).get('min_rssi')}` |"
+            f"`{_fmt_ms(inference.get('avg_ms'))}` | `{_fmt_ms(source_to_target.get('avg_ms'))}` | `{_fmt_ms(item.get('total_latency_ms'))}` | `{item.get('recollect_count')}` | `{item.get('path_switch_count')}` | `{item.get('path_rssi', {}).get('min_rssi')}` |"
         )
     lines.extend([
         "",
@@ -370,6 +379,8 @@ def build_report(summary: dict, hardware_record: dict, log_dir: str | Path) -> s
         "| 指标 | 当前值 | 单位 | 说明 |",
         "|---|---:|---|---|",
         f"| 算法计算延时 | `{_fmt_ms(metrics.get('algorithm_compute_latency_ms'))}` | ms | 上位机用 D3QN 算出路径的平均耗时 |",
+        f"| 推理时间 | `{_fmt_ms(metrics.get('inference_latency', {}).get('avg_ms'))}` | ms | 网关收到源ACK到下发路径的时间 |",
+        f"| 源到目标延时 | `{_fmt_ms(metrics.get('source_to_target_latency', {}).get('avg_ms'))}` | ms | 网关下发路径到收到目标ACK的时间 |",
         f"| 指令下发延时 | `{_fmt_ms(metrics.get('command_downlink_latency_ms'))}` | ms | 当前硬件无中间节点时间戳，用 SEND 到 ACK 总时延近似 |",
         f"| 端到端实际传输平均延时 | `{_fmt_ms(metrics.get('end_to_end_avg_latency_ms'))}` | ms | 现有统计总 ACK 时延 |",
         f"| 全局平均丢包率 | `{_fmt_rate(metrics.get('global_avg_loss_rate'))}` | ratio | 总 timeout / 总发送 |",

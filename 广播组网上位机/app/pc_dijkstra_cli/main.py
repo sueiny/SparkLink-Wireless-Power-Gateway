@@ -100,6 +100,7 @@ def cmd_bench(args: argparse.Namespace) -> int:
         gateway=parse_addr(args.gateway),
         dongle_addr=parse_addr(args.dongle_addr) if args.dongle_addr else None,
         min_rssi=args.min_rssi,
+        max_hops=args.max_hops,
         route_mode=args.route_mode,
         sources=parse_optional_node_list(args.sources),
         recollect_consecutive_failures=args.recollect_consecutive_failures,
@@ -231,8 +232,9 @@ def build_parser() -> argparse.ArgumentParser:
     bench.add_argument("--payload", default="AABBCC")
     bench.add_argument("--log-dir", default=str(DEFAULT_LOG_ROOT / "dijkstra_hw"))
     bench.add_argument("--gateway", default="00")
-    bench.add_argument("--dongle-addr", default=None, help="dongle address to exclude from routing (e.g. 10)")
-    bench.add_argument("--min-rssi", type=int, default=-85, help="minimum RSSI threshold for routing edges")
+    bench.add_argument("--dongle-addr", default=None, help="dongle address to exclude from routing (decimal: 16 or hex: 0x10)")
+    bench.add_argument("--min-rssi", type=int, default=-100, help="minimum RSSI threshold for routing edges")
+    bench.add_argument("--max-hops", type=int, default=6, help="maximum hop count for routing paths")
     bench.add_argument("--boot-wait", type=float, default=5.0)
     bench.add_argument("--rssi-seconds", type=float, default=8.0)
     bench.add_argument("--rssi-requests", type=int, default=5)

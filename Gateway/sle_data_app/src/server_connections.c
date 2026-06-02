@@ -3,15 +3,11 @@
 #include <string.h>
 #include <sys/time.h>
 
-/**
- * @brief 获取当前时间（毫秒）
- * @return 当前时间戳（毫秒）
- */
-static uint64_t get_current_time_ms(void)
+static uint64_t now_ms(void)
 {
     struct timeval tv;
     gettimeofday(&tv, NULL);
-    return (uint64_t)tv.tv_sec * 1000 + (uint64_t)tv.tv_usec / 1000;
+    return (uint64_t)tv.tv_sec * 1000ULL + (uint64_t)tv.tv_usec / 1000ULL;
 }
 
 static bool addr_equal(const sle_addr_t *a, const sle_addr_t *b)
@@ -163,7 +159,7 @@ void server_connections_mark_connecting(sle_server_connections_t *table, int ser
     /* 重置时间戳 */
     table->servers[server_index].last_state_ms = 0;
     table->servers[server_index].last_rx_ms = 0;
-    table->servers[server_index].state_enter_ms = get_current_time_ms();
+    table->servers[server_index].state_enter_ms = now_ms();
     table->servers[server_index].rx_count = 0;
     
     /* 超时由外部设置 */
@@ -196,8 +192,8 @@ void server_connections_mark_connected(sle_server_connections_t *table, int serv
     table->servers[server_index].write_handle = 0;
     
     /* 更新时间戳 */
-    table->servers[server_index].last_state_ms = get_current_time_ms();
-    table->servers[server_index].state_enter_ms = get_current_time_ms();
+    table->servers[server_index].last_state_ms = now_ms();
+    table->servers[server_index].state_enter_ms = now_ms();
     
     /* 超时由外部设置 */
     table->servers[server_index].state_timeout_ms = 0;
@@ -275,7 +271,7 @@ void server_connections_mark_disconnected(sle_server_connections_t *table, int s
     table->servers[server_index].auth_complete_received = false;
     
     /* 更新时间戳 */
-    table->servers[server_index].state_enter_ms = get_current_time_ms();
+    table->servers[server_index].state_enter_ms = now_ms();
     
     /* 清除超时 */
     table->servers[server_index].state_timeout_ms = 0;
@@ -409,7 +405,7 @@ void server_connections_set_state_timeout(sle_server_connections_t *table,
     }
     pthread_mutex_lock(&table->mutex);
     table->servers[server_index].state_timeout_ms = timeout_ms;
-    table->servers[server_index].state_enter_ms = get_current_time_ms();
+    table->servers[server_index].state_enter_ms = now_ms();
     pthread_mutex_unlock(&table->mutex);
 }
 

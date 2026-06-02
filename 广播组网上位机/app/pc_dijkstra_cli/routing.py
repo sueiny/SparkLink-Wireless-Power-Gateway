@@ -45,12 +45,13 @@ class Route:
     status: str
 
 
-def dijkstra(graph: Mapping[int, Mapping[int, int]], src: int, dst: int) -> Route:
+def dijkstra(graph: Mapping[int, Mapping[int, int]], src: int, dst: int, max_hops: int = 4) -> Route:
     if src == dst:
         return Route(src=src, dst=dst, path=[src], cost=0.0, status="valid")
 
     distances: Dict[int, float] = {src: 0.0}
     predecessors: Dict[int, int] = {}
+    hop_counts: Dict[int, int] = {src: 0}
     queue: List[Tuple[float, int]] = [(0.0, src)]
     visited = set()
 
@@ -62,11 +63,19 @@ def dijkstra(graph: Mapping[int, Mapping[int, int]], src: int, dst: int) -> Rout
         if current == dst:
             break
 
+        current_hops = hop_counts.get(current, 0)
+        if current_hops >= max_hops:
+            continue
+
         for neighbor, weight in graph.get(current, {}).items():
             new_cost = current_cost + float(weight)
+            new_hops = current_hops + 1
+            if new_hops > max_hops:
+                continue
             if new_cost < distances.get(neighbor, float("inf")):
                 distances[neighbor] = new_cost
                 predecessors[neighbor] = current
+                hop_counts[neighbor] = new_hops
                 heapq.heappush(queue, (new_cost, neighbor))
 
     if dst not in distances:
@@ -79,14 +88,14 @@ def dijkstra(graph: Mapping[int, Mapping[int, int]], src: int, dst: int) -> Rout
     return Route(src=src, dst=dst, path=path, cost=distances[dst], status="valid")
 
 
-def build_route_table(graph: Mapping[int, Mapping[int, int]], nodes: Iterable[int]) -> Dict[str, Route]:
+def build_route_table(graph: Mapping[int, Mapping[int, int]], nodes: Iterable[int], max_hops: int = 4) -> Dict[str, Route]:
     node_list = sorted(set(nodes))
     routes: Dict[str, Route] = {}
     for src in node_list:
         for dst in node_list:
             if src == dst:
                 continue
-            route = dijkstra(graph, src, dst)
+            route = dijkstra(graph, src, dst, max_hops=max_hops)
             if route.status == "valid":
                 routes[f"{src:02X}:{dst:02X}"] = route
     return routes

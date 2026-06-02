@@ -1,28 +1,15 @@
 #include "cloud/mqtt_cloud_client.h"
 
+#include "network/network_utils.h"
+
 #include <chrono>
+#include <cstring>
 #include <mutex>
 #include <sstream>
 #include <thread>
 #include <utility>
 
-extern "C" {
-// 当前 RK3506 SDK 内的 mosquitto.h 没有暴露订阅和消息回调相关声明，
-// 但 libmosquitto 实际提供这些符号；保留最小声明以兼容板端工具链。
-struct mosquitto_message {
-    int mid;
-    char *topic;
-    void *payload;
-    int payloadlen;
-    int qos;
-    bool retain;
-};
-
-int mosquitto_subscribe(struct mosquitto *mosq, int *mid, const char *sub, int qos);
-void mosquitto_message_callback_set(
-    struct mosquitto *mosq,
-    void (*on_message)(struct mosquitto *, void *, const struct mosquitto_message *));
-}
+/* mosquitto.h (来自 buildroot sysroot) 已提供所有声明，无需本地重定义。 */
 
 namespace gateway::cloud {
 
@@ -91,7 +78,10 @@ bool MqttCloudClient::connect()
 
     // mosquitto_connect 只发起连接，真正的 CONNACK 结果在回调里到达。
     // 因此后面还需要 waitForConnected，避免 connect 返回成功但认证实际失败。
-    logger_.info("MQTT", "connecting to " + config_.host + ":" + std::to_string(config_.port));
+    // 注意：setDefaultRouteVia 由调用方 (PublishManager::ensureCloudConnected) 负责，
+    // MQTT 客户端不应修改系统路由。
+    logger_.info("MQTT", "connecting to " + config_.host + ":" + std::to_string(config_.port) +
+                " via " + (bind_interface_.empty() ? "default" : bind_interface_));
 
     const int rc = mosquitto_connect(
         client_,

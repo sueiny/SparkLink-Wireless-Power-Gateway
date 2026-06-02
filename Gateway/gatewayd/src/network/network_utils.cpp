@@ -1,4 +1,5 @@
 #include "network/network_utils.h"
+#include "network/netlink_utils.h"
 
 #include <arpa/inet.h>
 #include <cerrno>
@@ -64,11 +65,35 @@ bool tcpConnect(const std::string &host, int port, int timeout_ms)
 
     addrinfo hints {};
     hints.ai_socktype = SOCK_STREAM;
-    hints.ai_family = AF_UNSPEC;
+    hints.ai_family = AF_INET;
 
     addrinfo *res = nullptr;
     const std::string port_text = std::to_string(port);
-    if (::getaddrinfo(host.c_str(), port_text.c_str(), &hints, &res) != 0)
+
+    // DNS 解析：dhcpcd 重写 resolv.conf 时 nameserver 会暂时消失。
+    // 等待最多 15 秒（75×200ms），之后返回 false，由 ensureNetwork 下一轮重试。
+    int gai_ret = EAI_AGAIN;
+    for (int retry = 0; retry < 75 && gai_ret != 0; ++retry) {
+        bool has_ns = false;
+        {
+            std::ifstream check("/etc/resolv.conf");
+            std::string line;
+            while (std::getline(check, line)) {
+                if (line.find("nameserver") == 0) {
+                    has_ns = true;
+                    break;
+                }
+            }
+        }
+        if (!has_ns) {
+            ::usleep(200000);
+            continue;
+        }
+        gai_ret = ::getaddrinfo(host.c_str(), port_text.c_str(), &hints, &res);
+        if (gai_ret != 0)
+            ::usleep(200000);
+    }
+    if (gai_ret != 0)
         return false;
 
     bool ok = false;
@@ -87,7 +112,8 @@ bool tcpConnect(const std::string &host, int port, int timeout_ms)
             pollfd pfd {};
             pfd.fd = fd;
             pfd.events = POLLOUT;
-            if (::poll(&pfd, 1, timeout_ms) > 0) {
+            const int pr = ::poll(&pfd, 1, timeout_ms);
+            if (pr > 0) {
                 int err = 0;
                 socklen_t len = sizeof(err);
                 if (::getsockopt(fd, SOL_SOCKET, SO_ERROR, &err, &len) == 0 && err == 0)
@@ -100,6 +126,20 @@ bool tcpConnect(const std::string &host, int port, int timeout_ms)
 
     ::freeaddrinfo(res);
     return ok;
+}
+
+bool tcpConnectVia(const std::string &host, int port, int timeout_ms, const std::string &ifname)
+{
+    // 已通过 Netlink 设置默认路由，直接用 tcpConnect 即可
+    // SO_BINDTODEVICE 在某些内核版本会导致连接失败
+    (void)ifname;
+    return tcpConnect(host, port, timeout_ms);
+}
+
+bool setDefaultRouteVia(const std::string &ifname)
+{
+    // 使用 Netlink Socket 直接管理路由（不 fork 进程）
+    return netlinkSetDefaultRouteVia(ifname);
 }
 
 ProcessResult runProcess(const std::vector<std::string> &args, int timeout_ms)

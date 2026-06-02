@@ -58,8 +58,7 @@ CommandParseResult CommandRouter::parse(const RawCommandMessage &raw,
         const auto it = std::find_if(config.devices.begin(), config.devices.end(),
                                      [&](const model::DeviceInfo &device) {
                                          return device.device_id == target ||
-                                                device.name == target ||
-                                                device.mac == target;
+                                                device.name == target;
                                      });
         if (it != config.devices.end()) {
             request.target_device_id = it->device_id;
@@ -69,10 +68,22 @@ CommandParseResult CommandRouter::parse(const RawCommandMessage &raw,
                                        : it->product_id;
             request.target_found = true;
         } else {
-            request.target_device_id = target;
-            request.target_type = model::DeviceType::Gateway;
-            request.product_type = "unknown";
-            request.target_found = false;
+            // 也搜索 DTU 设备
+            const auto dtu_it = std::find_if(config.dtu_devices.begin(), config.dtu_devices.end(),
+                                              [&](const model::DtuDeviceInfo &dtu) {
+                                                  return dtu.device_id == target;
+                                              });
+            if (dtu_it != config.dtu_devices.end()) {
+                request.target_device_id = dtu_it->device_id;
+                request.target_type = model::DeviceType::DtuNode;
+                request.product_type = "dtu_node";
+                request.target_found = true;
+            } else {
+                request.target_device_id = target;
+                request.target_type = model::DeviceType::Gateway;
+                request.product_type = "unknown";
+                request.target_found = false;
+            }
         }
     }
 

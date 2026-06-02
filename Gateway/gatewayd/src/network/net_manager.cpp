@@ -2,10 +2,13 @@
 
 #include "network/cellular_provider.h"
 #include "network/ethernet_provider.h"
+#include "network/network_utils.h"
 #include "network/wifi_provider.h"
 
 #include <algorithm>
+#include <chrono>
 #include <sstream>
+#include <thread>
 
 namespace gateway::network {
 
@@ -30,18 +33,27 @@ bool NetManager::init(const config::NetworkConfig &config, log::Logger *logger)
 
 NetworkState NetManager::ensureNetwork()
 {
+    // 已有选中接口：先检查是否仍然可用
     if (current_.available) {
         auto *current_provider = findProvider(current_);
         bool cloud_reachable = false;
         if (current_provider && checkProvider(*current_provider, false, &cloud_reachable)) {
             current_.cloud_reachable = cloud_reachable;
+            // 定期刷新默认路由，防止 dhcpcd 续租后路由漂移
+            setDefaultRouteVia(current_.ifname);
             if (logger_)
                 logger_->info("NET", "keep selected " + current_.name + " " + current_.ifname +
                                          ", cloud=" + (cloud_reachable ? "reachable" : "unreachable"));
             return current_;
         }
+        // 当前接口不可用，释放后重新选择
+        if (logger_)
+            logger_->warn("NET", current_.name + " " + current_.ifname + " lost, re-selecting");
+        releaseCurrentProvider();
     }
 
+    // 按优先级逐个拉起，成功就停，不拉起低优先级接口。
+    // 避免所有接口同时 UP 导致 dhcpcd 路由冲突。
     for (auto *provider : candidateProviders()) {
         if (!provider->enabled()) {
             if (logger_)
@@ -57,11 +69,22 @@ NetworkState NetManager::ensureNetwork()
             current_.cloud_reachable = cloud_reachable;
             current_.available = true;
 
+            // 确保默认路由走选中的接口
+            if (setDefaultRouteVia(current_.ifname)) {
+                if (logger_)
+                    logger_->info("NET", "default route set via " + current_.ifname);
+            }
+
             if (logger_)
                 logger_->info("NET", "selected " + current_.name + " " + current_.ifname +
                                          ", cloud=" + (cloud_reachable ? "reachable" : "unreachable"));
             return current_;
         }
+
+        // 该接口不可用，继续尝试下一个
+        if (logger_)
+            logger_->info("NET", std::string(provider->name()) + " " + provider->ifname() +
+                                     " not available, trying next");
     }
 
     current_ = {};
@@ -113,6 +136,10 @@ bool NetManager::checkProvider(INetworkProvider &provider,
                                      std::string(" bringUp ") +
                                      (bring_up_ok ? "ok" : "failed"));
         }
+        // bringUp 会触发 dhcpcd 更新 resolv.conf（异步写入 nameserver）。
+        // 设置路由后等待 DNS 就绪，tcpConnect 内部也会重试等待。
+        if (bring_up_ok)
+            setDefaultRouteVia(provider.ifname());
     }
 
     if (!provider.isInterfaceUp()) {
@@ -127,6 +154,18 @@ bool NetManager::checkProvider(INetworkProvider &provider,
             logger_->warn("NET", std::string(provider.name()) +
                                       " has no IPv4: " + provider.ifname());
         return false;
+    }
+
+    // bringUp 后 dhcpcd 异步更新 resolv.conf，DNS 可能暂时不可用。
+    // 首次选择时跳过 canReachCloud 测试，先选中接口、设好路由，
+    // 下一轮 ensureNetwork 会重新验证（此时 DNS 已就绪）。
+    if (allow_bring_up) {
+        if (cloud_reachable)
+            *cloud_reachable = false;
+        if (logger_)
+            logger_->info("NET", std::string(provider.name()) + " " + provider.ifname() +
+                                      " ready, deferring cloud test");
+        return true;
     }
 
     const bool reachable = provider.canReachCloud(config_.cloud_test_host, config_.cloud_test_port);
@@ -152,6 +191,16 @@ int NetManager::priorityFor(const std::string &name) const
             return static_cast<int>(i);
     }
     return 100;
+}
+
+void NetManager::releaseCurrentProvider()
+{
+    // 重置内存中的接口状态。注意：不执行 ip link set down，
+    // 因为设计上不允许同时拉低所有接口（会导致 dhcpcd 路由冲突）。
+    // 接口实际由 dhcpcd 管理，新接口选中后通过 setDefaultRouteVia 切换路由。
+    if (logger_)
+        logger_->info("NET", "releasing " + current_.name + " " + current_.ifname);
+    current_ = {};
 }
 
 } // namespace gateway::network

@@ -1,0 +1,370 @@
+Dijkstra RSSI Topology
+Gateway: 00
+Edge direction: src_to_neighbor
+
+Shortest paths and selected link quality:
+  01 -> 02: 00 -> 03 -> 01 -> 02 (hops=3, cost=6.0, loss=0.00%, min_rssi=-84)
+    00 -> 03  quality=中  RSSI=-73dBm  weight=6
+    03 -> 01  quality=弱  RSSI=-84dBm  weight=12
+    01 -> 02  quality=中  RSSI=-72dBm  weight=6
+  01 -> 03: 00 -> 03 (hops=1, cost=14.0, loss=0.00%, min_rssi=-73)
+    00 -> 03  quality=中  RSSI=-73dBm  weight=6
+  01 -> 04: 00 -> 03 -> 04 (hops=2, cost=33.0, loss=0.00%, min_rssi=-79)
+    00 -> 03  quality=中  RSSI=-73dBm  weight=6
+    03 -> 04  quality=弱  RSSI=-79dBm  weight=12
+  01 -> 05: 00 -> 03 -> 01 -> 05 (hops=3, cost=12.0, loss=0.00%, min_rssi=-84)
+    00 -> 03  quality=中  RSSI=-73dBm  weight=6
+    03 -> 01  quality=弱  RSSI=-84dBm  weight=12
+    01 -> 05  quality=中  RSSI=-73dBm  weight=12
+  01 -> 06: 00 -> 03 -> 01 -> 06 (hops=3, cost=12.0, loss=0.00%, min_rssi=-84)
+    00 -> 03  quality=中  RSSI=-73dBm  weight=6
+    03 -> 01  quality=弱  RSSI=-84dBm  weight=12
+    01 -> 06  quality=中  RSSI=-75dBm  weight=12
+  01 -> 07: 00 -> 03 -> 01 -> 07 (hops=3, cost=22.0, loss=0.00%, min_rssi=-84)
+    00 -> 03  quality=中  RSSI=-73dBm  weight=6
+    03 -> 01  quality=弱  RSSI=-84dBm  weight=12
+    01 -> 07  quality=弱  RSSI=-82dBm  weight=12
+  01 -> 08:  (hops=0, cost=inf, loss=n/a, min_rssi=None)
+  01 -> 09: 00 -> 03 -> 01 -> 09 (hops=3, cost=6.0, loss=0.00%, min_rssi=-84)
+    00 -> 03  quality=中  RSSI=-73dBm  weight=6
+    03 -> 01  quality=弱  RSSI=-84dBm  weight=12
+    01 -> 09  quality=中  RSSI=-68dBm  weight=6
+  01 -> 0A: 00 -> 03 -> 01 -> 02 -> 06 -> 0A (hops=5, cost=22.0, loss=100.00%, min_rssi=-84)
+    00 -> 03  quality=中  RSSI=-73dBm  weight=6
+    03 -> 01  quality=弱  RSSI=-84dBm  weight=12
+    01 -> 02  quality=中  RSSI=-72dBm  weight=6
+    02 -> 06  quality=中  RSSI=-70dBm  weight=6
+    06 -> 0A  quality=中  RSSI=-72dBm  weight=6
+  02 -> 01: 00 -> 04 -> 02 -> 01 (hops=3, cost=22.0, loss=0.00%, min_rssi=-84)
+    00 -> 04  quality=良  RSSI=-59dBm  weight=3
+    04 -> 02  quality=弱  RSSI=-79dBm  weight=12
+    02 -> 01  quality=弱  RSSI=-84dBm  weight=12
+  02 -> 03: 00 -> 04 -> 02 -> 03 (hops=3, cost=17.0, loss=50.00%, min_rssi=-79)
+    00 -> 04  quality=良  RSSI=-59dBm  weight=3
+    04 -> 02  quality=弱  RSSI=-79dBm  weight=12
+    02 -> 03  quality=弱  RSSI=-78dBm  weight=12
+  02 -> 04: 00 -> 04 (hops=1, cost=39.0, loss=0.00%, min_rssi=-59)
+    00 -> 04  quality=良  RSSI=-59dBm  weight=3
+  02 -> 05: 00 -> 04 -> 02 -> 05 (hops=3, cost=6.0, loss=0.00%, min_rssi=-79)
+    00 -> 04  quality=良  RSSI=-59dBm  weight=3
+    04 -> 02  quality=弱  RSSI=-79dBm  weight=12
+    02 -> 05  quality=中  RSSI=-70dBm  weight=6
+  02 -> 06: 00 -> 04 -> 02 -> 05 -> 06 (hops=4, cost=14.0, loss=0.00%, min_rssi=-79)
+    00 -> 04  quality=良  RSSI=-59dBm  weight=3
+    04 -> 02  quality=弱  RSSI=-79dBm  weight=12
+    02 -> 05  quality=中  RSSI=-70dBm  weight=6
+    05 -> 06  quality=中  RSSI=-73dBm  weight=6
+  02 -> 07: 00 -> 04 -> 02 -> 05 -> 07 (hops=4, cost=20.0, loss=0.00%, min_rssi=-79)
+    00 -> 04  quality=良  RSSI=-59dBm  weight=3
+    04 -> 02  quality=弱  RSSI=-79dBm  weight=12
+    02 -> 05  quality=中  RSSI=-70dBm  weight=6
+    05 -> 07  quality=中  RSSI=-73dBm  weight=12
+  02 -> 08:  (hops=0, cost=inf, loss=n/a, min_rssi=None)
+  02 -> 09: 00 -> 04 -> 02 -> 09 (hops=3, cost=17.0, loss=0.00%, min_rssi=-79)
+    00 -> 04  quality=良  RSSI=-59dBm  weight=3
+    04 -> 02  quality=弱  RSSI=-79dBm  weight=12
+    02 -> 09  quality=弱  RSSI=-76dBm  weight=12
+  02 -> 0A: 00 -> 04 -> 02 -> 0A (hops=3, cost=17.0, loss=100.00%, min_rssi=-79)
+    00 -> 04  quality=良  RSSI=-59dBm  weight=3
+    04 -> 02  quality=弱  RSSI=-79dBm  weight=12
+    02 -> 0A  quality=弱  RSSI=-77dBm  weight=12
+  03 -> 01: 00 -> 03 -> 01 (hops=2, cost=22.0, loss=0.00%, min_rssi=-84)
+    00 -> 03  quality=中  RSSI=-73dBm  weight=6
+    03 -> 01  quality=弱  RSSI=-84dBm  weight=12
+  03 -> 02: 00 -> 03 -> 02 (hops=2, cost=17.0, loss=0.00%, min_rssi=-76)
+    00 -> 03  quality=中  RSSI=-73dBm  weight=6
+    03 -> 02  quality=弱  RSSI=-76dBm  weight=12
+  03 -> 04: 00 -> 03 -> 04 (hops=2, cost=17.0, loss=0.00%, min_rssi=-79)
+    00 -> 03  quality=中  RSSI=-73dBm  weight=6
+    03 -> 04  quality=弱  RSSI=-79dBm  weight=12
+  03 -> 05: 00 -> 03 -> 09 -> 02 -> 05 (hops=4, cost=22.0, loss=0.00%, min_rssi=-74)
+    00 -> 03  quality=中  RSSI=-73dBm  weight=6
+    03 -> 09  quality=中  RSSI=-74dBm  weight=6
+    09 -> 02  quality=中  RSSI=-72dBm  weight=6
+    02 -> 05  quality=中  RSSI=-70dBm  weight=6
+  03 -> 06: 00 -> 03 -> 02 -> 06 (hops=3, cost=25.0, loss=0.00%, min_rssi=-76)
+    00 -> 03  quality=中  RSSI=-73dBm  weight=6
+    03 -> 02  quality=弱  RSSI=-76dBm  weight=12
+    02 -> 06  quality=中  RSSI=-70dBm  weight=6
+  03 -> 07: 00 -> 03 -> 09 -> 07 (hops=3, cost=14.0, loss=0.00%, min_rssi=-74)
+    00 -> 03  quality=中  RSSI=-73dBm  weight=6
+    03 -> 09  quality=中  RSSI=-74dBm  weight=6
+    09 -> 07  quality=中  RSSI=-73dBm  weight=6
+  03 -> 08:  (hops=0, cost=inf, loss=n/a, min_rssi=None)
+  03 -> 09: 00 -> 03 -> 04 -> 09 (hops=3, cost=25.0, loss=0.00%, min_rssi=-79)
+    00 -> 03  quality=中  RSSI=-73dBm  weight=6
+    03 -> 04  quality=弱  RSSI=-79dBm  weight=12
+    04 -> 09  quality=中  RSSI=-74dBm  weight=6
+  03 -> 0A: 00 -> 03 -> 07 -> 0A (hops=3, cost=25.0, loss=100.00%, min_rssi=-79)
+    00 -> 03  quality=中  RSSI=-73dBm  weight=6
+    03 -> 07  quality=中  RSSI=-73dBm  weight=6
+    07 -> 0A  quality=弱  RSSI=-79dBm  weight=12
+  04 -> 01: 00 -> 04 -> 09 -> 01 (hops=3, cost=25.0, loss=0.00%, min_rssi=-78)
+    00 -> 04  quality=良  RSSI=-59dBm  weight=3
+    04 -> 09  quality=中  RSSI=-74dBm  weight=6
+    09 -> 01  quality=弱  RSSI=-78dBm  weight=12
+  04 -> 02: 00 -> 04 -> 02 (hops=2, cost=17.0, loss=0.00%, min_rssi=-79)
+    00 -> 04  quality=良  RSSI=-59dBm  weight=3
+    04 -> 02  quality=弱  RSSI=-79dBm  weight=12
+  04 -> 03: 00 -> 04 -> 03 (hops=2, cost=6.0, loss=0.00%, min_rssi=-69)
+    00 -> 04  quality=良  RSSI=-59dBm  weight=3
+    04 -> 03  quality=中  RSSI=-69dBm  weight=6
+  04 -> 05: 00 -> 04 -> 02 -> 05 (hops=3, cost=25.0, loss=0.00%, min_rssi=-79)
+    00 -> 04  quality=良  RSSI=-59dBm  weight=3
+    04 -> 02  quality=弱  RSSI=-79dBm  weight=12
+    02 -> 05  quality=中  RSSI=-70dBm  weight=6
+  04 -> 06: 00 -> 04 -> 09 -> 02 -> 06 (hops=4, cost=22.0, loss=0.00%, min_rssi=-74)
+    00 -> 04  quality=良  RSSI=-59dBm  weight=3
+    04 -> 09  quality=中  RSSI=-74dBm  weight=6
+    09 -> 02  quality=中  RSSI=-72dBm  weight=6
+    02 -> 06  quality=中  RSSI=-70dBm  weight=6
+  04 -> 07: 00 -> 04 -> 03 -> 07 (hops=3, cost=14.0, loss=0.00%, min_rssi=-73)
+    00 -> 04  quality=良  RSSI=-59dBm  weight=3
+    04 -> 03  quality=中  RSSI=-69dBm  weight=6
+    03 -> 07  quality=中  RSSI=-73dBm  weight=6
+  04 -> 08:  (hops=0, cost=inf, loss=n/a, min_rssi=None)
+  04 -> 09: 00 -> 04 -> 03 -> 09 (hops=3, cost=14.0, loss=0.00%, min_rssi=-74)
+    00 -> 04  quality=良  RSSI=-59dBm  weight=3
+    04 -> 03  quality=中  RSSI=-69dBm  weight=6
+    03 -> 09  quality=中  RSSI=-74dBm  weight=6
+  04 -> 0A: 00 -> 04 -> 03 -> 0A (hops=3, cost=30.0, loss=100.00%, min_rssi=-81)
+    00 -> 04  quality=良  RSSI=-59dBm  weight=3
+    04 -> 03  quality=中  RSSI=-69dBm  weight=6
+    03 -> 0A  quality=弱  RSSI=-81dBm  weight=12
+  05 -> 01: 00 -> 03 -> 05 -> 02 -> 01 (hops=4, cost=27.0, loss=0.00%, min_rssi=-85)
+    00 -> 03  quality=中  RSSI=-73dBm  weight=6
+    03 -> 05  quality=弱  RSSI=-85dBm  weight=12
+    05 -> 02  quality=中  RSSI=-66dBm  weight=3
+    02 -> 01  quality=弱  RSSI=-84dBm  weight=12
+  05 -> 02: 00 -> 03 -> 05 -> 06 -> 0A -> 02 (hops=5, cost=22.0, loss=0.00%, min_rssi=-85)
+    00 -> 03  quality=中  RSSI=-73dBm  weight=6
+    03 -> 05  quality=弱  RSSI=-85dBm  weight=12
+    05 -> 06  quality=中  RSSI=-73dBm  weight=6
+    06 -> 0A  quality=中  RSSI=-72dBm  weight=6
+    0A -> 02  quality=中  RSSI=-73dBm  weight=6
+  05 -> 03: 00 -> 03 (hops=1, cost=12.0, loss=0.00%, min_rssi=-73)
+    00 -> 03  quality=中  RSSI=-73dBm  weight=6
+  05 -> 04: 00 -> 03 -> 04 (hops=2, cost=31.0, loss=0.00%, min_rssi=-79)
+    00 -> 03  quality=中  RSSI=-73dBm  weight=6
+    03 -> 04  quality=弱  RSSI=-79dBm  weight=12
+  05 -> 06: 00 -> 03 -> 05 -> 02 -> 06 (hops=4, cost=11.0, loss=0.00%, min_rssi=-85)
+    00 -> 03  quality=中  RSSI=-73dBm  weight=6
+    03 -> 05  quality=弱  RSSI=-85dBm  weight=12
+    05 -> 02  quality=中  RSSI=-66dBm  weight=3
+    02 -> 06  quality=中  RSSI=-70dBm  weight=6
+  05 -> 07: 00 -> 03 -> 07 (hops=2, cost=20.0, loss=0.00%, min_rssi=-73)
+    00 -> 03  quality=中  RSSI=-73dBm  weight=6
+    03 -> 07  quality=中  RSSI=-73dBm  weight=6
+  05 -> 08:  (hops=0, cost=inf, loss=n/a, min_rssi=None)
+  05 -> 09: 00 -> 03 -> 05 -> 09 (hops=3, cost=17.0, loss=0.00%, min_rssi=-85)
+    00 -> 03  quality=中  RSSI=-73dBm  weight=6
+    03 -> 05  quality=弱  RSSI=-85dBm  weight=12
+    05 -> 09  quality=弱  RSSI=-80dBm  weight=12
+  05 -> 0A: 00 -> 03 -> 05 -> 0A (hops=3, cost=16.0, loss=100.00%, min_rssi=-85)
+    00 -> 03  quality=中  RSSI=-73dBm  weight=6
+    03 -> 05  quality=弱  RSSI=-85dBm  weight=12
+    05 -> 0A  quality=弱  RSSI=-84dBm  weight=6
+  06 -> 01: 00 -> 06 -> 0A -> 02 -> 01 (hops=4, cost=38.0, loss=50.00%, min_rssi=-84)
+    00 -> 06  quality=弱  RSSI=-79dBm  weight=12
+    06 -> 0A  quality=中  RSSI=-72dBm  weight=6
+    0A -> 02  quality=中  RSSI=-73dBm  weight=6
+    02 -> 01  quality=弱  RSSI=-84dBm  weight=12
+  06 -> 02: 00 -> 06 -> 0A -> 02 (hops=3, cost=14.0, loss=0.00%, min_rssi=-79)
+    00 -> 06  quality=弱  RSSI=-79dBm  weight=12
+    06 -> 0A  quality=中  RSSI=-72dBm  weight=6
+    0A -> 02  quality=中  RSSI=-73dBm  weight=6
+  06 -> 03: 00 -> 06 -> 03 (hops=2, cost=22.0, loss=0.00%, min_rssi=-84)
+    00 -> 06  quality=弱  RSSI=-79dBm  weight=12
+    06 -> 03  quality=弱  RSSI=-84dBm  weight=12
+  06 -> 04: 00 -> 06 -> 03 -> 04 (hops=3, cost=41.0, loss=0.00%, min_rssi=-84)
+    00 -> 06  quality=弱  RSSI=-79dBm  weight=12
+    06 -> 03  quality=弱  RSSI=-84dBm  weight=12
+    03 -> 04  quality=弱  RSSI=-79dBm  weight=12
+  06 -> 05: 00 -> 06 -> 0A -> 02 -> 05 (hops=4, cost=22.0, loss=0.00%, min_rssi=-79)
+    00 -> 06  quality=弱  RSSI=-79dBm  weight=12
+    06 -> 0A  quality=中  RSSI=-72dBm  weight=6
+    0A -> 02  quality=中  RSSI=-73dBm  weight=6
+    02 -> 05  quality=中  RSSI=-70dBm  weight=6
+  06 -> 07: 00 -> 06 -> 07 (hops=2, cost=17.0, loss=0.00%, min_rssi=-79)
+    00 -> 06  quality=弱  RSSI=-79dBm  weight=12
+    06 -> 07  quality=弱  RSSI=-78dBm  weight=12
+  06 -> 08:  (hops=0, cost=inf, loss=n/a, min_rssi=None)
+  06 -> 09: 00 -> 06 -> 03 -> 09 (hops=3, cost=30.0, loss=0.00%, min_rssi=-84)
+    00 -> 06  quality=弱  RSSI=-79dBm  weight=12
+    06 -> 03  quality=弱  RSSI=-84dBm  weight=12
+    03 -> 09  quality=中  RSSI=-74dBm  weight=6
+  06 -> 0A: 00 -> 06 -> 05 -> 0A (hops=3, cost=35.0, loss=100.00%, min_rssi=-84)
+    00 -> 06  quality=弱  RSSI=-79dBm  weight=12
+    06 -> 05  quality=弱  RSSI=-76dBm  weight=12
+    05 -> 0A  quality=弱  RSSI=-84dBm  weight=6
+  07 -> 01: 00 -> 07 -> 03 -> 01 (hops=3, cost=30.0, loss=0.00%, min_rssi=-84)
+    00 -> 07  quality=弱  RSSI=-79dBm  weight=12
+    07 -> 03  quality=中  RSSI=-69dBm  weight=6
+    03 -> 01  quality=弱  RSSI=-84dBm  weight=12
+  07 -> 02: 00 -> 07 -> 02 (hops=2, cost=17.0, loss=0.00%, min_rssi=-80)
+    00 -> 07  quality=弱  RSSI=-79dBm  weight=12
+    07 -> 02  quality=弱  RSSI=-80dBm  weight=12
+  07 -> 03: 00 -> 07 -> 03 (hops=2, cost=6.0, loss=0.00%, min_rssi=-79)
+    00 -> 07  quality=弱  RSSI=-79dBm  weight=12
+    07 -> 03  quality=中  RSSI=-69dBm  weight=6
+  07 -> 04: 00 -> 07 -> 03 -> 04 (hops=3, cost=25.0, loss=0.00%, min_rssi=-79)
+    00 -> 07  quality=弱  RSSI=-79dBm  weight=12
+    07 -> 03  quality=中  RSSI=-69dBm  weight=6
+    03 -> 04  quality=弱  RSSI=-79dBm  weight=12
+  07 -> 05: 00 -> 07 -> 05 (hops=2, cost=17.0, loss=0.00%, min_rssi=-79)
+    00 -> 07  quality=弱  RSSI=-79dBm  weight=12
+    07 -> 05  quality=弱  RSSI=-77dBm  weight=12
+  07 -> 06: 00 -> 07 -> 06 (hops=2, cost=22.0, loss=0.00%, min_rssi=-85)
+    00 -> 07  quality=弱  RSSI=-79dBm  weight=12
+    07 -> 06  quality=弱  RSSI=-85dBm  weight=12
+  07 -> 08:  (hops=0, cost=inf, loss=n/a, min_rssi=None)
+  07 -> 09: 00 -> 07 -> 03 -> 09 (hops=3, cost=14.0, loss=0.00%, min_rssi=-79)
+    00 -> 07  quality=弱  RSSI=-79dBm  weight=12
+    07 -> 03  quality=中  RSSI=-69dBm  weight=6
+    03 -> 09  quality=中  RSSI=-74dBm  weight=6
+  07 -> 0A: 00 -> 07 -> 03 -> 0A (hops=3, cost=30.0, loss=100.00%, min_rssi=-81)
+    00 -> 07  quality=弱  RSSI=-79dBm  weight=12
+    07 -> 03  quality=中  RSSI=-69dBm  weight=6
+    03 -> 0A  quality=弱  RSSI=-81dBm  weight=12
+  08 -> 01:  (hops=0, cost=inf, loss=n/a, min_rssi=None)
+  08 -> 02:  (hops=0, cost=inf, loss=n/a, min_rssi=None)
+  08 -> 03:  (hops=0, cost=inf, loss=n/a, min_rssi=None)
+  08 -> 04:  (hops=0, cost=inf, loss=n/a, min_rssi=None)
+  08 -> 05:  (hops=0, cost=inf, loss=n/a, min_rssi=None)
+  08 -> 06:  (hops=0, cost=inf, loss=n/a, min_rssi=None)
+  08 -> 07:  (hops=0, cost=inf, loss=n/a, min_rssi=None)
+  08 -> 09:  (hops=0, cost=inf, loss=n/a, min_rssi=None)
+  08 -> 0A:  (hops=0, cost=inf, loss=n/a, min_rssi=None)
+  09 -> 01: 00 -> 04 -> 09 -> 01 (hops=3, cost=17.0, loss=0.00%, min_rssi=-78)
+    00 -> 04  quality=良  RSSI=-59dBm  weight=3
+    04 -> 09  quality=中  RSSI=-74dBm  weight=6
+    09 -> 01  quality=弱  RSSI=-78dBm  weight=12
+  09 -> 02: 00 -> 04 -> 09 -> 01 -> 02 (hops=4, cost=25.0, loss=0.00%, min_rssi=-78)
+    00 -> 04  quality=良  RSSI=-59dBm  weight=3
+    04 -> 09  quality=中  RSSI=-74dBm  weight=6
+    09 -> 01  quality=弱  RSSI=-78dBm  weight=12
+    01 -> 02  quality=中  RSSI=-72dBm  weight=6
+  09 -> 03: 00 -> 04 -> 09 -> 03 (hops=3, cost=6.0, loss=0.00%, min_rssi=-74)
+    00 -> 04  quality=良  RSSI=-59dBm  weight=3
+    04 -> 09  quality=中  RSSI=-74dBm  weight=6
+    09 -> 03  quality=中  RSSI=-69dBm  weight=6
+  09 -> 04: 00 -> 04 (hops=1, cost=33.0, loss=0.00%, min_rssi=-59)
+    00 -> 04  quality=良  RSSI=-59dBm  weight=3
+  09 -> 05: 00 -> 04 -> 09 -> 05 (hops=3, cost=22.0, loss=0.00%, min_rssi=-83)
+    00 -> 04  quality=良  RSSI=-59dBm  weight=3
+    04 -> 09  quality=中  RSSI=-74dBm  weight=6
+    09 -> 05  quality=弱  RSSI=-83dBm  weight=12
+  09 -> 06: 00 -> 04 -> 09 -> 06 (hops=3, cost=17.0, loss=0.00%, min_rssi=-80)
+    00 -> 04  quality=良  RSSI=-59dBm  weight=3
+    04 -> 09  quality=中  RSSI=-74dBm  weight=6
+    09 -> 06  quality=弱  RSSI=-80dBm  weight=12
+  09 -> 07: 00 -> 04 -> 09 -> 03 -> 07 (hops=4, cost=14.0, loss=0.00%, min_rssi=-74)
+    00 -> 04  quality=良  RSSI=-59dBm  weight=3
+    04 -> 09  quality=中  RSSI=-74dBm  weight=6
+    09 -> 03  quality=中  RSSI=-69dBm  weight=6
+    03 -> 07  quality=中  RSSI=-73dBm  weight=6
+  09 -> 08:  (hops=0, cost=inf, loss=n/a, min_rssi=None)
+  09 -> 0A: 00 -> 04 -> 09 -> 02 -> 06 -> 0A (hops=5, cost=22.0, loss=100.00%, min_rssi=-74)
+    00 -> 04  quality=良  RSSI=-59dBm  weight=3
+    04 -> 09  quality=中  RSSI=-74dBm  weight=6
+    09 -> 02  quality=中  RSSI=-72dBm  weight=6
+    02 -> 06  quality=中  RSSI=-70dBm  weight=6
+    06 -> 0A  quality=中  RSSI=-72dBm  weight=6
+  0A -> 01: 00 -> 0A -> 03 -> 01 (hops=3, cost=41.0, loss=100.00%, min_rssi=-84)
+    00 -> 0A  quality=弱  RSSI=-78dBm  weight=12
+    0A -> 03  quality=弱  RSSI=-76dBm  weight=12
+    03 -> 01  quality=弱  RSSI=-84dBm  weight=12
+  0A -> 02: 00 -> 0A -> 05 -> 02 (hops=3, cost=27.0, loss=100.00%, min_rssi=-82)
+    00 -> 0A  quality=弱  RSSI=-78dBm  weight=12
+    0A -> 05  quality=弱  RSSI=-82dBm  weight=12
+    05 -> 02  quality=中  RSSI=-66dBm  weight=3
+  0A -> 03: 00 -> 0A -> 02 -> 03 (hops=3, cost=25.0, loss=100.00%, min_rssi=-78)
+    00 -> 0A  quality=弱  RSSI=-78dBm  weight=12
+    0A -> 02  quality=中  RSSI=-73dBm  weight=6
+    02 -> 03  quality=弱  RSSI=-78dBm  weight=12
+  0A -> 04: 00 -> 0A -> 02 -> 03 -> 04 (hops=4, cost=44.0, loss=100.00%, min_rssi=-79)
+    00 -> 0A  quality=弱  RSSI=-78dBm  weight=12
+    0A -> 02  quality=中  RSSI=-73dBm  weight=6
+    02 -> 03  quality=弱  RSSI=-78dBm  weight=12
+    03 -> 04  quality=弱  RSSI=-79dBm  weight=12
+  0A -> 05: 00 -> 0A -> 05 (hops=2, cost=22.0, loss=100.00%, min_rssi=-82)
+    00 -> 0A  quality=弱  RSSI=-78dBm  weight=12
+    0A -> 05  quality=弱  RSSI=-82dBm  weight=12
+  0A -> 06: 00 -> 0A -> 02 -> 06 (hops=3, cost=14.0, loss=100.00%, min_rssi=-78)
+    00 -> 0A  quality=弱  RSSI=-78dBm  weight=12
+    0A -> 02  quality=中  RSSI=-73dBm  weight=6
+    02 -> 06  quality=中  RSSI=-70dBm  weight=6
+  0A -> 07: 00 -> 0A -> 02 -> 07 (hops=3, cost=25.0, loss=100.00%, min_rssi=-80)
+    00 -> 0A  quality=弱  RSSI=-78dBm  weight=12
+    0A -> 02  quality=中  RSSI=-73dBm  weight=6
+    02 -> 07  quality=弱  RSSI=-80dBm  weight=12
+  0A -> 08:  (hops=0, cost=inf, loss=n/a, min_rssi=None)
+  0A -> 09: 00 -> 0A -> 02 -> 09 (hops=3, cost=25.0, loss=100.00%, min_rssi=-78)
+    00 -> 0A  quality=弱  RSSI=-78dBm  weight=12
+    0A -> 02  quality=中  RSSI=-73dBm  weight=6
+    02 -> 09  quality=弱  RSSI=-76dBm  weight=12
+
+Edges:
+  00 -> 03  RSSI=-73dBm  weight=6  source=real_rssi
+  00 -> 04  RSSI=-59dBm  weight=3  source=real_rssi
+  00 -> 06  RSSI=-79dBm  weight=12  source=real_rssi
+  00 -> 07  RSSI=-79dBm  weight=12  source=real_rssi
+  00 -> 09  RSSI=-78dBm  weight=12  source=real_rssi
+  00 -> 0A  RSSI=-78dBm  weight=12  source=real_rssi
+  01 -> 02  RSSI=-72dBm  weight=6  source=real_rssi
+  01 -> 03  RSSI=-76dBm  weight=12  source=real_rssi
+  01 -> 05  RSSI=-73dBm  weight=12  source=real_rssi
+  01 -> 06  RSSI=-75dBm  weight=12  source=real_rssi
+  01 -> 07  RSSI=-82dBm  weight=12  source=real_rssi
+  01 -> 09  RSSI=-68dBm  weight=6  source=real_rssi
+  01 -> 0A  RSSI=-75dBm  weight=12  source=real_rssi
+  02 -> 01  RSSI=-84dBm  weight=12  source=real_rssi
+  02 -> 03  RSSI=-78dBm  weight=12  source=real_rssi
+  02 -> 05  RSSI=-70dBm  weight=6  source=real_rssi
+  02 -> 06  RSSI=-70dBm  weight=6  source=real_rssi
+  02 -> 07  RSSI=-80dBm  weight=12  source=real_rssi
+  02 -> 09  RSSI=-76dBm  weight=12  source=real_rssi
+  02 -> 0A  RSSI=-77dBm  weight=12  source=real_rssi
+  03 -> 01  RSSI=-84dBm  weight=12  source=real_rssi
+  03 -> 02  RSSI=-76dBm  weight=12  source=real_rssi
+  03 -> 04  RSSI=-79dBm  weight=12  source=real_rssi
+  03 -> 05  RSSI=-85dBm  weight=12  source=real_rssi
+  03 -> 07  RSSI=-73dBm  weight=6  source=real_rssi
+  03 -> 09  RSSI=-74dBm  weight=6  source=real_rssi
+  03 -> 0A  RSSI=-81dBm  weight=12  source=real_rssi
+  04 -> 02  RSSI=-79dBm  weight=12  source=real_rssi
+  04 -> 03  RSSI=-69dBm  weight=6  source=real_rssi
+  04 -> 06  RSSI=-76dBm  weight=12  source=real_rssi
+  04 -> 07  RSSI=-81dBm  weight=12  source=real_rssi
+  04 -> 09  RSSI=-74dBm  weight=6  source=real_rssi
+  05 -> 02  RSSI=-66dBm  weight=3  source=real_rssi
+  05 -> 03  RSSI=-72dBm  weight=12  source=real_rssi
+  05 -> 06  RSSI=-73dBm  weight=6  source=real_rssi
+  05 -> 07  RSSI=-73dBm  weight=12  source=real_rssi
+  05 -> 09  RSSI=-80dBm  weight=12  source=real_rssi
+  05 -> 0A  RSSI=-84dBm  weight=6  source=real_rssi
+  06 -> 02  RSSI=-81dBm  weight=12  source=real_rssi
+  06 -> 03  RSSI=-84dBm  weight=12  source=real_rssi
+  06 -> 05  RSSI=-76dBm  weight=12  source=real_rssi
+  06 -> 07  RSSI=-78dBm  weight=12  source=real_rssi
+  06 -> 09  RSSI=-76dBm  weight=12  source=real_rssi
+  06 -> 0A  RSSI=-72dBm  weight=6  source=real_rssi
+  07 -> 02  RSSI=-80dBm  weight=12  source=real_rssi
+  07 -> 03  RSSI=-69dBm  weight=6  source=real_rssi
+  07 -> 05  RSSI=-77dBm  weight=12  source=real_rssi
+  07 -> 06  RSSI=-85dBm  weight=12  source=real_rssi
+  07 -> 09  RSSI=-80dBm  weight=12  source=real_rssi
+  07 -> 0A  RSSI=-79dBm  weight=12  source=real_rssi
+  09 -> 01  RSSI=-78dBm  weight=12  source=real_rssi
+  09 -> 02  RSSI=-72dBm  weight=6  source=real_rssi
+  09 -> 03  RSSI=-69dBm  weight=6  source=real_rssi
+  09 -> 05  RSSI=-83dBm  weight=12  source=real_rssi
+  09 -> 06  RSSI=-80dBm  weight=12  source=real_rssi
+  09 -> 07  RSSI=-73dBm  weight=6  source=real_rssi
+  09 -> 0A  RSSI=-82dBm  weight=12  source=real_rssi
+  0A -> 02  RSSI=-73dBm  weight=6  source=real_rssi
+  0A -> 03  RSSI=-76dBm  weight=12  source=real_rssi
+  0A -> 05  RSSI=-82dBm  weight=12  source=real_rssi
+  0A -> 06  RSSI=-72dBm  weight=6  source=real_rssi
+  0A -> 07  RSSI=-78dBm  weight=12  source=real_rssi
+  0A -> 09  RSSI=-82dBm  weight=12  source=real_rssi

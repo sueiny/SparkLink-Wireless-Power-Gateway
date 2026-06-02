@@ -1,5 +1,7 @@
 #include "common/device_model.h"
 
+#include <cstdio>
+
 namespace gateway::model {
 namespace {
 
@@ -66,15 +68,6 @@ DeviceType deviceTypeFromString(const std::string &text)
     return DeviceType::Gateway;
 }
 
-MeterRole meterRoleFromString(const std::string &text)
-{
-    if (text == "main")
-        return MeterRole::Main;
-    if (text == "branch")
-        return MeterRole::Branch;
-    return MeterRole::None;
-}
-
 std::string toString(DeviceType type)
 {
     switch (type) {
@@ -92,17 +85,38 @@ std::string toString(DeviceType type)
     }
 }
 
-std::string toString(MeterRole role)
+std::string generateDeviceName(DeviceType type, int station_id)
 {
-    switch (role) {
-    case MeterRole::Main:
-        return "main";
-    case MeterRole::Branch:
-        return "branch";
-    case MeterRole::None:
+    const char *prefix = "DEV_";
+    switch (type) {
+    case DeviceType::SinglePhaseMeter:
+        prefix = "METER_";
+        break;
+    case DeviceType::Relay:
+        prefix = "RELAY_";
+        break;
+    case DeviceType::EnvSensor:
+        prefix = "ENV_";
+        break;
     default:
-        return "none";
+        break;
     }
+    char buf[16];
+    snprintf(buf, sizeof(buf), "%s%03d", prefix, station_id);
+    return buf;
+}
+
+std::string generateDtuName(int node_id)
+{
+    char buf[16];
+    snprintf(buf, sizeof(buf), "DTU_%03d", node_id);
+    return buf;
+}
+
+uint8_t sleRoleToCloudRole(uint8_t sle_role)
+{
+    // SLE: Root(1) → 云端 0 (root), Relay(2)/Leaf(3) → 云端 1 (node)
+    return (sle_role == 1) ? 0 : 1;
 }
 
 } // namespace gateway::model

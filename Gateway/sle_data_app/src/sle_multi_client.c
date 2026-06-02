@@ -176,23 +176,6 @@ static void ensure_dir(const char *path)
     mkdir(tmp, 0755);
 }
 
-static bool data_contains_name(const uint8_t *data, uint8_t len, const char *name)
-{
-    if (data == NULL || name == NULL || name[0] == '\0') {
-        return false;
-    }
-    size_t name_len = strlen(name);
-    if (name_len == 0 || name_len > len) {
-        return false;
-    }
-    for (uint8_t i = 0; i + name_len <= len; ++i) {
-        if (memcmp(data + i, name, name_len) == 0) {
-            return true;
-        }
-    }
-    return false;
-}
-
 /* --------------------------------------------------------------------------
  * Target matching helpers
  * -------------------------------------------------------------------------- */
@@ -351,11 +334,7 @@ static bool seek_result_matches_target(const sle_seek_result_info_t *result)
     if (result == NULL) {
         return false;
     }
-    if (addr_matches_prefix(&result->addr, g_config.mac_prefix)) {
-        return true;
-    }
-    return g_config.fallback_name_filter_enabled &&
-        data_contains_name(result->data, result->data_length, g_config.fallback_target_name);
+    return addr_matches_prefix(&result->addr, g_config.mac_prefix);
 }
 
 /* --------------------------------------------------------------------------

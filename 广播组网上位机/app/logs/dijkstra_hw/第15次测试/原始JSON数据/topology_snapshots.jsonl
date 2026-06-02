@@ -1,0 +1,1 @@
+{"label": "post_collection", "topology": {"edge_direction": "src_to_neighbor", "edges": [], "gateway": 0, "max_hops": 4, "min_rssi": -85, "nodes": [], "relay_excluded": [22], "stale_seconds": null}, "ts": "2026-06-01T10:46:11.758"}

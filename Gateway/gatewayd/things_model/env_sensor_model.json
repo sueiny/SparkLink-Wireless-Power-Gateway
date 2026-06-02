@@ -1,19 +1,22 @@
 {
   "properties": [
     {
+      "functionName": "DTU挂载ID",
+      "identifier": "dtu_id",
+      "functionType": "properties",
+      "accessMode": "r",
+      "specs": {
+        "dataType": {"type": "INT", "specs": {}}
+      }
+    },
+    {
       "functionName": "温度",
       "identifier": "temperature",
       "functionType": "properties",
       "accessMode": "r",
       "specs": {
-        "dataType": {
-          "type": "DOUBLE",
-          "specs": {
-            "unit": "°C"
-          }
-        }
-      },
-      "extensionDesc": null
+        "dataType": {"type": "DOUBLE", "specs": {"unit": "°C"}}
+      }
     },
     {
       "functionName": "湿度",
@@ -21,14 +24,8 @@
       "functionType": "properties",
       "accessMode": "r",
       "specs": {
-        "dataType": {
-          "type": "DOUBLE",
-          "specs": {
-            "unit": "%RH"
-          }
-        }
-      },
-      "extensionDesc": null
+        "dataType": {"type": "DOUBLE", "specs": {"unit": "%RH"}}
+      }
     },
     {
       "functionName": "在线状态",
@@ -37,22 +34,13 @@
       "accessMode": "r",
       "specs": {
         "dataType": {
-          "type": "ENUM",
-          "specsList": [
-            {
-              "value": 0,
-              "name": "离线",
-              "dataType": "ENUM"
-            },
-            {
-              "value": 1,
-              "name": "在线",
-              "dataType": "ENUM"
-            }
-          ]
+          "type": "BOOL",
+          "specs": {
+            "boolClose": "离线",
+            "boolOpen": "在线"
+          }
         }
-      },
-      "extensionDesc": null
+      }
     }
   ],
   "events": [
@@ -62,26 +50,8 @@
       "functionType": "events",
       "eventType": "ALERT",
       "outputData": [
-        {
-          "functionName": "当前温度",
-          "identifier": "temperature",
-          "dataType": {
-            "type": "DOUBLE",
-            "specs": {
-              "unit": "°C"
-            }
-          }
-        },
-        {
-          "functionName": "阈值",
-          "identifier": "threshold",
-          "dataType": {
-            "type": "DOUBLE",
-            "specs": {
-              "unit": "°C"
-            }
-          }
-        }
+        {"functionName": "当前温度", "identifier": "temperature", "dataType": {"type": "DOUBLE", "specs": {"unit": "°C"}}},
+        {"functionName": "阈值", "identifier": "threshold", "dataType": {"type": "DOUBLE", "specs": {"unit": "°C"}}}
       ]
     },
     {
@@ -90,26 +60,8 @@
       "functionType": "events",
       "eventType": "ALERT",
       "outputData": [
-        {
-          "functionName": "当前湿度",
-          "identifier": "humidity",
-          "dataType": {
-            "type": "DOUBLE",
-            "specs": {
-              "unit": "%RH"
-            }
-          }
-        },
-        {
-          "functionName": "阈值",
-          "identifier": "threshold",
-          "dataType": {
-            "type": "DOUBLE",
-            "specs": {
-              "unit": "%RH"
-            }
-          }
-        }
+        {"functionName": "当前湿度", "identifier": "humidity", "dataType": {"type": "DOUBLE", "specs": {"unit": "%RH"}}},
+        {"functionName": "阈值", "identifier": "threshold", "dataType": {"type": "DOUBLE", "specs": {"unit": "%RH"}}}
       ]
     }
   ],

@@ -1,0 +1,1031 @@
+{"baud": 115200, "demand": 8, "matrix_mode": true, "nodes": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], "pairs": [{"source": 1, "target": 2}, {"source": 1, "target": 3}, {"source": 1, "target": 4}, {"source": 1, "target": 5}, {"source": 1, "target": 6}, {"source": 1, "target": 7}, {"source": 1, "target": 8}, {"source": 1, "target": 9}, {"source": 1, "target": 10}, {"source": 2, "target": 1}, {"source": 2, "target": 3}, {"source": 2, "target": 4}, {"source": 2, "target": 5}, {"source": 2, "target": 6}, {"source": 2, "target": 7}, {"source": 2, "target": 8}, {"source": 2, "target": 9}, {"source": 2, "target": 10}, {"source": 3, "target": 1}, {"source": 3, "target": 2}, {"source": 3, "target": 4}, {"source": 3, "target": 5}, {"source": 3, "target": 6}, {"source": 3, "target": 7}, {"source": 3, "target": 8}, {"source": 3, "target": 9}, {"source": 3, "target": 10}, {"source": 4, "target": 1}, {"source": 4, "target": 2}, {"source": 4, "target": 3}, {"source": 4, "target": 5}, {"source": 4, "target": 6}, {"source": 4, "target": 7}, {"source": 4, "target": 8}, {"source": 4, "target": 9}, {"source": 4, "target": 10}, {"source": 5, "target": 1}, {"source": 5, "target": 2}, {"source": 5, "target": 3}, {"source": 5, "target": 4}, {"source": 5, "target": 6}, {"source": 5, "target": 7}, {"source": 5, "target": 8}, {"source": 5, "target": 9}, {"source": 5, "target": 10}, {"source": 6, "target": 1}, {"source": 6, "target": 2}, {"source": 6, "target": 3}, {"source": 6, "target": 4}, {"source": 6, "target": 5}, {"source": 6, "target": 7}, {"source": 6, "target": 8}, {"source": 6, "target": 9}, {"source": 6, "target": 10}, {"source": 7, "target": 1}, {"source": 7, "target": 2}, {"source": 7, "target": 3}, {"source": 7, "target": 4}, {"source": 7, "target": 5}, {"source": 7, "target": 6}, {"source": 7, "target": 8}, {"source": 7, "target": 9}, {"source": 7, "target": 10}, {"source": 8, "target": 1}, {"source": 8, "target": 2}, {"source": 8, "target": 3}, {"source": 8, "target": 4}, {"source": 8, "target": 5}, {"source": 8, "target": 6}, {"source": 8, "target": 7}, {"source": 8, "target": 9}, {"source": 8, "target": 10}, {"source": 9, "target": 1}, {"source": 9, "target": 2}, {"source": 9, "target": 3}, {"source": 9, "target": 4}, {"source": 9, "target": 5}, {"source": 9, "target": 6}, {"source": 9, "target": 7}, {"source": 9, "target": 8}, {"source": 9, "target": 10}, {"source": 10, "target": 1}, {"source": 10, "target": 2}, {"source": 10, "target": 3}, {"source": 10, "target": 4}, {"source": 10, "target": 5}, {"source": 10, "target": 6}, {"source": 10, "target": 7}, {"source": 10, "target": 8}, {"source": 10, "target": 9}], "payload": "AABBCC", "port": "/dev/ttyUSB0", "rounds": 2, "sources": null, "ts": "2026-06-01T20:54:11.967", "type": "bench_start"}
+{"command": "RSSI_REQ", "request": 1, "ts": "2026-06-01T20:54:34.705", "type": "send_command"}
+{"neighbors": [{"addr": 6, "rssi": -73}, {"addr": 2, "rssi": -66}, {"addr": 7, "rssi": -78}, {"addr": 9, "rssi": -79}, {"addr": 10, "rssi": -76}, {"addr": 8, "rssi": -83}, {"addr": 3, "rssi": -78}, {"addr": 4, "rssi": -90}, {"addr": 1, "rssi": -81}], "src": 5, "ts": "2026-06-01T20:54:34.805", "type": "rssi_report"}
+{"neighbors": [{"addr": 7, "rssi": -79}, {"addr": 10, "rssi": -81}, {"addr": 5, "rssi": -70}, {"addr": 2, "rssi": -67}, {"addr": 9, "rssi": -69}, {"addr": 3, "rssi": -75}, {"addr": 4, "rssi": -88}, {"addr": 6, "rssi": -81}, {"addr": 8, "rssi": -78}], "src": 1, "ts": "2026-06-01T20:54:34.805", "type": "rssi_report"}
+{"neighbors": [{"addr": 5, "rssi": -77}, {"addr": 9, "rssi": -82}, {"addr": 2, "rssi": -74}, {"addr": 4, "rssi": -78}, {"addr": 1, "rssi": -98}, {"addr": 10, "rssi": -94}, {"addr": 7, "rssi": -67}, {"addr": 6, "rssi": -75}, {"addr": 8, "rssi": -76}], "src": 3, "ts": "2026-06-01T20:54:34.805", "type": "rssi_report"}
+{"neighbors": [{"addr": 5, "rssi": -76}, {"addr": 2, "rssi": -70}, {"addr": 9, "rssi": -87}, {"addr": 10, "rssi": -73}, {"addr": 8, "rssi": -86}, {"addr": 3, "rssi": -88}, {"addr": 7, "rssi": -75}, {"addr": 4, "rssi": -91}, {"addr": 1, "rssi": -97}], "src": 6, "ts": "2026-06-01T20:54:34.806", "type": "rssi_report"}
+{"neighbors": [{"addr": 2, "rssi": -75}, {"addr": 9, "rssi": -81}, {"addr": 10, "rssi": -79}, {"addr": 4, "rssi": -88}, {"addr": 5, "rssi": -79}, {"addr": 1, "rssi": -90}, {"addr": 3, "rssi": -83}, {"addr": 6, "rssi": -84}, {"addr": 7, "rssi": -76}], "src": 8, "ts": "2026-06-01T20:54:34.806", "type": "rssi_report"}
+{"neighbors": [{"addr": 4, "rssi": -86}, {"addr": 10, "rssi": -76}, {"addr": 1, "rssi": -92}, {"addr": 6, "rssi": -80}, {"addr": 9, "rssi": -75}, {"addr": 3, "rssi": -75}, {"addr": 5, "rssi": -84}, {"addr": 2, "rssi": -76}, {"addr": 8, "rssi": -75}], "src": 7, "ts": "2026-06-01T20:54:34.806", "type": "rssi_report"}
+{"neighbors": [{"addr": 7, "rssi": -78}, {"addr": 9, "rssi": -76}, {"addr": 5, "rssi": -70}, {"addr": 8, "rssi": -73}, {"addr": 1, "rssi": -83}, {"addr": 3, "rssi": -78}, {"addr": 4, "rssi": -104}, {"addr": 10, "rssi": -75}, {"addr": 6, "rssi": -70}], "src": 2, "ts": "2026-06-01T20:54:34.906", "type": "rssi_report"}
+{"neighbors": [{"addr": 5, "rssi": -72}, {"addr": 1, "rssi": -94}, {"addr": 3, "rssi": -69}, {"addr": 6, "rssi": -92}, {"addr": 8, "rssi": -72}, {"addr": 7, "rssi": -78}, {"addr": 2, "rssi": -82}, {"addr": 9, "rssi": -82}, {"addr": 10, "rssi": -72}, {"addr": 4, "rssi": -60}], "src": 0, "ts": "2026-06-01T20:54:34.906", "type": "rssi_report"}
+{"neighbors": [{"addr": 2, "rssi": -90}, {"addr": 1, "rssi": -77}, {"addr": 4, "rssi": -86}, {"addr": 7, "rssi": -72}, {"addr": 3, "rssi": -68}, {"addr": 6, "rssi": -78}, {"addr": 10, "rssi": -82}, {"addr": 5, "rssi": -82}, {"addr": 8, "rssi": -78}], "src": 9, "ts": "2026-06-01T20:54:34.906", "type": "rssi_report"}
+{"neighbors": [{"addr": 2, "rssi": -70}, {"addr": 1, "rssi": -98}, {"addr": 4, "rssi": -98}, {"addr": 5, "rssi": -70}, {"addr": 6, "rssi": -75}, {"addr": 7, "rssi": -74}, {"addr": 3, "rssi": -78}, {"addr": 8, "rssi": -81}, {"addr": 9, "rssi": -88}], "src": 10, "ts": "2026-06-01T20:54:34.906", "type": "rssi_report"}
+{"neighbors": [{"addr": 6, "rssi": -86}, {"addr": 2, "rssi": -85}, {"addr": 3, "rssi": -66}, {"addr": 5, "rssi": -76}, {"addr": 9, "rssi": -76}, {"addr": 7, "rssi": -73}, {"addr": 10, "rssi": -83}, {"addr": 1, "rssi": -92}, {"addr": 8, "rssi": -74}], "src": 4, "ts": "2026-06-01T20:54:34.906", "type": "rssi_report"}
+{"edges": [{"direction": "src_to_neighbor", "dst": 6, "rssi": -73, "samples": [-73], "source": "real_rssi", "src": 5, "updated_at": 1780318475.908037, "weight": 6}, {"direction": "src_to_neighbor", "dst": 2, "rssi": -66, "samples": [-66], "source": "real_rssi", "src": 5, "updated_at": 1780318475.908037, "weight": 6}, {"direction": "src_to_neighbor", "dst": 7, "rssi": -78, "samples": [-78], "source": "real_rssi", "src": 5, "updated_at": 1780318475.908037, "weight": 12}, {"direction": "src_to_neighbor", "dst": 9, "rssi": -79, "samples": [-79], "source": "real_rssi", "src": 5, "updated_at": 1780318475.908037, "weight": 12}, {"direction": "src_to_neighbor", "dst": 10, "rssi": -76, "samples": [-76], "source": "real_rssi", "src": 5, "updated_at": 1780318475.908037, "weight": 12}, {"direction": "src_to_neighbor", "dst": 8, "rssi": -83, "samples": [-83], "source": "real_rssi", "src": 5, "updated_at": 1780318475.908037, "weight": 12}, {"direction": "src_to_neighbor", "dst": 3, "rssi": -78, "samples": [-78], "source": "real_rssi", "src": 5, "updated_at": 1780318475.908037, "weight": 12}, {"direction": "src_to_neighbor", "dst": 1, "rssi": -81, "samples": [-81], "source": "real_rssi", "src": 5, "updated_at": 1780318475.908037, "weight": 12}], "src": 5, "ts": "2026-06-01T20:54:35.908", "type": "topology_update"}
+{"edges": [{"direction": "src_to_neighbor", "dst": 7, "rssi": -79, "samples": [-79], "source": "real_rssi", "src": 1, "updated_at": 1780318475.9084096, "weight": 12}, {"direction": "src_to_neighbor", "dst": 10, "rssi": -81, "samples": [-81], "source": "real_rssi", "src": 1, "updated_at": 1780318475.9084096, "weight": 12}, {"direction": "src_to_neighbor", "dst": 5, "rssi": -70, "samples": [-70], "source": "real_rssi", "src": 1, "updated_at": 1780318475.9084096, "weight": 6}, {"direction": "src_to_neighbor", "dst": 2, "rssi": -67, "samples": [-67], "source": "real_rssi", "src": 1, "updated_at": 1780318475.9084096, "weight": 6}, {"direction": "src_to_neighbor", "dst": 9, "rssi": -69, "samples": [-69], "source": "real_rssi", "src": 1, "updated_at": 1780318475.9084096, "weight": 6}, {"direction": "src_to_neighbor", "dst": 3, "rssi": -75, "samples": [-75], "source": "real_rssi", "src": 1, "updated_at": 1780318475.9084096, "weight": 6}, {"direction": "src_to_neighbor", "dst": 6, "rssi": -81, "samples": [-81], "source": "real_rssi", "src": 1, "updated_at": 1780318475.9084096, "weight": 12}, {"direction": "src_to_neighbor", "dst": 8, "rssi": -78, "samples": [-78], "source": "real_rssi", "src": 1, "updated_at": 1780318475.9084096, "weight": 12}], "src": 1, "ts": "2026-06-01T20:54:35.908", "type": "topology_update"}
+{"edges": [{"direction": "src_to_neighbor", "dst": 5, "rssi": -77, "samples": [-77], "source": "real_rssi", "src": 3, "updated_at": 1780318475.908653, "weight": 12}, {"direction": "src_to_neighbor", "dst": 9, "rssi": -82, "samples": [-82], "source": "real_rssi", "src": 3, "updated_at": 1780318475.908653, "weight": 12}, {"direction": "src_to_neighbor", "dst": 2, "rssi": -74, "samples": [-74], "source": "real_rssi", "src": 3, "updated_at": 1780318475.908653, "weight": 6}, {"direction": "src_to_neighbor", "dst": 4, "rssi": -78, "samples": [-78], "source": "real_rssi", "src": 3, "updated_at": 1780318475.908653, "weight": 12}, {"direction": "src_to_neighbor", "dst": 7, "rssi": -67, "samples": [-67], "source": "real_rssi", "src": 3, "updated_at": 1780318475.908653, "weight": 6}, {"direction": "src_to_neighbor", "dst": 6, "rssi": -75, "samples": [-75], "source": "real_rssi", "src": 3, "updated_at": 1780318475.908653, "weight": 6}, {"direction": "src_to_neighbor", "dst": 8, "rssi": -76, "samples": [-76], "source": "real_rssi", "src": 3, "updated_at": 1780318475.908653, "weight": 12}], "src": 3, "ts": "2026-06-01T20:54:35.908", "type": "topology_update"}
+{"edges": [{"direction": "src_to_neighbor", "dst": 5, "rssi": -76, "samples": [-76], "source": "real_rssi", "src": 6, "updated_at": 1780318475.9089475, "weight": 12}, {"direction": "src_to_neighbor", "dst": 2, "rssi": -70, "samples": [-70], "source": "real_rssi", "src": 6, "updated_at": 1780318475.9089475, "weight": 6}, {"direction": "src_to_neighbor", "dst": 10, "rssi": -73, "samples": [-73], "source": "real_rssi", "src": 6, "updated_at": 1780318475.9089475, "weight": 6}, {"direction": "src_to_neighbor", "dst": 7, "rssi": -75, "samples": [-75], "source": "real_rssi", "src": 6, "updated_at": 1780318475.9089475, "weight": 6}], "src": 6, "ts": "2026-06-01T20:54:35.908", "type": "topology_update"}
+{"edges": [{"direction": "src_to_neighbor", "dst": 2, "rssi": -75, "samples": [-75], "source": "real_rssi", "src": 8, "updated_at": 1780318475.9091966, "weight": 6}, {"direction": "src_to_neighbor", "dst": 9, "rssi": -81, "samples": [-81], "source": "real_rssi", "src": 8, "updated_at": 1780318475.9091966, "weight": 12}, {"direction": "src_to_neighbor", "dst": 10, "rssi": -79, "samples": [-79], "source": "real_rssi", "src": 8, "updated_at": 1780318475.9091966, "weight": 12}, {"direction": "src_to_neighbor", "dst": 5, "rssi": -79, "samples": [-79], "source": "real_rssi", "src": 8, "updated_at": 1780318475.9091966, "weight": 12}, {"direction": "src_to_neighbor", "dst": 3, "rssi": -83, "samples": [-83], "source": "real_rssi", "src": 8, "updated_at": 1780318475.9091966, "weight": 12}, {"direction": "src_to_neighbor", "dst": 6, "rssi": -84, "samples": [-84], "source": "real_rssi", "src": 8, "updated_at": 1780318475.9091966, "weight": 12}, {"direction": "src_to_neighbor", "dst": 7, "rssi": -76, "samples": [-76], "source": "real_rssi", "src": 8, "updated_at": 1780318475.9091966, "weight": 12}], "src": 8, "ts": "2026-06-01T20:54:35.909", "type": "topology_update"}
+{"edges": [{"direction": "src_to_neighbor", "dst": 10, "rssi": -76, "samples": [-76], "source": "real_rssi", "src": 7, "updated_at": 1780318475.9094977, "weight": 12}, {"direction": "src_to_neighbor", "dst": 6, "rssi": -80, "samples": [-80], "source": "real_rssi", "src": 7, "updated_at": 1780318475.9094977, "weight": 12}, {"direction": "src_to_neighbor", "dst": 9, "rssi": -75, "samples": [-75], "source": "real_rssi", "src": 7, "updated_at": 1780318475.9094977, "weight": 6}, {"direction": "src_to_neighbor", "dst": 3, "rssi": -75, "samples": [-75], "source": "real_rssi", "src": 7, "updated_at": 1780318475.9094977, "weight": 6}, {"direction": "src_to_neighbor", "dst": 5, "rssi": -84, "samples": [-84], "source": "real_rssi", "src": 7, "updated_at": 1780318475.9094977, "weight": 12}, {"direction": "src_to_neighbor", "dst": 2, "rssi": -76, "samples": [-76], "source": "real_rssi", "src": 7, "updated_at": 1780318475.9094977, "weight": 12}, {"direction": "src_to_neighbor", "dst": 8, "rssi": -75, "samples": [-75], "source": "real_rssi", "src": 7, "updated_at": 1780318475.9094977, "weight": 6}], "src": 7, "ts": "2026-06-01T20:54:35.909", "type": "topology_update"}
+{"edges": [{"direction": "src_to_neighbor", "dst": 7, "rssi": -78, "samples": [-78], "source": "real_rssi", "src": 2, "updated_at": 1780318475.909901, "weight": 12}, {"direction": "src_to_neighbor", "dst": 9, "rssi": -76, "samples": [-76], "source": "real_rssi", "src": 2, "updated_at": 1780318475.909901, "weight": 12}, {"direction": "src_to_neighbor", "dst": 5, "rssi": -70, "samples": [-70], "source": "real_rssi", "src": 2, "updated_at": 1780318475.909901, "weight": 6}, {"direction": "src_to_neighbor", "dst": 8, "rssi": -73, "samples": [-73], "source": "real_rssi", "src": 2, "updated_at": 1780318475.909901, "weight": 6}, {"direction": "src_to_neighbor", "dst": 1, "rssi": -83, "samples": [-83], "source": "real_rssi", "src": 2, "updated_at": 1780318475.909901, "weight": 12}, {"direction": "src_to_neighbor", "dst": 3, "rssi": -78, "samples": [-78], "source": "real_rssi", "src": 2, "updated_at": 1780318475.909901, "weight": 12}, {"direction": "src_to_neighbor", "dst": 10, "rssi": -75, "samples": [-75], "source": "real_rssi", "src": 2, "updated_at": 1780318475.909901, "weight": 6}, {"direction": "src_to_neighbor", "dst": 6, "rssi": -70, "samples": [-70], "source": "real_rssi", "src": 2, "updated_at": 1780318475.909901, "weight": 6}], "src": 2, "ts": "2026-06-01T20:54:35.909", "type": "topology_update"}
+{"edges": [{"direction": "src_to_neighbor", "dst": 5, "rssi": -72, "samples": [-72], "source": "real_rssi", "src": 0, "updated_at": 1780318475.9103115, "weight": 6}, {"direction": "src_to_neighbor", "dst": 3, "rssi": -69, "samples": [-69], "source": "real_rssi", "src": 0, "updated_at": 1780318475.9103115, "weight": 6}, {"direction": "src_to_neighbor", "dst": 8, "rssi": -72, "samples": [-72], "source": "real_rssi", "src": 0, "updated_at": 1780318475.9103115, "weight": 6}, {"direction": "src_to_neighbor", "dst": 7, "rssi": -78, "samples": [-78], "source": "real_rssi", "src": 0, "updated_at": 1780318475.9103115, "weight": 12}, {"direction": "src_to_neighbor", "dst": 2, "rssi": -82, "samples": [-82], "source": "real_rssi", "src": 0, "updated_at": 1780318475.9103115, "weight": 12}, {"direction": "src_to_neighbor", "dst": 9, "rssi": -82, "samples": [-82], "source": "real_rssi", "src": 0, "updated_at": 1780318475.9103115, "weight": 12}, {"direction": "src_to_neighbor", "dst": 10, "rssi": -72, "samples": [-72], "source": "real_rssi", "src": 0, "updated_at": 1780318475.9103115, "weight": 6}, {"direction": "src_to_neighbor", "dst": 4, "rssi": -60, "samples": [-60], "source": "real_rssi", "src": 0, "updated_at": 1780318475.9103115, "weight": 3}], "src": 0, "ts": "2026-06-01T20:54:35.910", "type": "topology_update"}
+{"edges": [{"direction": "src_to_neighbor", "dst": 1, "rssi": -77, "samples": [-77], "source": "real_rssi", "src": 9, "updated_at": 1780318475.9107745, "weight": 12}, {"direction": "src_to_neighbor", "dst": 7, "rssi": -72, "samples": [-72], "source": "real_rssi", "src": 9, "updated_at": 1780318475.9107745, "weight": 6}, {"direction": "src_to_neighbor", "dst": 3, "rssi": -68, "samples": [-68], "source": "real_rssi", "src": 9, "updated_at": 1780318475.9107745, "weight": 6}, {"direction": "src_to_neighbor", "dst": 6, "rssi": -78, "samples": [-78], "source": "real_rssi", "src": 9, "updated_at": 1780318475.9107745, "weight": 12}, {"direction": "src_to_neighbor", "dst": 10, "rssi": -82, "samples": [-82], "source": "real_rssi", "src": 9, "updated_at": 1780318475.9107745, "weight": 12}, {"direction": "src_to_neighbor", "dst": 5, "rssi": -82, "samples": [-82], "source": "real_rssi", "src": 9, "updated_at": 1780318475.9107745, "weight": 12}, {"direction": "src_to_neighbor", "dst": 8, "rssi": -78, "samples": [-78], "source": "real_rssi", "src": 9, "updated_at": 1780318475.9107745, "weight": 12}], "src": 9, "ts": "2026-06-01T20:54:35.910", "type": "topology_update"}
+{"edges": [{"direction": "src_to_neighbor", "dst": 2, "rssi": -70, "samples": [-70], "source": "real_rssi", "src": 10, "updated_at": 1780318475.911257, "weight": 6}, {"direction": "src_to_neighbor", "dst": 5, "rssi": -70, "samples": [-70], "source": "real_rssi", "src": 10, "updated_at": 1780318475.911257, "weight": 6}, {"direction": "src_to_neighbor", "dst": 6, "rssi": -75, "samples": [-75], "source": "real_rssi", "src": 10, "updated_at": 1780318475.911257, "weight": 6}, {"direction": "src_to_neighbor", "dst": 7, "rssi": -74, "samples": [-74], "source": "real_rssi", "src": 10, "updated_at": 1780318475.911257, "weight": 6}, {"direction": "src_to_neighbor", "dst": 3, "rssi": -78, "samples": [-78], "source": "real_rssi", "src": 10, "updated_at": 1780318475.911257, "weight": 12}, {"direction": "src_to_neighbor", "dst": 8, "rssi": -81, "samples": [-81], "source": "real_rssi", "src": 10, "updated_at": 1780318475.911257, "weight": 12}], "src": 10, "ts": "2026-06-01T20:54:35.911", "type": "topology_update"}
+{"edges": [{"direction": "src_to_neighbor", "dst": 2, "rssi": -85, "samples": [-85], "source": "real_rssi", "src": 4, "updated_at": 1780318475.9117608, "weight": 12}, {"direction": "src_to_neighbor", "dst": 3, "rssi": -66, "samples": [-66], "source": "real_rssi", "src": 4, "updated_at": 1780318475.9117608, "weight": 6}, {"direction": "src_to_neighbor", "dst": 5, "rssi": -76, "samples": [-76], "source": "real_rssi", "src": 4, "updated_at": 1780318475.9117608, "weight": 12}, {"direction": "src_to_neighbor", "dst": 9, "rssi": -76, "samples": [-76], "source": "real_rssi", "src": 4, "updated_at": 1780318475.9117608, "weight": 12}, {"direction": "src_to_neighbor", "dst": 7, "rssi": -73, "samples": [-73], "source": "real_rssi", "src": 4, "updated_at": 1780318475.9117608, "weight": 6}, {"direction": "src_to_neighbor", "dst": 10, "rssi": -83, "samples": [-83], "source": "real_rssi", "src": 4, "updated_at": 1780318475.9117608, "weight": 12}, {"direction": "src_to_neighbor", "dst": 8, "rssi": -74, "samples": [-74], "source": "real_rssi", "src": 4, "updated_at": 1780318475.9117608, "weight": 6}], "src": 4, "ts": "2026-06-01T20:54:35.911", "type": "topology_update"}
+{"request": 1, "ts": "2026-06-01T20:54:35.912", "type": "topology_ready"}
+{"algorithm_compute_latency_ms": 0.9478950087213889, "route_mode": "baseline_dijkstra", "routes": {"00:01": {"cost": 18.0, "dst": 1, "path": [0, 5, 1], "src": 0, "status": "valid"}, "00:02": {"cost": 12.0, "dst": 2, "path": [0, 2], "src": 0, "status": "valid"}, "00:03": {"cost": 6.0, "dst": 3, "path": [0, 3], "src": 0, "status": "valid"}, "00:04": {"cost": 3.0, "dst": 4, "path": [0, 4], "src": 0, "status": "valid"}, "00:05": {"cost": 6.0, "dst": 5, "path": [0, 5], "src": 0, "status": "valid"}, "00:06": {"cost": 12.0, "dst": 6, "path": [0, 3, 6], "src": 0, "status": "valid"}, "00:07": {"cost": 9.0, "dst": 7, "path": [0, 4, 7], "src": 0, "status": "valid"}, "00:08": {"cost": 6.0, "dst": 8, "path": [0, 8], "src": 0, "status": "valid"}, "00:09": {"cost": 12.0, "dst": 9, "path": [0, 9], "src": 0, "status": "valid"}, "00:0A": {"cost": 6.0, "dst": 10, "path": [0, 10], "src": 0, "status": "valid"}, "01:02": {"cost": 6.0, "dst": 2, "path": [1, 2], "src": 1, "status": "valid"}, "01:03": {"cost": 6.0, "dst": 3, "path": [1, 3], "src": 1, "status": "valid"}, "01:04": {"cost": 18.0, "dst": 4, "path": [1, 3, 4], "src": 1, "status": "valid"}, "01:05": {"cost": 6.0, "dst": 5, "path": [1, 5], "src": 1, "status": "valid"}, "01:06": {"cost": 12.0, "dst": 6, "path": [1, 6], "src": 1, "status": "valid"}, "01:07": {"cost": 12.0, "dst": 7, "path": [1, 7], "src": 1, "status": "valid"}, "01:08": {"cost": 12.0, "dst": 8, "path": [1, 8], "src": 1, "status": "valid"}, "01:09": {"cost": 6.0, "dst": 9, "path": [1, 9], "src": 1, "status": "valid"}, "01:0A": {"cost": 12.0, "dst": 10, "path": [1, 10], "src": 1, "status": "valid"}, "02:01": {"cost": 12.0, "dst": 1, "path": [2, 1], "src": 2, "status": "valid"}, "02:03": {"cost": 12.0, "dst": 3, "path": [2, 3], "src": 2, "status": "valid"}, "02:04": {"cost": 24.0, "dst": 4, "path": [2, 3, 4], "src": 2, "status": "valid"}, "02:05": {"cost": 6.0, "dst": 5, "path": [2, 5], "src": 2, "status": "valid"}, "02:06": {"cost": 6.0, "dst": 6, "path": [2, 6], "src": 2, "status": "valid"}, "02:07": {"cost": 12.0, "dst": 7, "path": [2, 7], "src": 2, "status": "valid"}, "02:08": {"cost": 6.0, "dst": 8, "path": [2, 8], "src": 2, "status": "valid"}, "02:09": {"cost": 12.0, "dst": 9, "path": [2, 9], "src": 2, "status": "valid"}, "02:0A": {"cost": 6.0, "dst": 10, "path": [2, 10], "src": 2, "status": "valid"}, "03:01": {"cost": 18.0, "dst": 1, "path": [3, 2, 1], "src": 3, "status": "valid"}, "03:02": {"cost": 6.0, "dst": 2, "path": [3, 2], "src": 3, "status": "valid"}, "03:04": {"cost": 12.0, "dst": 4, "path": [3, 4], "src": 3, "status": "valid"}, "03:05": {"cost": 12.0, "dst": 5, "path": [3, 5], "src": 3, "status": "valid"}, "03:06": {"cost": 6.0, "dst": 6, "path": [3, 6], "src": 3, "status": "valid"}, "03:07": {"cost": 6.0, "dst": 7, "path": [3, 7], "src": 3, "status": "valid"}, "03:08": {"cost": 12.0, "dst": 8, "path": [3, 8], "src": 3, "status": "valid"}, "03:09": {"cost": 12.0, "dst": 9, "path": [3, 9], "src": 3, "status": "valid"}, "03:0A": {"cost": 12.0, "dst": 10, "path": [3, 2, 10], "src": 3, "status": "valid"}, "04:01": {"cost": 24.0, "dst": 1, "path": [4, 2, 1], "src": 4, "status": "valid"}, "04:02": {"cost": 12.0, "dst": 2, "path": [4, 2], "src": 4, "status": "valid"}, "04:03": {"cost": 6.0, "dst": 3, "path": [4, 3], "src": 4, "status": "valid"}, "04:05": {"cost": 12.0, "dst": 5, "path": [4, 5], "src": 4, "status": "valid"}, "04:06": {"cost": 12.0, "dst": 6, "path": [4, 3, 6], "src": 4, "status": "valid"}, "04:07": {"cost": 6.0, "dst": 7, "path": [4, 7], "src": 4, "status": "valid"}, "04:08": {"cost": 6.0, "dst": 8, "path": [4, 8], "src": 4, "status": "valid"}, "04:09": {"cost": 12.0, "dst": 9, "path": [4, 9], "src": 4, "status": "valid"}, "04:0A": {"cost": 12.0, "dst": 10, "path": [4, 10], "src": 4, "status": "valid"}, "05:01": {"cost": 12.0, "dst": 1, "path": [5, 1], "src": 5, "status": "valid"}, "05:02": {"cost": 6.0, "dst": 2, "path": [5, 2], "src": 5, "status": "valid"}, "05:03": {"cost": 12.0, "dst": 3, "path": [5, 3], "src": 5, "status": "valid"}, "05:04": {"cost": 24.0, "dst": 4, "path": [5, 3, 4], "src": 5, "status": "valid"}, "05:06": {"cost": 6.0, "dst": 6, "path": [5, 6], "src": 5, "status": "valid"}, "05:07": {"cost": 12.0, "dst": 7, "path": [5, 7], "src": 5, "status": "valid"}, "05:08": {"cost": 12.0, "dst": 8, "path": [5, 8], "src": 5, "status": "valid"}, "05:09": {"cost": 12.0, "dst": 9, "path": [5, 9], "src": 5, "status": "valid"}, "05:0A": {"cost": 12.0, "dst": 10, "path": [5, 10], "src": 5, "status": "valid"}, "06:01": {"cost": 18.0, "dst": 1, "path": [6, 2, 1], "src": 6, "status": "valid"}, "06:02": {"cost": 6.0, "dst": 2, "path": [6, 2], "src": 6, "status": "valid"}, "06:03": {"cost": 12.0, "dst": 3, "path": [6, 7, 3], "src": 6, "status": "valid"}, "06:04": {"cost": 24.0, "dst": 4, "path": [6, 7, 3, 4], "src": 6, "status": "valid"}, "06:05": {"cost": 12.0, "dst": 5, "path": [6, 5], "src": 6, "status": "valid"}, "06:07": {"cost": 6.0, "dst": 7, "path": [6, 7], "src": 6, "status": "valid"}, "06:08": {"cost": 12.0, "dst": 8, "path": [6, 2, 8], "src": 6, "status": "valid"}, "06:09": {"cost": 12.0, "dst": 9, "path": [6, 7, 9], "src": 6, "status": "valid"}, "06:0A": {"cost": 6.0, "dst": 10, "path": [6, 10], "src": 6, "status": "valid"}, "07:01": {"cost": 18.0, "dst": 1, "path": [7, 9, 1], "src": 7, "status": "valid"}, "07:02": {"cost": 12.0, "dst": 2, "path": [7, 2], "src": 7, "status": "valid"}, "07:03": {"cost": 6.0, "dst": 3, "path": [7, 3], "src": 7, "status": "valid"}, "07:04": {"cost": 18.0, "dst": 4, "path": [7, 3, 4], "src": 7, "status": "valid"}, "07:05": {"cost": 12.0, "dst": 5, "path": [7, 5], "src": 7, "status": "valid"}, "07:06": {"cost": 12.0, "dst": 6, "path": [7, 6], "src": 7, "status": "valid"}, "07:08": {"cost": 6.0, "dst": 8, "path": [7, 8], "src": 7, "status": "valid"}, "07:09": {"cost": 6.0, "dst": 9, "path": [7, 9], "src": 7, "status": "valid"}, "07:0A": {"cost": 12.0, "dst": 10, "path": [7, 10], "src": 7, "status": "valid"}, "08:01": {"cost": 18.0, "dst": 1, "path": [8, 2, 1], "src": 8, "status": "valid"}, "08:02": {"cost": 6.0, "dst": 2, "path": [8, 2], "src": 8, "status": "valid"}, "08:03": {"cost": 12.0, "dst": 3, "path": [8, 3], "src": 8, "status": "valid"}, "08:04": {"cost": 24.0, "dst": 4, "path": [8, 3, 4], "src": 8, "status": "valid"}, "08:05": {"cost": 12.0, "dst": 5, "path": [8, 5], "src": 8, "status": "valid"}, "08:06": {"cost": 12.0, "dst": 6, "path": [8, 6], "src": 8, "status": "valid"}, "08:07": {"cost": 12.0, "dst": 7, "path": [8, 7], "src": 8, "status": "valid"}, "08:09": {"cost": 12.0, "dst": 9, "path": [8, 9], "src": 8, "status": "valid"}, "08:0A": {"cost": 12.0, "dst": 10, "path": [8, 10], "src": 8, "status": "valid"}, "09:01": {"cost": 12.0, "dst": 1, "path": [9, 1], "src": 9, "status": "valid"}, "09:02": {"cost": 12.0, "dst": 2, "path": [9, 3, 2], "src": 9, "status": "valid"}, "09:03": {"cost": 6.0, "dst": 3, "path": [9, 3], "src": 9, "status": "valid"}, "09:04": {"cost": 18.0, "dst": 4, "path": [9, 3, 4], "src": 9, "status": "valid"}, "09:05": {"cost": 12.0, "dst": 5, "path": [9, 5], "src": 9, "status": "valid"}, "09:06": {"cost": 12.0, "dst": 6, "path": [9, 6], "src": 9, "status": "valid"}, "09:07": {"cost": 6.0, "dst": 7, "path": [9, 7], "src": 9, "status": "valid"}, "09:08": {"cost": 12.0, "dst": 8, "path": [9, 8], "src": 9, "status": "valid"}, "09:0A": {"cost": 12.0, "dst": 10, "path": [9, 10], "src": 9, "status": "valid"}, "0A:01": {"cost": 18.0, "dst": 1, "path": [10, 2, 1], "src": 10, "status": "valid"}, "0A:02": {"cost": 6.0, "dst": 2, "path": [10, 2], "src": 10, "status": "valid"}, "0A:03": {"cost": 12.0, "dst": 3, "path": [10, 3], "src": 10, "status": "valid"}, "0A:04": {"cost": 24.0, "dst": 4, "path": [10, 3, 4], "src": 10, "status": "valid"}, "0A:05": {"cost": 6.0, "dst": 5, "path": [10, 5], "src": 10, "status": "valid"}, "0A:06": {"cost": 6.0, "dst": 6, "path": [10, 6], "src": 10, "status": "valid"}, "0A:07": {"cost": 6.0, "dst": 7, "path": [10, 7], "src": 10, "status": "valid"}, "0A:08": {"cost": 12.0, "dst": 8, "path": [10, 8], "src": 10, "status": "valid"}, "0A:09": {"cost": 12.0, "dst": 9, "path": [10, 7, 9], "src": 10, "status": "valid"}}, "ts": "2026-06-01T20:54:35.916", "type": "routes"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 1, "target": 2, "ts": "2026-06-01T20:54:35.917", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 1, "target": 2, "ts": "2026-06-01T20:54:36.918", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 1, "target": 3, "ts": "2026-06-01T20:54:37.920", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 1, "target": 3, "ts": "2026-06-01T20:54:38.921", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 1, "target": 4, "ts": "2026-06-01T20:54:39.924", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 1, "target": 4, "ts": "2026-06-01T20:54:40.926", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 1, "target": 5, "ts": "2026-06-01T20:54:41.927", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 1, "target": 5, "ts": "2026-06-01T20:54:42.930", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 1, "target": 6, "ts": "2026-06-01T20:54:43.931", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 1, "target": 6, "ts": "2026-06-01T20:54:44.933", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 1, "target": 7, "ts": "2026-06-01T20:54:45.935", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 1, "target": 7, "ts": "2026-06-01T20:54:46.937", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 1, "target": 8, "ts": "2026-06-01T20:54:47.939", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 1, "target": 8, "ts": "2026-06-01T20:54:48.941", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 1, "target": 9, "ts": "2026-06-01T20:54:49.943", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 1, "target": 9, "ts": "2026-06-01T20:54:50.944", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 1, "target": 10, "ts": "2026-06-01T20:54:51.946", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 1, "target": 10, "ts": "2026-06-01T20:54:52.948", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 2, "target": 1, "ts": "2026-06-01T20:54:53.950", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 2, "target": 1, "ts": "2026-06-01T20:54:54.952", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 2, "target": 3, "ts": "2026-06-01T20:54:55.954", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 2, "target": 3, "ts": "2026-06-01T20:54:56.956", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 2, "target": 4, "ts": "2026-06-01T20:54:57.958", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 2, "target": 4, "ts": "2026-06-01T20:55:01.479", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 2, "target": 5, "ts": "2026-06-01T20:55:02.481", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 2, "target": 5, "ts": "2026-06-01T20:55:03.483", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 2, "target": 6, "ts": "2026-06-01T20:55:04.484", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 2, "target": 6, "ts": "2026-06-01T20:55:05.486", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 2, "target": 7, "ts": "2026-06-01T20:55:06.488", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 2, "target": 7, "ts": "2026-06-01T20:55:07.489", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 2, "target": 8, "ts": "2026-06-01T20:55:08.491", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 2, "target": 8, "ts": "2026-06-01T20:55:09.493", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 2, "target": 9, "ts": "2026-06-01T20:55:10.494", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 2, "target": 9, "ts": "2026-06-01T20:55:11.496", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 2, "target": 10, "ts": "2026-06-01T20:55:12.500", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 2, "target": 10, "ts": "2026-06-01T20:55:13.502", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 3, "target": 1, "ts": "2026-06-01T20:55:14.504", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 3, "target": 1, "ts": "2026-06-01T20:55:15.506", "type": "route_unreachable"}
+{"command": "SEND 03 2 00 03 aabbcc", "cost": 6.0, "demand": 8, "interval_s": 1.0, "pair_target": 2, "phase": "gateway_to_source", "round": 1, "route": [0, 3], "route_mode": "baseline_dijkstra", "source": 3, "ts": "2026-06-01T20:55:16.508", "type": "round_send"}
+{"seq": 0, "src": 3, "ts": "2026-06-01T20:55:16.813", "type": "ack_observed"}
+{"ack_target": 3, "cost": 6.0, "demand": 8, "interval_s": 1.0, "latency_ms": 304.8136209981749, "pair_target": 2, "phase": "gateway_to_source", "round": 1, "route": [0, 3], "route_mode": "baseline_dijkstra", "seq": 0, "source": 3, "ts": "2026-06-01T20:55:16.813", "type": "round_ack"}
+{"command": "SEND 02 3 00 03 02 aabbcc", "cost": 14.0, "demand": 8, "interval_s": 1.0, "pair_target": 2, "phase": "gateway_to_target_via_source", "round": 1, "route": [0, 3, 2], "route_fallback": false, "route_mode": "baseline_dijkstra", "source": 3, "source_to_target_route": [0, 3, 2], "ts": "2026-06-01T20:55:16.813", "type": "round_send"}
+{"seq": 0, "src": 3, "ts": "2026-06-01T20:55:16.915", "type": "ack_observed"}
+{"seq": 0, "src": 3, "ts": "2026-06-01T20:55:16.915", "type": "ack_observed"}
+{"seq": 0, "src": 3, "ts": "2026-06-01T20:55:16.915", "type": "ack_observed"}
+{"seq": 0, "src": 3, "ts": "2026-06-01T20:55:17.018", "type": "ack_observed"}
+{"seq": 0, "src": 3, "ts": "2026-06-01T20:55:17.118", "type": "ack_observed"}
+{"seq": 0, "src": 3, "ts": "2026-06-01T20:55:17.118", "type": "ack_observed"}
+{"seq": 0, "src": 3, "ts": "2026-06-01T20:55:17.118", "type": "ack_observed"}
+{"seq": 0, "src": 3, "ts": "2026-06-01T20:55:17.219", "type": "ack_observed"}
+{"seq": 0, "src": 3, "ts": "2026-06-01T20:55:17.219", "type": "ack_observed"}
+{"seq": 1, "src": 2, "ts": "2026-06-01T20:55:17.219", "type": "ack_observed"}
+{"ack_target": 2, "cost": 14.0, "demand": 8, "interval_s": 1.0, "latency_ms": 406.17444200324826, "pair_target": 2, "phase": "gateway_to_target_via_source", "round": 1, "route": [0, 3, 2], "route_fallback": false, "route_mode": "baseline_dijkstra", "seq": 1, "source": 3, "source_to_target_route": [0, 3, 2], "ts": "2026-06-01T20:55:17.219", "type": "round_ack"}
+{"seq": 0, "src": 3, "ts": "2026-06-01T20:55:17.320", "type": "ack_observed"}
+{"seq": 1, "src": 2, "ts": "2026-06-01T20:55:17.320", "type": "ack_observed"}
+{"seq": 0, "src": 3, "ts": "2026-06-01T20:55:17.320", "type": "ack_observed"}
+{"seq": 0, "src": 3, "ts": "2026-06-01T20:55:17.320", "type": "ack_observed"}
+{"seq": 1, "src": 2, "ts": "2026-06-01T20:55:17.320", "type": "ack_observed"}
+{"seq": 0, "src": 3, "ts": "2026-06-01T20:55:17.320", "type": "ack_observed"}
+{"seq": 1, "src": 2, "ts": "2026-06-01T20:55:17.421", "type": "ack_observed"}
+{"seq": 0, "src": 3, "ts": "2026-06-01T20:55:17.421", "type": "ack_observed"}
+{"seq": 1, "src": 2, "ts": "2026-06-01T20:55:17.421", "type": "ack_observed"}
+{"seq": 1, "src": 2, "ts": "2026-06-01T20:55:17.421", "type": "ack_observed"}
+{"seq": 0, "src": 3, "ts": "2026-06-01T20:55:17.421", "type": "ack_observed"}
+{"seq": 0, "src": 3, "ts": "2026-06-01T20:55:17.526", "type": "ack_observed"}
+{"seq": 0, "src": 3, "ts": "2026-06-01T20:55:17.527", "type": "ack_observed"}
+{"seq": 1, "src": 2, "ts": "2026-06-01T20:55:17.527", "type": "ack_observed"}
+{"seq": 0, "src": 3, "ts": "2026-06-01T20:55:17.527", "type": "ack_observed"}
+{"seq": 1, "src": 2, "ts": "2026-06-01T20:55:17.527", "type": "ack_observed"}
+{"seq": 0, "src": 3, "ts": "2026-06-01T20:55:17.527", "type": "ack_observed"}
+{"seq": 0, "src": 3, "ts": "2026-06-01T20:55:17.627", "type": "ack_observed"}
+{"seq": 1, "src": 2, "ts": "2026-06-01T20:55:17.627", "type": "ack_observed"}
+{"seq": 0, "src": 3, "ts": "2026-06-01T20:55:17.627", "type": "ack_observed"}
+{"seq": 1, "src": 2, "ts": "2026-06-01T20:55:17.627", "type": "ack_observed"}
+{"seq": 0, "src": 3, "ts": "2026-06-01T20:55:17.627", "type": "ack_observed"}
+{"seq": 1, "src": 2, "ts": "2026-06-01T20:55:17.627", "type": "ack_observed"}
+{"seq": 0, "src": 3, "ts": "2026-06-01T20:55:17.627", "type": "ack_observed"}
+{"seq": 0, "src": 3, "ts": "2026-06-01T20:55:17.727", "type": "ack_observed"}
+{"seq": 0, "src": 3, "ts": "2026-06-01T20:55:17.727", "type": "ack_observed"}
+{"seq": 1, "src": 2, "ts": "2026-06-01T20:55:17.727", "type": "ack_observed"}
+{"seq": 0, "src": 3, "ts": "2026-06-01T20:55:17.729", "type": "ack_observed"}
+{"seq": 0, "src": 3, "ts": "2026-06-01T20:55:17.929", "type": "ack_observed"}
+{"seq": 0, "src": 3, "ts": "2026-06-01T20:55:17.929", "type": "ack_observed"}
+{"seq": 0, "src": 3, "ts": "2026-06-01T20:55:17.929", "type": "ack_observed"}
+{"seq": 0, "src": 3, "ts": "2026-06-01T20:55:18.030", "type": "ack_observed"}
+{"seq": 1, "src": 2, "ts": "2026-06-01T20:55:18.231", "type": "ack_observed"}
+{"command": "SEND 03 2 00 03 aabbcc", "cost": 6.0, "demand": 8, "interval_s": 1.0, "pair_target": 2, "phase": "gateway_to_source", "round": 2, "route": [0, 3], "route_mode": "baseline_dijkstra", "source": 3, "ts": "2026-06-01T20:55:18.231", "type": "round_send"}
+{"seq": 1, "src": 2, "ts": "2026-06-01T20:55:18.335", "type": "ack_observed"}
+{"seq": 1, "src": 2, "ts": "2026-06-01T20:55:18.335", "type": "ack_observed"}
+{"seq": 1, "src": 2, "ts": "2026-06-01T20:55:18.436", "type": "ack_observed"}
+{"seq": 1, "src": 2, "ts": "2026-06-01T20:55:18.437", "type": "ack_observed"}
+{"seq": 1, "src": 2, "ts": "2026-06-01T20:55:18.539", "type": "ack_observed"}
+{"seq": 1, "src": 2, "ts": "2026-06-01T20:55:18.539", "type": "ack_observed"}
+{"seq": 1, "src": 2, "ts": "2026-06-01T20:55:18.539", "type": "ack_observed"}
+{"seq": 1, "src": 2, "ts": "2026-06-01T20:55:18.642", "type": "ack_observed"}
+{"seq": 1, "src": 2, "ts": "2026-06-01T20:55:18.643", "type": "ack_observed"}
+{"seq": 1, "src": 2, "ts": "2026-06-01T20:55:18.643", "type": "ack_observed"}
+{"seq": 1, "src": 2, "ts": "2026-06-01T20:55:18.643", "type": "ack_observed"}
+{"seq": 1, "src": 2, "ts": "2026-06-01T20:55:18.643", "type": "ack_observed"}
+{"seq": 1, "src": 2, "ts": "2026-06-01T20:55:18.744", "type": "ack_observed"}
+{"seq": 1, "src": 2, "ts": "2026-06-01T20:55:18.744", "type": "ack_observed"}
+{"seq": 1, "src": 2, "ts": "2026-06-01T20:55:18.844", "type": "ack_observed"}
+{"seq": 1, "src": 2, "ts": "2026-06-01T20:55:18.844", "type": "ack_observed"}
+{"seq": 1, "src": 2, "ts": "2026-06-01T20:55:18.844", "type": "ack_observed"}
+{"seq": 1, "src": 2, "ts": "2026-06-01T20:55:18.844", "type": "ack_observed"}
+{"seq": 1, "src": 2, "ts": "2026-06-01T20:55:18.944", "type": "ack_observed"}
+{"seq": 1, "src": 2, "ts": "2026-06-01T20:55:19.145", "type": "ack_observed"}
+{"seq": 1, "src": 2, "ts": "2026-06-01T20:55:19.145", "type": "ack_observed"}
+{"seq": 1, "src": 2, "ts": "2026-06-01T20:55:19.245", "type": "ack_observed"}
+{"seq": 1, "src": 2, "ts": "2026-06-01T20:55:19.245", "type": "ack_observed"}
+{"seq": 1, "src": 2, "ts": "2026-06-01T20:55:19.245", "type": "ack_observed"}
+{"seq": 1, "src": 2, "ts": "2026-06-01T20:55:19.345", "type": "ack_observed"}
+{"seq": 1, "src": 2, "ts": "2026-06-01T20:55:19.446", "type": "ack_observed"}
+{"seq": 1, "src": 2, "ts": "2026-06-01T20:55:19.446", "type": "ack_observed"}
+{"seq": 1, "src": 2, "ts": "2026-06-01T20:55:19.446", "type": "ack_observed"}
+{"seq": 1, "src": 2, "ts": "2026-06-01T20:55:19.546", "type": "ack_observed"}
+{"seq": 1, "src": 2, "ts": "2026-06-01T20:55:19.546", "type": "ack_observed"}
+{"seq": 1, "src": 2, "ts": "2026-06-01T20:55:19.546", "type": "ack_observed"}
+{"seq": 1, "src": 2, "ts": "2026-06-01T20:55:19.546", "type": "ack_observed"}
+{"seq": 1, "src": 2, "ts": "2026-06-01T20:55:19.646", "type": "ack_observed"}
+{"seq": 1, "src": 2, "ts": "2026-06-01T20:55:19.646", "type": "ack_observed"}
+{"seq": 1, "src": 2, "ts": "2026-06-01T20:55:19.746", "type": "ack_observed"}
+{"seq": 1, "src": 2, "ts": "2026-06-01T20:55:19.746", "type": "ack_observed"}
+{"seq": 1, "src": 2, "ts": "2026-06-01T20:55:19.847", "type": "ack_observed"}
+{"seq": 1, "src": 2, "ts": "2026-06-01T20:55:19.847", "type": "ack_observed"}
+{"seq": 1, "src": 2, "ts": "2026-06-01T20:55:19.947", "type": "ack_observed"}
+{"seq": 1, "src": 2, "ts": "2026-06-01T20:55:19.947", "type": "ack_observed"}
+{"seq": 1, "src": 2, "ts": "2026-06-01T20:55:20.147", "type": "ack_observed"}
+{"seq": 1, "src": 2, "ts": "2026-06-01T20:55:20.147", "type": "ack_observed"}
+{"seq": 1, "src": 2, "ts": "2026-06-01T20:55:20.248", "type": "ack_observed"}
+{"seq": 1, "src": 2, "ts": "2026-06-01T20:55:20.248", "type": "ack_observed"}
+{"ack_target": 3, "cost": 6.0, "demand": 8, "interval_s": 1.0, "pair_target": 2, "phase": "gateway_to_source", "round": 2, "route": [0, 3], "route_mode": "baseline_dijkstra", "source": 3, "timeout_s": 2.0, "ts": "2026-06-01T20:55:20.248", "type": "round_timeout"}
+{"attempt": 1, "cost": 6.0, "demand": 8, "dst": 3, "interval_s": 1.0, "max_retries": 1, "pair_target": 2, "phase": "gateway_to_source", "round": 2, "route": [0, 3], "route_mode": "baseline_dijkstra", "source": 3, "ts": "2026-06-01T20:55:20.248", "type": "retry"}
+{"command": "SEND 03 2 00 03 aabbcc", "cost": 6.0, "demand": 8, "interval_s": 1.0, "pair_target": 2, "phase": "gateway_to_source", "round": 2, "route": [0, 3], "route_mode": "baseline_dijkstra", "source": 3, "ts": "2026-06-01T20:55:20.748", "type": "round_send"}
+{"seq": 1, "src": 2, "ts": "2026-06-01T20:55:20.849", "type": "ack_observed"}
+{"seq": 1, "src": 2, "ts": "2026-06-01T20:55:20.849", "type": "ack_observed"}
+{"seq": 1, "src": 2, "ts": "2026-06-01T20:55:20.849", "type": "ack_observed"}
+{"seq": 1, "src": 2, "ts": "2026-06-01T20:55:20.849", "type": "ack_observed"}
+{"seq": 1, "src": 2, "ts": "2026-06-01T20:55:20.849", "type": "ack_observed"}
+{"seq": 3, "src": 3, "ts": "2026-06-01T20:55:21.049", "type": "ack_observed"}
+{"ack_target": 3, "cost": 6.0, "demand": 8, "interval_s": 1.0, "latency_ms": 301.2031840044074, "pair_target": 2, "phase": "gateway_to_source", "round": 2, "route": [0, 3], "route_mode": "baseline_dijkstra", "seq": 3, "source": 3, "ts": "2026-06-01T20:55:21.049", "type": "round_ack"}
+{"command": "SEND 02 3 00 03 02 aabbcc", "cost": 14.0, "demand": 8, "interval_s": 1.0, "pair_target": 2, "phase": "gateway_to_target_via_source", "round": 2, "route": [0, 3, 2], "route_fallback": false, "route_mode": "baseline_dijkstra", "source": 3, "source_to_target_route": [0, 3, 2], "ts": "2026-06-01T20:55:21.049", "type": "round_send"}
+{"seq": 3, "src": 3, "ts": "2026-06-01T20:55:21.150", "type": "ack_observed"}
+{"seq": 3, "src": 3, "ts": "2026-06-01T20:55:21.150", "type": "ack_observed"}
+{"seq": 3, "src": 3, "ts": "2026-06-01T20:55:21.150", "type": "ack_observed"}
+{"seq": 3, "src": 3, "ts": "2026-06-01T20:55:21.150", "type": "ack_observed"}
+{"seq": 3, "src": 3, "ts": "2026-06-01T20:55:21.250", "type": "ack_observed"}
+{"seq": 4, "src": 2, "ts": "2026-06-01T20:55:21.251", "type": "ack_observed"}
+{"ack_target": 2, "cost": 14.0, "demand": 8, "interval_s": 1.0, "latency_ms": 201.01369699114002, "pair_target": 2, "phase": "gateway_to_target_via_source", "round": 2, "route": [0, 3, 2], "route_fallback": false, "route_mode": "baseline_dijkstra", "seq": 4, "source": 3, "source_to_target_route": [0, 3, 2], "ts": "2026-06-01T20:55:21.251", "type": "round_ack"}
+{"seq": 4, "src": 2, "ts": "2026-06-01T20:55:21.351", "type": "ack_observed"}
+{"seq": 3, "src": 3, "ts": "2026-06-01T20:55:21.351", "type": "ack_observed"}
+{"seq": 3, "src": 3, "ts": "2026-06-01T20:55:21.351", "type": "ack_observed"}
+{"seq": 4, "src": 2, "ts": "2026-06-01T20:55:21.351", "type": "ack_observed"}
+{"seq": 3, "src": 3, "ts": "2026-06-01T20:55:21.351", "type": "ack_observed"}
+{"seq": 4, "src": 2, "ts": "2026-06-01T20:55:21.351", "type": "ack_observed"}
+{"seq": 3, "src": 3, "ts": "2026-06-01T20:55:21.451", "type": "ack_observed"}
+{"seq": 4, "src": 2, "ts": "2026-06-01T20:55:21.451", "type": "ack_observed"}
+{"seq": 3, "src": 3, "ts": "2026-06-01T20:55:21.451", "type": "ack_observed"}
+{"seq": 4, "src": 2, "ts": "2026-06-01T20:55:21.451", "type": "ack_observed"}
+{"seq": 3, "src": 3, "ts": "2026-06-01T20:55:21.451", "type": "ack_observed"}
+{"seq": 3, "src": 3, "ts": "2026-06-01T20:55:21.551", "type": "ack_observed"}
+{"seq": 3, "src": 3, "ts": "2026-06-01T20:55:21.560", "type": "ack_observed"}
+{"seq": 4, "src": 2, "ts": "2026-06-01T20:55:21.560", "type": "ack_observed"}
+{"seq": 4, "src": 2, "ts": "2026-06-01T20:55:21.560", "type": "ack_observed"}
+{"seq": 3, "src": 3, "ts": "2026-06-01T20:55:21.560", "type": "ack_observed"}
+{"seq": 4, "src": 2, "ts": "2026-06-01T20:55:21.660", "type": "ack_observed"}
+{"seq": 4, "src": 2, "ts": "2026-06-01T20:55:21.660", "type": "ack_observed"}
+{"seq": 3, "src": 3, "ts": "2026-06-01T20:55:21.660", "type": "ack_observed"}
+{"seq": 4, "src": 2, "ts": "2026-06-01T20:55:21.660", "type": "ack_observed"}
+{"seq": 3, "src": 3, "ts": "2026-06-01T20:55:21.660", "type": "ack_observed"}
+{"seq": 4, "src": 2, "ts": "2026-06-01T20:55:21.660", "type": "ack_observed"}
+{"seq": 3, "src": 3, "ts": "2026-06-01T20:55:21.760", "type": "ack_observed"}
+{"seq": 3, "src": 3, "ts": "2026-06-01T20:55:21.760", "type": "ack_observed"}
+{"seq": 3, "src": 3, "ts": "2026-06-01T20:55:21.860", "type": "ack_observed"}
+{"seq": 3, "src": 3, "ts": "2026-06-01T20:55:21.961", "type": "ack_observed"}
+{"seq": 3, "src": 3, "ts": "2026-06-01T20:55:21.961", "type": "ack_observed"}
+{"seq": 3, "src": 3, "ts": "2026-06-01T20:55:21.961", "type": "ack_observed"}
+{"seq": 3, "src": 3, "ts": "2026-06-01T20:55:21.961", "type": "ack_observed"}
+{"seq": 3, "src": 3, "ts": "2026-06-01T20:55:22.061", "type": "ack_observed"}
+{"seq": 3, "src": 3, "ts": "2026-06-01T20:55:22.061", "type": "ack_observed"}
+{"seq": 3, "src": 3, "ts": "2026-06-01T20:55:22.061", "type": "ack_observed"}
+{"seq": 3, "src": 3, "ts": "2026-06-01T20:55:22.061", "type": "ack_observed"}
+{"seq": 3, "src": 3, "ts": "2026-06-01T20:55:22.161", "type": "ack_observed"}
+{"seq": 3, "src": 3, "ts": "2026-06-01T20:55:22.161", "type": "ack_observed"}
+{"seq": 3, "src": 3, "ts": "2026-06-01T20:55:22.161", "type": "ack_observed"}
+{"seq": 3, "src": 3, "ts": "2026-06-01T20:55:22.261", "type": "ack_observed"}
+{"seq": 3, "src": 3, "ts": "2026-06-01T20:55:22.261", "type": "ack_observed"}
+{"seq": 3, "src": 3, "ts": "2026-06-01T20:55:22.261", "type": "ack_observed"}
+{"seq": 3, "src": 3, "ts": "2026-06-01T20:55:22.261", "type": "ack_observed"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 3, "target": 4, "ts": "2026-06-01T20:55:22.262", "type": "route_unreachable"}
+{"seq": 3, "src": 3, "ts": "2026-06-01T20:55:22.362", "type": "ack_observed"}
+{"seq": 3, "src": 3, "ts": "2026-06-01T20:55:22.362", "type": "ack_observed"}
+{"seq": 3, "src": 3, "ts": "2026-06-01T20:55:22.363", "type": "ack_observed"}
+{"seq": 3, "src": 3, "ts": "2026-06-01T20:55:22.363", "type": "ack_observed"}
+{"seq": 3, "src": 3, "ts": "2026-06-01T20:55:22.463", "type": "ack_observed"}
+{"seq": 3, "src": 3, "ts": "2026-06-01T20:55:22.463", "type": "ack_observed"}
+{"seq": 3, "src": 3, "ts": "2026-06-01T20:55:22.463", "type": "ack_observed"}
+{"seq": 3, "src": 3, "ts": "2026-06-01T20:55:22.463", "type": "ack_observed"}
+{"seq": 3, "src": 3, "ts": "2026-06-01T20:55:22.563", "type": "ack_observed"}
+{"seq": 3, "src": 3, "ts": "2026-06-01T20:55:22.563", "type": "ack_observed"}
+{"seq": 3, "src": 3, "ts": "2026-06-01T20:55:22.563", "type": "ack_observed"}
+{"seq": 3, "src": 3, "ts": "2026-06-01T20:55:22.563", "type": "ack_observed"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 3, "target": 4, "ts": "2026-06-01T20:55:23.265", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 3, "target": 5, "ts": "2026-06-01T20:55:24.266", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 3, "target": 5, "ts": "2026-06-01T20:55:25.268", "type": "route_unreachable"}
+{"command": "SEND 03 2 00 03 aabbcc", "cost": 6.0, "demand": 8, "interval_s": 1.0, "pair_target": 6, "phase": "gateway_to_source", "round": 1, "route": [0, 3], "route_mode": "baseline_dijkstra", "source": 3, "ts": "2026-06-01T20:55:26.270", "type": "round_send"}
+{"seq": 5, "src": 3, "ts": "2026-06-01T20:55:26.471", "type": "ack_observed"}
+{"ack_target": 3, "cost": 6.0, "demand": 8, "interval_s": 1.0, "latency_ms": 200.92267099244054, "pair_target": 6, "phase": "gateway_to_source", "round": 1, "route": [0, 3], "route_mode": "baseline_dijkstra", "seq": 5, "source": 3, "ts": "2026-06-01T20:55:26.471", "type": "round_ack"}
+{"command": "SEND 06 3 00 03 06 aabbcc", "cost": 14.0, "demand": 8, "interval_s": 1.0, "pair_target": 6, "phase": "gateway_to_target_via_source", "round": 1, "route": [0, 3, 6], "route_fallback": false, "route_mode": "baseline_dijkstra", "source": 3, "source_to_target_route": [0, 3, 6], "ts": "2026-06-01T20:55:26.471", "type": "round_send"}
+{"seq": 5, "src": 3, "ts": "2026-06-01T20:55:26.572", "type": "ack_observed"}
+{"seq": 5, "src": 3, "ts": "2026-06-01T20:55:26.672", "type": "ack_observed"}
+{"seq": 5, "src": 3, "ts": "2026-06-01T20:55:26.672", "type": "ack_observed"}
+{"seq": 5, "src": 3, "ts": "2026-06-01T20:55:26.672", "type": "ack_observed"}
+{"seq": 5, "src": 3, "ts": "2026-06-01T20:55:26.772", "type": "ack_observed"}
+{"seq": 5, "src": 3, "ts": "2026-06-01T20:55:26.772", "type": "ack_observed"}
+{"seq": 5, "src": 3, "ts": "2026-06-01T20:55:26.872", "type": "ack_observed"}
+{"seq": 6, "src": 6, "ts": "2026-06-01T20:55:26.872", "type": "ack_observed"}
+{"ack_target": 6, "cost": 14.0, "demand": 8, "interval_s": 1.0, "latency_ms": 401.59678099735174, "pair_target": 6, "phase": "gateway_to_target_via_source", "round": 1, "route": [0, 3, 6], "route_fallback": false, "route_mode": "baseline_dijkstra", "seq": 6, "source": 3, "source_to_target_route": [0, 3, 6], "ts": "2026-06-01T20:55:26.872", "type": "round_ack"}
+{"seq": 5, "src": 3, "ts": "2026-06-01T20:55:26.973", "type": "ack_observed"}
+{"seq": 6, "src": 6, "ts": "2026-06-01T20:55:26.973", "type": "ack_observed"}
+{"seq": 5, "src": 3, "ts": "2026-06-01T20:55:26.973", "type": "ack_observed"}
+{"seq": 5, "src": 3, "ts": "2026-06-01T20:55:26.973", "type": "ack_observed"}
+{"seq": 5, "src": 3, "ts": "2026-06-01T20:55:26.973", "type": "ack_observed"}
+{"seq": 5, "src": 3, "ts": "2026-06-01T20:55:27.074", "type": "ack_observed"}
+{"seq": 5, "src": 3, "ts": "2026-06-01T20:55:27.074", "type": "ack_observed"}
+{"seq": 5, "src": 3, "ts": "2026-06-01T20:55:27.074", "type": "ack_observed"}
+{"seq": 5, "src": 3, "ts": "2026-06-01T20:55:27.174", "type": "ack_observed"}
+{"seq": 5, "src": 3, "ts": "2026-06-01T20:55:27.174", "type": "ack_observed"}
+{"seq": 5, "src": 3, "ts": "2026-06-01T20:55:27.174", "type": "ack_observed"}
+{"seq": 6, "src": 6, "ts": "2026-06-01T20:55:27.274", "type": "ack_observed"}
+{"seq": 6, "src": 6, "ts": "2026-06-01T20:55:27.374", "type": "ack_observed"}
+{"seq": 6, "src": 6, "ts": "2026-06-01T20:55:27.374", "type": "ack_observed"}
+{"seq": 6, "src": 6, "ts": "2026-06-01T20:55:27.374", "type": "ack_observed"}
+{"seq": 6, "src": 6, "ts": "2026-06-01T20:55:27.475", "type": "ack_observed"}
+{"seq": 6, "src": 6, "ts": "2026-06-01T20:55:27.475", "type": "ack_observed"}
+{"seq": 6, "src": 6, "ts": "2026-06-01T20:55:27.475", "type": "ack_observed"}
+{"seq": 6, "src": 6, "ts": "2026-06-01T20:55:27.475", "type": "ack_observed"}
+{"seq": 6, "src": 6, "ts": "2026-06-01T20:55:27.575", "type": "ack_observed"}
+{"seq": 6, "src": 6, "ts": "2026-06-01T20:55:27.675", "type": "ack_observed"}
+{"seq": 6, "src": 6, "ts": "2026-06-01T20:55:27.675", "type": "ack_observed"}
+{"seq": 6, "src": 6, "ts": "2026-06-01T20:55:27.675", "type": "ack_observed"}
+{"seq": 6, "src": 6, "ts": "2026-06-01T20:55:27.775", "type": "ack_observed"}
+{"seq": 6, "src": 6, "ts": "2026-06-01T20:55:27.776", "type": "ack_observed"}
+{"seq": 6, "src": 6, "ts": "2026-06-01T20:55:27.876", "type": "ack_observed"}
+{"seq": 6, "src": 6, "ts": "2026-06-01T20:55:27.876", "type": "ack_observed"}
+{"seq": 6, "src": 6, "ts": "2026-06-01T20:55:27.876", "type": "ack_observed"}
+{"command": "SEND 03 2 00 03 aabbcc", "cost": 6.0, "demand": 8, "interval_s": 1.0, "pair_target": 6, "phase": "gateway_to_source", "round": 2, "route": [0, 3], "route_mode": "baseline_dijkstra", "source": 3, "ts": "2026-06-01T20:55:27.876", "type": "round_send"}
+{"seq": 6, "src": 6, "ts": "2026-06-01T20:55:27.977", "type": "ack_observed"}
+{"seq": 6, "src": 6, "ts": "2026-06-01T20:55:28.177", "type": "ack_observed"}
+{"seq": 6, "src": 6, "ts": "2026-06-01T20:55:28.177", "type": "ack_observed"}
+{"seq": 7, "src": 3, "ts": "2026-06-01T20:55:28.177", "type": "ack_observed"}
+{"ack_target": 3, "cost": 6.0, "demand": 8, "interval_s": 1.0, "latency_ms": 301.1647120001726, "pair_target": 6, "phase": "gateway_to_source", "round": 2, "route": [0, 3], "route_mode": "baseline_dijkstra", "seq": 7, "source": 3, "ts": "2026-06-01T20:55:28.177", "type": "round_ack"}
+{"command": "SEND 06 3 00 03 06 aabbcc", "cost": 14.0, "demand": 8, "interval_s": 1.0, "pair_target": 6, "phase": "gateway_to_target_via_source", "round": 2, "route": [0, 3, 6], "route_fallback": false, "route_mode": "baseline_dijkstra", "source": 3, "source_to_target_route": [0, 3, 6], "ts": "2026-06-01T20:55:28.177", "type": "round_send"}
+{"seq": 7, "src": 3, "ts": "2026-06-01T20:55:28.278", "type": "ack_observed"}
+{"seq": 7, "src": 3, "ts": "2026-06-01T20:55:28.278", "type": "ack_observed"}
+{"seq": 7, "src": 3, "ts": "2026-06-01T20:55:28.278", "type": "ack_observed"}
+{"seq": 7, "src": 3, "ts": "2026-06-01T20:55:28.378", "type": "ack_observed"}
+{"seq": 6, "src": 6, "ts": "2026-06-01T20:55:28.378", "type": "ack_observed"}
+{"ack_target": 6, "cost": 14.0, "demand": 8, "interval_s": 1.0, "latency_ms": 201.09287700324785, "pair_target": 6, "phase": "gateway_to_target_via_source", "round": 2, "route": [0, 3, 6], "route_fallback": false, "route_mode": "baseline_dijkstra", "seq": 6, "source": 3, "source_to_target_route": [0, 3, 6], "ts": "2026-06-01T20:55:28.378", "type": "round_ack"}
+{"seq": 6, "src": 6, "ts": "2026-06-01T20:55:28.479", "type": "ack_observed"}
+{"seq": 6, "src": 6, "ts": "2026-06-01T20:55:28.479", "type": "ack_observed"}
+{"seq": 7, "src": 3, "ts": "2026-06-01T20:55:28.579", "type": "ack_observed"}
+{"seq": 7, "src": 3, "ts": "2026-06-01T20:55:28.579", "type": "ack_observed"}
+{"seq": 6, "src": 6, "ts": "2026-06-01T20:55:28.579", "type": "ack_observed"}
+{"seq": 7, "src": 3, "ts": "2026-06-01T20:55:28.579", "type": "ack_observed"}
+{"seq": 7, "src": 3, "ts": "2026-06-01T20:55:28.579", "type": "ack_observed"}
+{"seq": 7, "src": 3, "ts": "2026-06-01T20:55:28.679", "type": "ack_observed"}
+{"seq": 8, "src": 6, "ts": "2026-06-01T20:55:28.780", "type": "ack_observed"}
+{"seq": 8, "src": 6, "ts": "2026-06-01T20:55:28.880", "type": "ack_observed"}
+{"seq": 8, "src": 6, "ts": "2026-06-01T20:55:28.880", "type": "ack_observed"}
+{"seq": 8, "src": 6, "ts": "2026-06-01T20:55:28.980", "type": "ack_observed"}
+{"seq": 8, "src": 6, "ts": "2026-06-01T20:55:28.980", "type": "ack_observed"}
+{"seq": 8, "src": 6, "ts": "2026-06-01T20:55:28.980", "type": "ack_observed"}
+{"seq": 8, "src": 6, "ts": "2026-06-01T20:55:28.980", "type": "ack_observed"}
+{"seq": 8, "src": 6, "ts": "2026-06-01T20:55:29.080", "type": "ack_observed"}
+{"seq": 8, "src": 6, "ts": "2026-06-01T20:55:29.080", "type": "ack_observed"}
+{"seq": 8, "src": 6, "ts": "2026-06-01T20:55:29.080", "type": "ack_observed"}
+{"seq": 8, "src": 6, "ts": "2026-06-01T20:55:29.181", "type": "ack_observed"}
+{"seq": 8, "src": 6, "ts": "2026-06-01T20:55:29.181", "type": "ack_observed"}
+{"seq": 8, "src": 6, "ts": "2026-06-01T20:55:29.181", "type": "ack_observed"}
+{"seq": 8, "src": 6, "ts": "2026-06-01T20:55:29.181", "type": "ack_observed"}
+{"seq": 8, "src": 6, "ts": "2026-06-01T20:55:29.281", "type": "ack_observed"}
+{"seq": 8, "src": 6, "ts": "2026-06-01T20:55:29.281", "type": "ack_observed"}
+{"seq": 8, "src": 6, "ts": "2026-06-01T20:55:29.381", "type": "ack_observed"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 3, "target": 7, "ts": "2026-06-01T20:55:29.381", "type": "route_unreachable"}
+{"seq": 8, "src": 6, "ts": "2026-06-01T20:55:29.482", "type": "ack_observed"}
+{"seq": 8, "src": 6, "ts": "2026-06-01T20:55:29.482", "type": "ack_observed"}
+{"seq": 8, "src": 6, "ts": "2026-06-01T20:55:29.582", "type": "ack_observed"}
+{"seq": 8, "src": 6, "ts": "2026-06-01T20:55:29.582", "type": "ack_observed"}
+{"seq": 8, "src": 6, "ts": "2026-06-01T20:55:29.682", "type": "ack_observed"}
+{"seq": 8, "src": 6, "ts": "2026-06-01T20:55:29.783", "type": "ack_observed"}
+{"seq": 8, "src": 6, "ts": "2026-06-01T20:55:29.783", "type": "ack_observed"}
+{"seq": 8, "src": 6, "ts": "2026-06-01T20:55:29.883", "type": "ack_observed"}
+{"seq": 8, "src": 6, "ts": "2026-06-01T20:55:29.883", "type": "ack_observed"}
+{"seq": 8, "src": 6, "ts": "2026-06-01T20:55:29.983", "type": "ack_observed"}
+{"seq": 8, "src": 6, "ts": "2026-06-01T20:55:29.983", "type": "ack_observed"}
+{"seq": 8, "src": 6, "ts": "2026-06-01T20:55:30.083", "type": "ack_observed"}
+{"seq": 8, "src": 6, "ts": "2026-06-01T20:55:30.083", "type": "ack_observed"}
+{"seq": 8, "src": 6, "ts": "2026-06-01T20:55:30.184", "type": "ack_observed"}
+{"seq": 8, "src": 6, "ts": "2026-06-01T20:55:30.184", "type": "ack_observed"}
+{"seq": 8, "src": 6, "ts": "2026-06-01T20:55:30.184", "type": "ack_observed"}
+{"seq": 8, "src": 6, "ts": "2026-06-01T20:55:30.184", "type": "ack_observed"}
+{"seq": 8, "src": 6, "ts": "2026-06-01T20:55:30.284", "type": "ack_observed"}
+{"seq": 8, "src": 6, "ts": "2026-06-01T20:55:30.284", "type": "ack_observed"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 3, "target": 7, "ts": "2026-06-01T20:55:30.385", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 3, "target": 8, "ts": "2026-06-01T20:55:31.387", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 3, "target": 8, "ts": "2026-06-01T20:55:32.390", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 3, "target": 9, "ts": "2026-06-01T20:55:35.781", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 3, "target": 9, "ts": "2026-06-01T20:55:36.783", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 3, "target": 10, "ts": "2026-06-01T20:55:37.788", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 3, "target": 10, "ts": "2026-06-01T20:55:38.793", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 4, "target": 1, "ts": "2026-06-01T20:55:39.798", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 4, "target": 1, "ts": "2026-06-01T20:55:40.804", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 4, "target": 2, "ts": "2026-06-01T20:55:41.811", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 4, "target": 2, "ts": "2026-06-01T20:55:42.818", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 4, "target": 3, "ts": "2026-06-01T20:55:43.825", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 4, "target": 3, "ts": "2026-06-01T20:55:44.831", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 4, "target": 5, "ts": "2026-06-01T20:55:45.833", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 4, "target": 5, "ts": "2026-06-01T20:55:46.835", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 4, "target": 6, "ts": "2026-06-01T20:55:47.836", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 4, "target": 6, "ts": "2026-06-01T20:55:48.838", "type": "route_unreachable"}
+{"command": "SEND 04 2 00 04 aabbcc", "cost": 3.0, "demand": 8, "interval_s": 1.0, "pair_target": 7, "phase": "gateway_to_source", "round": 1, "route": [0, 4], "route_mode": "baseline_dijkstra", "source": 4, "ts": "2026-06-01T20:55:49.840", "type": "round_send"}
+{"seq": 9, "src": 4, "ts": "2026-06-01T20:55:50.241", "type": "ack_observed"}
+{"ack_target": 4, "cost": 3.0, "demand": 8, "interval_s": 1.0, "latency_ms": 401.36632400390226, "pair_target": 7, "phase": "gateway_to_source", "round": 1, "route": [0, 4], "route_mode": "baseline_dijkstra", "seq": 9, "source": 4, "ts": "2026-06-01T20:55:50.241", "type": "round_ack"}
+{"command": "SEND 07 3 00 04 07 aabbcc", "cost": 11.0, "demand": 8, "interval_s": 1.0, "pair_target": 7, "phase": "gateway_to_target_via_source", "round": 1, "route": [0, 4, 7], "route_fallback": false, "route_mode": "baseline_dijkstra", "source": 4, "source_to_target_route": [0, 4, 7], "ts": "2026-06-01T20:55:50.241", "type": "round_send"}
+{"seq": 9, "src": 4, "ts": "2026-06-01T20:55:50.342", "type": "ack_observed"}
+{"seq": 9, "src": 4, "ts": "2026-06-01T20:55:50.342", "type": "ack_observed"}
+{"seq": 9, "src": 4, "ts": "2026-06-01T20:55:50.442", "type": "ack_observed"}
+{"seq": 9, "src": 4, "ts": "2026-06-01T20:55:50.442", "type": "ack_observed"}
+{"seq": 9, "src": 4, "ts": "2026-06-01T20:55:50.442", "type": "ack_observed"}
+{"seq": 9, "src": 4, "ts": "2026-06-01T20:55:50.442", "type": "ack_observed"}
+{"seq": 9, "src": 4, "ts": "2026-06-01T20:55:50.442", "type": "ack_observed"}
+{"seq": 9, "src": 4, "ts": "2026-06-01T20:55:50.542", "type": "ack_observed"}
+{"seq": 9, "src": 4, "ts": "2026-06-01T20:55:50.642", "type": "ack_observed"}
+{"seq": 9, "src": 4, "ts": "2026-06-01T20:55:50.642", "type": "ack_observed"}
+{"seq": 9, "src": 4, "ts": "2026-06-01T20:55:50.642", "type": "ack_observed"}
+{"seq": 9, "src": 4, "ts": "2026-06-01T20:55:50.642", "type": "ack_observed"}
+{"seq": 9, "src": 4, "ts": "2026-06-01T20:55:50.743", "type": "ack_observed"}
+{"seq": 9, "src": 4, "ts": "2026-06-01T20:55:50.743", "type": "ack_observed"}
+{"seq": 9, "src": 4, "ts": "2026-06-01T20:55:50.743", "type": "ack_observed"}
+{"seq": 9, "src": 4, "ts": "2026-06-01T20:55:50.843", "type": "ack_observed"}
+{"seq": 9, "src": 4, "ts": "2026-06-01T20:55:50.843", "type": "ack_observed"}
+{"seq": 9, "src": 4, "ts": "2026-06-01T20:55:50.843", "type": "ack_observed"}
+{"seq": 9, "src": 4, "ts": "2026-06-01T20:55:50.843", "type": "ack_observed"}
+{"seq": 9, "src": 4, "ts": "2026-06-01T20:55:50.943", "type": "ack_observed"}
+{"seq": 9, "src": 4, "ts": "2026-06-01T20:55:50.943", "type": "ack_observed"}
+{"seq": 9, "src": 4, "ts": "2026-06-01T20:55:50.943", "type": "ack_observed"}
+{"seq": 9, "src": 4, "ts": "2026-06-01T20:55:50.943", "type": "ack_observed"}
+{"seq": 9, "src": 4, "ts": "2026-06-01T20:55:51.043", "type": "ack_observed"}
+{"seq": 9, "src": 4, "ts": "2026-06-01T20:55:51.043", "type": "ack_observed"}
+{"seq": 9, "src": 4, "ts": "2026-06-01T20:55:51.043", "type": "ack_observed"}
+{"seq": 9, "src": 4, "ts": "2026-06-01T20:55:51.144", "type": "ack_observed"}
+{"seq": 9, "src": 4, "ts": "2026-06-01T20:55:51.144", "type": "ack_observed"}
+{"seq": 9, "src": 4, "ts": "2026-06-01T20:55:51.244", "type": "ack_observed"}
+{"seq": 9, "src": 4, "ts": "2026-06-01T20:55:51.244", "type": "ack_observed"}
+{"seq": 9, "src": 4, "ts": "2026-06-01T20:55:51.244", "type": "ack_observed"}
+{"seq": 9, "src": 4, "ts": "2026-06-01T20:55:51.244", "type": "ack_observed"}
+{"seq": 10, "src": 7, "ts": "2026-06-01T20:55:51.444", "type": "ack_observed"}
+{"ack_target": 7, "cost": 11.0, "demand": 8, "interval_s": 1.0, "latency_ms": 1203.4003139997367, "pair_target": 7, "phase": "gateway_to_target_via_source", "round": 1, "route": [0, 4, 7], "route_fallback": false, "route_mode": "baseline_dijkstra", "seq": 10, "source": 4, "source_to_target_route": [0, 4, 7], "ts": "2026-06-01T20:55:51.444", "type": "round_ack"}
+{"seq": 10, "src": 7, "ts": "2026-06-01T20:55:51.545", "type": "ack_observed"}
+{"seq": 10, "src": 7, "ts": "2026-06-01T20:55:51.545", "type": "ack_observed"}
+{"seq": 10, "src": 7, "ts": "2026-06-01T20:55:51.645", "type": "ack_observed"}
+{"seq": 10, "src": 7, "ts": "2026-06-01T20:55:51.645", "type": "ack_observed"}
+{"seq": 10, "src": 7, "ts": "2026-06-01T20:55:51.645", "type": "ack_observed"}
+{"seq": 10, "src": 7, "ts": "2026-06-01T20:55:51.645", "type": "ack_observed"}
+{"seq": 10, "src": 7, "ts": "2026-06-01T20:55:51.745", "type": "ack_observed"}
+{"seq": 10, "src": 7, "ts": "2026-06-01T20:55:51.745", "type": "ack_observed"}
+{"command": "SEND 04 2 00 04 aabbcc", "cost": 3.0, "demand": 8, "interval_s": 1.0, "pair_target": 7, "phase": "gateway_to_source", "round": 2, "route": [0, 4], "route_mode": "baseline_dijkstra", "source": 4, "ts": "2026-06-01T20:55:52.447", "type": "round_send"}
+{"seq": 11, "src": 4, "ts": "2026-06-01T20:55:52.648", "type": "ack_observed"}
+{"ack_target": 4, "cost": 3.0, "demand": 8, "interval_s": 1.0, "latency_ms": 201.0050379903987, "pair_target": 7, "phase": "gateway_to_source", "round": 2, "route": [0, 4], "route_mode": "baseline_dijkstra", "seq": 11, "source": 4, "ts": "2026-06-01T20:55:52.648", "type": "round_ack"}
+{"command": "SEND 07 3 00 04 07 aabbcc", "cost": 11.0, "demand": 8, "interval_s": 1.0, "pair_target": 7, "phase": "gateway_to_target_via_source", "round": 2, "route": [0, 4, 7], "route_fallback": false, "route_mode": "baseline_dijkstra", "source": 4, "source_to_target_route": [0, 4, 7], "ts": "2026-06-01T20:55:52.648", "type": "round_send"}
+{"seq": 11, "src": 4, "ts": "2026-06-01T20:55:52.748", "type": "ack_observed"}
+{"seq": 11, "src": 4, "ts": "2026-06-01T20:55:52.748", "type": "ack_observed"}
+{"seq": 11, "src": 4, "ts": "2026-06-01T20:55:52.748", "type": "ack_observed"}
+{"seq": 11, "src": 4, "ts": "2026-06-01T20:55:52.748", "type": "ack_observed"}
+{"seq": 11, "src": 4, "ts": "2026-06-01T20:55:52.849", "type": "ack_observed"}
+{"seq": 11, "src": 4, "ts": "2026-06-01T20:55:52.849", "type": "ack_observed"}
+{"seq": 11, "src": 4, "ts": "2026-06-01T20:55:52.949", "type": "ack_observed"}
+{"seq": 11, "src": 4, "ts": "2026-06-01T20:55:52.949", "type": "ack_observed"}
+{"seq": 11, "src": 4, "ts": "2026-06-01T20:55:52.949", "type": "ack_observed"}
+{"seq": 11, "src": 4, "ts": "2026-06-01T20:55:52.949", "type": "ack_observed"}
+{"seq": 11, "src": 4, "ts": "2026-06-01T20:55:52.949", "type": "ack_observed"}
+{"seq": 11, "src": 4, "ts": "2026-06-01T20:55:53.049", "type": "ack_observed"}
+{"seq": 11, "src": 4, "ts": "2026-06-01T20:55:53.049", "type": "ack_observed"}
+{"seq": 11, "src": 4, "ts": "2026-06-01T20:55:53.049", "type": "ack_observed"}
+{"seq": 11, "src": 4, "ts": "2026-06-01T20:55:53.149", "type": "ack_observed"}
+{"seq": 11, "src": 4, "ts": "2026-06-01T20:55:53.149", "type": "ack_observed"}
+{"seq": 11, "src": 4, "ts": "2026-06-01T20:55:53.149", "type": "ack_observed"}
+{"seq": 11, "src": 4, "ts": "2026-06-01T20:55:53.149", "type": "ack_observed"}
+{"seq": 11, "src": 4, "ts": "2026-06-01T20:55:53.250", "type": "ack_observed"}
+{"seq": 11, "src": 4, "ts": "2026-06-01T20:55:53.250", "type": "ack_observed"}
+{"seq": 11, "src": 4, "ts": "2026-06-01T20:55:53.250", "type": "ack_observed"}
+{"seq": 11, "src": 4, "ts": "2026-06-01T20:55:53.350", "type": "ack_observed"}
+{"seq": 12, "src": 7, "ts": "2026-06-01T20:55:53.550", "type": "ack_observed"}
+{"ack_target": 7, "cost": 11.0, "demand": 8, "interval_s": 1.0, "latency_ms": 902.6091299892869, "pair_target": 7, "phase": "gateway_to_target_via_source", "round": 2, "route": [0, 4, 7], "route_fallback": false, "route_mode": "baseline_dijkstra", "seq": 12, "source": 4, "source_to_target_route": [0, 4, 7], "ts": "2026-06-01T20:55:53.550", "type": "round_ack"}
+{"seq": 12, "src": 7, "ts": "2026-06-01T20:55:53.651", "type": "ack_observed"}
+{"seq": 12, "src": 7, "ts": "2026-06-01T20:55:53.651", "type": "ack_observed"}
+{"seq": 12, "src": 7, "ts": "2026-06-01T20:55:53.651", "type": "ack_observed"}
+{"seq": 12, "src": 7, "ts": "2026-06-01T20:55:53.751", "type": "ack_observed"}
+{"seq": 12, "src": 7, "ts": "2026-06-01T20:55:53.751", "type": "ack_observed"}
+{"seq": 12, "src": 7, "ts": "2026-06-01T20:55:53.751", "type": "ack_observed"}
+{"seq": 12, "src": 7, "ts": "2026-06-01T20:55:53.751", "type": "ack_observed"}
+{"seq": 12, "src": 7, "ts": "2026-06-01T20:55:53.851", "type": "ack_observed"}
+{"seq": 12, "src": 7, "ts": "2026-06-01T20:55:53.851", "type": "ack_observed"}
+{"seq": 12, "src": 7, "ts": "2026-06-01T20:55:53.952", "type": "ack_observed"}
+{"seq": 12, "src": 7, "ts": "2026-06-01T20:55:53.952", "type": "ack_observed"}
+{"seq": 12, "src": 7, "ts": "2026-06-01T20:55:53.952", "type": "ack_observed"}
+{"seq": 12, "src": 7, "ts": "2026-06-01T20:55:54.052", "type": "ack_observed"}
+{"seq": 12, "src": 7, "ts": "2026-06-01T20:55:54.152", "type": "ack_observed"}
+{"seq": 12, "src": 7, "ts": "2026-06-01T20:55:54.152", "type": "ack_observed"}
+{"seq": 12, "src": 7, "ts": "2026-06-01T20:55:54.252", "type": "ack_observed"}
+{"seq": 12, "src": 7, "ts": "2026-06-01T20:55:54.252", "type": "ack_observed"}
+{"seq": 12, "src": 7, "ts": "2026-06-01T20:55:54.252", "type": "ack_observed"}
+{"seq": 12, "src": 7, "ts": "2026-06-01T20:55:54.353", "type": "ack_observed"}
+{"seq": 12, "src": 7, "ts": "2026-06-01T20:55:54.453", "type": "ack_observed"}
+{"seq": 12, "src": 7, "ts": "2026-06-01T20:55:54.453", "type": "ack_observed"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 4, "target": 8, "ts": "2026-06-01T20:55:54.553", "type": "route_unreachable"}
+{"seq": 12, "src": 7, "ts": "2026-06-01T20:55:54.954", "type": "ack_observed"}
+{"seq": 12, "src": 7, "ts": "2026-06-01T20:55:55.055", "type": "ack_observed"}
+{"seq": 12, "src": 7, "ts": "2026-06-01T20:55:55.055", "type": "ack_observed"}
+{"seq": 12, "src": 7, "ts": "2026-06-01T20:55:55.055", "type": "ack_observed"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 4, "target": 8, "ts": "2026-06-01T20:55:55.556", "type": "route_unreachable"}
+{"command": "SEND 04 2 00 04 aabbcc", "cost": 3.0, "demand": 8, "interval_s": 1.0, "pair_target": 9, "phase": "gateway_to_source", "round": 1, "route": [0, 4], "route_mode": "baseline_dijkstra", "source": 4, "ts": "2026-06-01T20:55:56.557", "type": "round_send"}
+{"seq": 13, "src": 4, "ts": "2026-06-01T20:55:56.758", "type": "ack_observed"}
+{"ack_target": 4, "cost": 3.0, "demand": 8, "interval_s": 1.0, "latency_ms": 201.27425700775348, "pair_target": 9, "phase": "gateway_to_source", "round": 1, "route": [0, 4], "route_mode": "baseline_dijkstra", "seq": 13, "source": 4, "ts": "2026-06-01T20:55:56.758", "type": "round_ack"}
+{"command": "SEND 09 4 00 04 07 09 aabbcc", "cost": 19.0, "demand": 8, "interval_s": 1.0, "pair_target": 9, "phase": "gateway_to_target_via_source", "round": 1, "route": [0, 4, 7, 9], "route_fallback": false, "route_mode": "baseline_dijkstra", "source": 4, "source_to_target_route": [0, 4, 7, 9], "ts": "2026-06-01T20:55:56.758", "type": "round_send"}
+{"seq": 13, "src": 4, "ts": "2026-06-01T20:55:56.859", "type": "ack_observed"}
+{"seq": 13, "src": 4, "ts": "2026-06-01T20:55:56.859", "type": "ack_observed"}
+{"seq": 13, "src": 4, "ts": "2026-06-01T20:55:56.859", "type": "ack_observed"}
+{"seq": 13, "src": 4, "ts": "2026-06-01T20:55:56.859", "type": "ack_observed"}
+{"seq": 13, "src": 4, "ts": "2026-06-01T20:55:56.960", "type": "ack_observed"}
+{"seq": 13, "src": 4, "ts": "2026-06-01T20:55:57.060", "type": "ack_observed"}
+{"seq": 13, "src": 4, "ts": "2026-06-01T20:55:57.160", "type": "ack_observed"}
+{"seq": 13, "src": 4, "ts": "2026-06-01T20:55:57.160", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:55:57.160", "type": "ack_observed"}
+{"ack_target": 9, "cost": 19.0, "demand": 8, "interval_s": 1.0, "latency_ms": 401.68982300383504, "pair_target": 9, "phase": "gateway_to_target_via_source", "round": 1, "route": [0, 4, 7, 9], "route_fallback": false, "route_mode": "baseline_dijkstra", "seq": 14, "source": 4, "source_to_target_route": [0, 4, 7, 9], "ts": "2026-06-01T20:55:57.160", "type": "round_ack"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:55:57.260", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:55:57.260", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:55:57.461", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:55:57.461", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:55:57.461", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:55:57.561", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:55:57.561", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:55:57.561", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:55:57.762", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:55:57.762", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:55:57.862", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:55:57.862", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:55:57.962", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:55:58.163", "type": "ack_observed"}
+{"command": "SEND 04 2 00 04 aabbcc", "cost": 3.0, "demand": 8, "interval_s": 1.0, "pair_target": 9, "phase": "gateway_to_source", "round": 2, "route": [0, 4], "route_mode": "baseline_dijkstra", "source": 4, "ts": "2026-06-01T20:55:58.163", "type": "round_send"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:55:58.264", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:55:58.264", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:55:58.364", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:55:58.364", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:55:58.564", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:55:58.564", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:55:58.564", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:55:58.564", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:55:58.564", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:55:58.665", "type": "ack_observed"}
+{"seq": 15, "src": 4, "ts": "2026-06-01T20:55:58.665", "type": "ack_observed"}
+{"ack_target": 4, "cost": 3.0, "demand": 8, "interval_s": 1.0, "latency_ms": 501.9115850009257, "pair_target": 9, "phase": "gateway_to_source", "round": 2, "route": [0, 4], "route_mode": "baseline_dijkstra", "seq": 15, "source": 4, "ts": "2026-06-01T20:55:58.665", "type": "round_ack"}
+{"command": "SEND 09 4 00 04 07 09 aabbcc", "cost": 19.0, "demand": 8, "interval_s": 1.0, "pair_target": 9, "phase": "gateway_to_target_via_source", "round": 2, "route": [0, 4, 7, 9], "route_fallback": false, "route_mode": "baseline_dijkstra", "source": 4, "source_to_target_route": [0, 4, 7, 9], "ts": "2026-06-01T20:55:58.665", "type": "round_send"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:55:58.766", "type": "ack_observed"}
+{"ack_target": 9, "cost": 19.0, "demand": 8, "interval_s": 1.0, "latency_ms": 100.79928301274776, "pair_target": 9, "phase": "gateway_to_target_via_source", "round": 2, "route": [0, 4, 7, 9], "route_fallback": false, "route_mode": "baseline_dijkstra", "seq": 14, "source": 4, "source_to_target_route": [0, 4, 7, 9], "ts": "2026-06-01T20:55:58.766", "type": "round_ack"}
+{"seq": 15, "src": 4, "ts": "2026-06-01T20:55:58.966", "type": "ack_observed"}
+{"seq": 15, "src": 4, "ts": "2026-06-01T20:55:58.966", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:55:58.966", "type": "ack_observed"}
+{"seq": 15, "src": 4, "ts": "2026-06-01T20:55:59.066", "type": "ack_observed"}
+{"seq": 15, "src": 4, "ts": "2026-06-01T20:55:59.066", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:55:59.066", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:55:59.066", "type": "ack_observed"}
+{"seq": 15, "src": 4, "ts": "2026-06-01T20:55:59.066", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:55:59.167", "type": "ack_observed"}
+{"seq": 15, "src": 4, "ts": "2026-06-01T20:55:59.167", "type": "ack_observed"}
+{"seq": 15, "src": 4, "ts": "2026-06-01T20:55:59.267", "type": "ack_observed"}
+{"seq": 15, "src": 4, "ts": "2026-06-01T20:55:59.267", "type": "ack_observed"}
+{"seq": 15, "src": 4, "ts": "2026-06-01T20:55:59.267", "type": "ack_observed"}
+{"seq": 15, "src": 4, "ts": "2026-06-01T20:55:59.267", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:55:59.367", "type": "ack_observed"}
+{"seq": 15, "src": 4, "ts": "2026-06-01T20:55:59.367", "type": "ack_observed"}
+{"seq": 15, "src": 4, "ts": "2026-06-01T20:55:59.467", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:55:59.467", "type": "ack_observed"}
+{"seq": 15, "src": 4, "ts": "2026-06-01T20:55:59.468", "type": "ack_observed"}
+{"seq": 15, "src": 4, "ts": "2026-06-01T20:55:59.468", "type": "ack_observed"}
+{"seq": 15, "src": 4, "ts": "2026-06-01T20:55:59.468", "type": "ack_observed"}
+{"seq": 15, "src": 4, "ts": "2026-06-01T20:55:59.568", "type": "ack_observed"}
+{"seq": 15, "src": 4, "ts": "2026-06-01T20:55:59.568", "type": "ack_observed"}
+{"seq": 15, "src": 4, "ts": "2026-06-01T20:55:59.568", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:55:59.768", "type": "ack_observed"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 4, "target": 10, "ts": "2026-06-01T20:55:59.768", "type": "route_unreachable"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:55:59.869", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:55:59.869", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:55:59.869", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:55:59.969", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:55:59.969", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:55:59.969", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:55:59.969", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:00.069", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:00.070", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:00.070", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:00.070", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:00.170", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:00.170", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:00.270", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:00.270", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:00.270", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:00.370", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:00.370", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:00.471", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:00.471", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:00.471", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:00.471", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:00.471", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:00.571", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:00.571", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:00.671", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:00.671", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:00.671", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:00.771", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:00.771", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:00.771", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:00.771", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:00.771", "type": "ack_observed"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 4, "target": 10, "ts": "2026-06-01T20:56:00.772", "type": "route_unreachable"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:00.872", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:00.972", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:00.972", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:00.972", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:00.972", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:01.072", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:01.373", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:01.373", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:01.473", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:01.473", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:01.473", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:01.473", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:01.574", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:01.574", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:01.574", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:01.674", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:01.674", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:01.774", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:01.774", "type": "ack_observed"}
+{"command": "SEND 05 2 00 05 aabbcc", "cost": 6.0, "demand": 8, "interval_s": 1.0, "pair_target": 1, "phase": "gateway_to_source", "round": 1, "route": [0, 5], "route_mode": "baseline_dijkstra", "source": 5, "ts": "2026-06-01T20:56:01.774", "type": "round_send"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:01.875", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:01.875", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:01.976", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:01.976", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:01.976", "type": "ack_observed"}
+{"seq": 17, "src": 5, "ts": "2026-06-01T20:56:02.076", "type": "ack_observed"}
+{"ack_target": 5, "cost": 6.0, "demand": 8, "interval_s": 1.0, "latency_ms": 301.57829700328875, "pair_target": 1, "phase": "gateway_to_source", "round": 1, "route": [0, 5], "route_mode": "baseline_dijkstra", "seq": 17, "source": 5, "ts": "2026-06-01T20:56:02.076", "type": "round_ack"}
+{"command": "SEND 01 3 00 05 01 aabbcc", "cost": 30.0, "demand": 8, "interval_s": 1.0, "pair_target": 1, "phase": "gateway_to_target_via_source", "round": 1, "route": [0, 5, 1], "route_fallback": false, "route_mode": "baseline_dijkstra", "source": 5, "source_to_target_route": [0, 5, 1], "ts": "2026-06-01T20:56:02.076", "type": "round_send"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:02.177", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:02.177", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:02.177", "type": "ack_observed"}
+{"seq": 17, "src": 5, "ts": "2026-06-01T20:56:02.277", "type": "ack_observed"}
+{"seq": 17, "src": 5, "ts": "2026-06-01T20:56:02.277", "type": "ack_observed"}
+{"seq": 18, "src": 1, "ts": "2026-06-01T20:56:02.277", "type": "ack_observed"}
+{"ack_target": 1, "cost": 30.0, "demand": 8, "interval_s": 1.0, "latency_ms": 200.92120100161992, "pair_target": 1, "phase": "gateway_to_target_via_source", "round": 1, "route": [0, 5, 1], "route_fallback": false, "route_mode": "baseline_dijkstra", "seq": 18, "source": 5, "source_to_target_route": [0, 5, 1], "ts": "2026-06-01T20:56:02.277", "type": "round_ack"}
+{"seq": 17, "src": 5, "ts": "2026-06-01T20:56:02.377", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:02.377", "type": "ack_observed"}
+{"seq": 17, "src": 5, "ts": "2026-06-01T20:56:02.377", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:02.377", "type": "ack_observed"}
+{"seq": 18, "src": 1, "ts": "2026-06-01T20:56:02.377", "type": "ack_observed"}
+{"seq": 17, "src": 5, "ts": "2026-06-01T20:56:02.478", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:02.478", "type": "ack_observed"}
+{"seq": 17, "src": 5, "ts": "2026-06-01T20:56:02.478", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:02.478", "type": "ack_observed"}
+{"seq": 17, "src": 5, "ts": "2026-06-01T20:56:02.478", "type": "ack_observed"}
+{"seq": 17, "src": 5, "ts": "2026-06-01T20:56:02.478", "type": "ack_observed"}
+{"seq": 18, "src": 1, "ts": "2026-06-01T20:56:02.478", "type": "ack_observed"}
+{"seq": 17, "src": 5, "ts": "2026-06-01T20:56:02.578", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:02.578", "type": "ack_observed"}
+{"seq": 18, "src": 1, "ts": "2026-06-01T20:56:02.578", "type": "ack_observed"}
+{"seq": 18, "src": 1, "ts": "2026-06-01T20:56:02.578", "type": "ack_observed"}
+{"seq": 17, "src": 5, "ts": "2026-06-01T20:56:02.578", "type": "ack_observed"}
+{"seq": 18, "src": 1, "ts": "2026-06-01T20:56:02.578", "type": "ack_observed"}
+{"seq": 17, "src": 5, "ts": "2026-06-01T20:56:02.678", "type": "ack_observed"}
+{"seq": 17, "src": 5, "ts": "2026-06-01T20:56:02.678", "type": "ack_observed"}
+{"seq": 17, "src": 5, "ts": "2026-06-01T20:56:02.678", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:02.779", "type": "ack_observed"}
+{"seq": 18, "src": 1, "ts": "2026-06-01T20:56:02.779", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:02.879", "type": "ack_observed"}
+{"seq": 18, "src": 1, "ts": "2026-06-01T20:56:02.879", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:02.979", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:02.979", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:03.080", "type": "ack_observed"}
+{"seq": 18, "src": 1, "ts": "2026-06-01T20:56:03.080", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:03.080", "type": "ack_observed"}
+{"seq": 18, "src": 1, "ts": "2026-06-01T20:56:03.080", "type": "ack_observed"}
+{"seq": 18, "src": 1, "ts": "2026-06-01T20:56:03.080", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:03.180", "type": "ack_observed"}
+{"seq": 18, "src": 1, "ts": "2026-06-01T20:56:03.180", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:03.180", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:03.180", "type": "ack_observed"}
+{"seq": 18, "src": 1, "ts": "2026-06-01T20:56:03.180", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:03.280", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:03.280", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:03.280", "type": "ack_observed"}
+{"command": "SEND 05 2 00 05 aabbcc", "cost": 6.0, "demand": 8, "interval_s": 1.0, "pair_target": 1, "phase": "gateway_to_source", "round": 2, "route": [0, 5], "route_mode": "baseline_dijkstra", "source": 5, "ts": "2026-06-01T20:56:03.281", "type": "round_send"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:03.381", "type": "ack_observed"}
+{"seq": 18, "src": 1, "ts": "2026-06-01T20:56:03.381", "type": "ack_observed"}
+{"seq": 18, "src": 1, "ts": "2026-06-01T20:56:03.381", "type": "ack_observed"}
+{"seq": 18, "src": 1, "ts": "2026-06-01T20:56:03.381", "type": "ack_observed"}
+{"seq": 19, "src": 5, "ts": "2026-06-01T20:56:03.482", "type": "ack_observed"}
+{"ack_target": 5, "cost": 6.0, "demand": 8, "interval_s": 1.0, "latency_ms": 200.98971400875598, "pair_target": 1, "phase": "gateway_to_source", "round": 2, "route": [0, 5], "route_mode": "baseline_dijkstra", "seq": 19, "source": 5, "ts": "2026-06-01T20:56:03.482", "type": "round_ack"}
+{"command": "SEND 01 3 00 05 01 aabbcc", "cost": 30.0, "demand": 8, "interval_s": 1.0, "pair_target": 1, "phase": "gateway_to_target_via_source", "round": 2, "route": [0, 5, 1], "route_fallback": false, "route_mode": "baseline_dijkstra", "source": 5, "source_to_target_route": [0, 5, 1], "ts": "2026-06-01T20:56:03.482", "type": "round_send"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:03.583", "type": "ack_observed"}
+{"seq": 18, "src": 1, "ts": "2026-06-01T20:56:03.583", "type": "ack_observed"}
+{"ack_target": 1, "cost": 30.0, "demand": 8, "interval_s": 1.0, "latency_ms": 101.10030299983919, "pair_target": 1, "phase": "gateway_to_target_via_source", "round": 2, "route": [0, 5, 1], "route_fallback": false, "route_mode": "baseline_dijkstra", "seq": 18, "source": 5, "source_to_target_route": [0, 5, 1], "ts": "2026-06-01T20:56:03.583", "type": "round_ack"}
+{"seq": 19, "src": 5, "ts": "2026-06-01T20:56:03.683", "type": "ack_observed"}
+{"seq": 19, "src": 5, "ts": "2026-06-01T20:56:03.683", "type": "ack_observed"}
+{"seq": 19, "src": 5, "ts": "2026-06-01T20:56:03.783", "type": "ack_observed"}
+{"seq": 19, "src": 5, "ts": "2026-06-01T20:56:03.783", "type": "ack_observed"}
+{"seq": 19, "src": 5, "ts": "2026-06-01T20:56:03.783", "type": "ack_observed"}
+{"seq": 19, "src": 5, "ts": "2026-06-01T20:56:03.783", "type": "ack_observed"}
+{"seq": 19, "src": 5, "ts": "2026-06-01T20:56:03.884", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:03.884", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:03.984", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:03.984", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:03.984", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:03.984", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:04.084", "type": "ack_observed"}
+{"seq": 20, "src": 1, "ts": "2026-06-01T20:56:04.084", "type": "ack_observed"}
+{"seq": 20, "src": 1, "ts": "2026-06-01T20:56:04.184", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:04.184", "type": "ack_observed"}
+{"seq": 20, "src": 1, "ts": "2026-06-01T20:56:04.185", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:04.185", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:04.185", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:04.185", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:04.285", "type": "ack_observed"}
+{"seq": 20, "src": 1, "ts": "2026-06-01T20:56:04.285", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:04.285", "type": "ack_observed"}
+{"seq": 20, "src": 1, "ts": "2026-06-01T20:56:04.285", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:04.285", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:04.385", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:04.385", "type": "ack_observed"}
+{"seq": 20, "src": 1, "ts": "2026-06-01T20:56:04.385", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:04.385", "type": "ack_observed"}
+{"seq": 20, "src": 1, "ts": "2026-06-01T20:56:04.385", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:04.385", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:04.485", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:04.485", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:04.485", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:04.485", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:04.586", "type": "ack_observed"}
+{"seq": 20, "src": 1, "ts": "2026-06-01T20:56:04.586", "type": "ack_observed"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 5, "target": 2, "ts": "2026-06-01T20:56:04.586", "type": "route_unreachable"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:04.686", "type": "ack_observed"}
+{"seq": 20, "src": 1, "ts": "2026-06-01T20:56:04.686", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:04.686", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:04.686", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:04.686", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:04.686", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:04.786", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:04.786", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:04.786", "type": "ack_observed"}
+{"seq": 20, "src": 1, "ts": "2026-06-01T20:56:04.786", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:04.887", "type": "ack_observed"}
+{"seq": 20, "src": 1, "ts": "2026-06-01T20:56:04.887", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:04.887", "type": "ack_observed"}
+{"seq": 20, "src": 1, "ts": "2026-06-01T20:56:04.887", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:04.887", "type": "ack_observed"}
+{"seq": 20, "src": 1, "ts": "2026-06-01T20:56:04.887", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:04.887", "type": "ack_observed"}
+{"seq": 20, "src": 1, "ts": "2026-06-01T20:56:04.987", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:04.987", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:04.987", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:04.987", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:04.987", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:05.087", "type": "ack_observed"}
+{"seq": 20, "src": 1, "ts": "2026-06-01T20:56:05.087", "type": "ack_observed"}
+{"seq": 20, "src": 1, "ts": "2026-06-01T20:56:05.188", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:05.188", "type": "ack_observed"}
+{"seq": 20, "src": 1, "ts": "2026-06-01T20:56:05.188", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:05.188", "type": "ack_observed"}
+{"seq": 20, "src": 1, "ts": "2026-06-01T20:56:05.188", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:05.188", "type": "ack_observed"}
+{"seq": 20, "src": 1, "ts": "2026-06-01T20:56:05.188", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:05.188", "type": "ack_observed"}
+{"seq": 20, "src": 1, "ts": "2026-06-01T20:56:05.188", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:05.288", "type": "ack_observed"}
+{"seq": 14, "src": 9, "ts": "2026-06-01T20:56:05.288", "type": "ack_observed"}
+{"seq": 16, "src": 9, "ts": "2026-06-01T20:56:05.388", "type": "ack_observed"}
+{"seq": 16, "src": 9, "ts": "2026-06-01T20:56:05.388", "type": "ack_observed"}
+{"seq": 16, "src": 9, "ts": "2026-06-01T20:56:05.488", "type": "ack_observed"}
+{"seq": 16, "src": 9, "ts": "2026-06-01T20:56:05.488", "type": "ack_observed"}
+{"seq": 16, "src": 9, "ts": "2026-06-01T20:56:05.589", "type": "ack_observed"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 5, "target": 2, "ts": "2026-06-01T20:56:05.589", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 5, "target": 3, "ts": "2026-06-01T20:56:06.590", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 5, "target": 3, "ts": "2026-06-01T20:56:07.592", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 5, "target": 4, "ts": "2026-06-01T20:56:10.649", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 5, "target": 4, "ts": "2026-06-01T20:56:11.652", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 5, "target": 6, "ts": "2026-06-01T20:56:12.653", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 5, "target": 6, "ts": "2026-06-01T20:56:13.655", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 5, "target": 7, "ts": "2026-06-01T20:56:14.656", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 5, "target": 7, "ts": "2026-06-01T20:56:15.658", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 5, "target": 8, "ts": "2026-06-01T20:56:16.660", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 5, "target": 8, "ts": "2026-06-01T20:56:17.662", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 5, "target": 9, "ts": "2026-06-01T20:56:18.664", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 5, "target": 9, "ts": "2026-06-01T20:56:19.666", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 5, "target": 10, "ts": "2026-06-01T20:56:20.668", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 5, "target": 10, "ts": "2026-06-01T20:56:21.669", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 6, "target": 1, "ts": "2026-06-01T20:56:22.671", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 6, "target": 1, "ts": "2026-06-01T20:56:23.673", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 6, "target": 2, "ts": "2026-06-01T20:56:24.675", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 6, "target": 2, "ts": "2026-06-01T20:56:25.677", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 6, "target": 3, "ts": "2026-06-01T20:56:26.678", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 6, "target": 3, "ts": "2026-06-01T20:56:27.680", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 6, "target": 4, "ts": "2026-06-01T20:56:28.682", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 6, "target": 4, "ts": "2026-06-01T20:56:29.684", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 6, "target": 5, "ts": "2026-06-01T20:56:30.686", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 6, "target": 5, "ts": "2026-06-01T20:56:31.687", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 6, "target": 7, "ts": "2026-06-01T20:56:32.689", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 6, "target": 7, "ts": "2026-06-01T20:56:33.691", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 6, "target": 8, "ts": "2026-06-01T20:56:34.692", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 6, "target": 8, "ts": "2026-06-01T20:56:35.694", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 6, "target": 9, "ts": "2026-06-01T20:56:36.696", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 6, "target": 9, "ts": "2026-06-01T20:56:37.697", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 6, "target": 10, "ts": "2026-06-01T20:56:38.699", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 6, "target": 10, "ts": "2026-06-01T20:56:39.701", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 7, "target": 1, "ts": "2026-06-01T20:56:40.703", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 7, "target": 1, "ts": "2026-06-01T20:56:41.705", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 7, "target": 2, "ts": "2026-06-01T20:56:44.927", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 7, "target": 2, "ts": "2026-06-01T20:56:45.930", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 7, "target": 3, "ts": "2026-06-01T20:56:46.932", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 7, "target": 3, "ts": "2026-06-01T20:56:47.933", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 7, "target": 4, "ts": "2026-06-01T20:56:48.936", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 7, "target": 4, "ts": "2026-06-01T20:56:49.938", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 7, "target": 5, "ts": "2026-06-01T20:56:50.940", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 7, "target": 5, "ts": "2026-06-01T20:56:51.942", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 7, "target": 6, "ts": "2026-06-01T20:56:52.944", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 7, "target": 6, "ts": "2026-06-01T20:56:53.946", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 7, "target": 8, "ts": "2026-06-01T20:56:54.948", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 7, "target": 8, "ts": "2026-06-01T20:56:55.950", "type": "route_unreachable"}
+{"command": "SEND 07 3 00 04 07 aabbcc", "cost": 9.0, "demand": 8, "interval_s": 1.0, "pair_target": 9, "phase": "gateway_to_source", "round": 1, "route": [0, 4, 7], "route_mode": "baseline_dijkstra", "source": 7, "ts": "2026-06-01T20:56:56.951", "type": "round_send"}
+{"seq": 21, "src": 7, "ts": "2026-06-01T20:56:57.453", "type": "ack_observed"}
+{"ack_target": 7, "cost": 9.0, "demand": 8, "interval_s": 1.0, "latency_ms": 501.5573980053887, "pair_target": 9, "phase": "gateway_to_source", "round": 1, "route": [0, 4, 7], "route_mode": "baseline_dijkstra", "seq": 21, "source": 7, "ts": "2026-06-01T20:56:57.453", "type": "round_ack"}
+{"command": "SEND 09 4 00 04 07 09 aabbcc", "cost": 19.0, "demand": 8, "interval_s": 1.0, "pair_target": 9, "phase": "gateway_to_target_via_source", "round": 1, "route": [0, 4, 7, 9], "route_fallback": false, "route_mode": "baseline_dijkstra", "source": 7, "source_to_target_route": [0, 4, 7, 9], "ts": "2026-06-01T20:56:57.453", "type": "round_send"}
+{"seq": 21, "src": 7, "ts": "2026-06-01T20:56:57.554", "type": "ack_observed"}
+{"seq": 21, "src": 7, "ts": "2026-06-01T20:56:57.554", "type": "ack_observed"}
+{"seq": 21, "src": 7, "ts": "2026-06-01T20:56:57.755", "type": "ack_observed"}
+{"seq": 21, "src": 7, "ts": "2026-06-01T20:56:57.755", "type": "ack_observed"}
+{"seq": 21, "src": 7, "ts": "2026-06-01T20:56:57.755", "type": "ack_observed"}
+{"seq": 21, "src": 7, "ts": "2026-06-01T20:56:57.955", "type": "ack_observed"}
+{"seq": 21, "src": 7, "ts": "2026-06-01T20:56:57.955", "type": "ack_observed"}
+{"seq": 21, "src": 7, "ts": "2026-06-01T20:56:57.955", "type": "ack_observed"}
+{"seq": 21, "src": 7, "ts": "2026-06-01T20:56:57.955", "type": "ack_observed"}
+{"seq": 21, "src": 7, "ts": "2026-06-01T20:56:58.356", "type": "ack_observed"}
+{"seq": 21, "src": 7, "ts": "2026-06-01T20:56:58.356", "type": "ack_observed"}
+{"seq": 21, "src": 7, "ts": "2026-06-01T20:56:58.356", "type": "ack_observed"}
+{"seq": 21, "src": 7, "ts": "2026-06-01T20:56:58.657", "type": "ack_observed"}
+{"seq": 21, "src": 7, "ts": "2026-06-01T20:56:58.657", "type": "ack_observed"}
+{"seq": 21, "src": 7, "ts": "2026-06-01T20:56:58.757", "type": "ack_observed"}
+{"seq": 21, "src": 7, "ts": "2026-06-01T20:56:59.358", "type": "ack_observed"}
+{"seq": 22, "src": 9, "ts": "2026-06-01T20:56:59.358", "type": "ack_observed"}
+{"ack_target": 9, "cost": 19.0, "demand": 8, "interval_s": 1.0, "latency_ms": 1904.821499992977, "pair_target": 9, "phase": "gateway_to_target_via_source", "round": 1, "route": [0, 4, 7, 9], "route_fallback": false, "route_mode": "baseline_dijkstra", "seq": 22, "source": 7, "source_to_target_route": [0, 4, 7, 9], "ts": "2026-06-01T20:56:59.358", "type": "round_ack"}
+{"seq": 22, "src": 9, "ts": "2026-06-01T20:56:59.458", "type": "ack_observed"}
+{"seq": 21, "src": 7, "ts": "2026-06-01T20:56:59.458", "type": "ack_observed"}
+{"seq": 22, "src": 9, "ts": "2026-06-01T20:56:59.458", "type": "ack_observed"}
+{"seq": 22, "src": 9, "ts": "2026-06-01T20:56:59.458", "type": "ack_observed"}
+{"seq": 22, "src": 9, "ts": "2026-06-01T20:56:59.458", "type": "ack_observed"}
+{"seq": 22, "src": 9, "ts": "2026-06-01T20:56:59.558", "type": "ack_observed"}
+{"seq": 22, "src": 9, "ts": "2026-06-01T20:56:59.558", "type": "ack_observed"}
+{"seq": 22, "src": 9, "ts": "2026-06-01T20:56:59.558", "type": "ack_observed"}
+{"seq": 22, "src": 9, "ts": "2026-06-01T20:56:59.558", "type": "ack_observed"}
+{"seq": 22, "src": 9, "ts": "2026-06-01T20:56:59.659", "type": "ack_observed"}
+{"seq": 22, "src": 9, "ts": "2026-06-01T20:56:59.659", "type": "ack_observed"}
+{"seq": 22, "src": 9, "ts": "2026-06-01T20:56:59.759", "type": "ack_observed"}
+{"seq": 22, "src": 9, "ts": "2026-06-01T20:56:59.759", "type": "ack_observed"}
+{"seq": 22, "src": 9, "ts": "2026-06-01T20:56:59.759", "type": "ack_observed"}
+{"seq": 22, "src": 9, "ts": "2026-06-01T20:56:59.859", "type": "ack_observed"}
+{"seq": 22, "src": 9, "ts": "2026-06-01T20:57:00.060", "type": "ack_observed"}
+{"seq": 22, "src": 9, "ts": "2026-06-01T20:57:00.060", "type": "ack_observed"}
+{"seq": 22, "src": 9, "ts": "2026-06-01T20:57:00.060", "type": "ack_observed"}
+{"seq": 22, "src": 9, "ts": "2026-06-01T20:57:00.160", "type": "ack_observed"}
+{"seq": 22, "src": 9, "ts": "2026-06-01T20:57:00.160", "type": "ack_observed"}
+{"seq": 22, "src": 9, "ts": "2026-06-01T20:57:00.160", "type": "ack_observed"}
+{"seq": 22, "src": 9, "ts": "2026-06-01T20:57:00.260", "type": "ack_observed"}
+{"seq": 22, "src": 9, "ts": "2026-06-01T20:57:00.260", "type": "ack_observed"}
+{"seq": 22, "src": 9, "ts": "2026-06-01T20:57:00.260", "type": "ack_observed"}
+{"seq": 22, "src": 9, "ts": "2026-06-01T20:57:00.260", "type": "ack_observed"}
+{"command": "SEND 07 3 00 04 07 aabbcc", "cost": 9.0, "demand": 8, "interval_s": 1.0, "pair_target": 9, "phase": "gateway_to_source", "round": 2, "route": [0, 4, 7], "route_mode": "baseline_dijkstra", "source": 7, "ts": "2026-06-01T20:57:00.361", "type": "round_send"}
+{"seq": 22, "src": 9, "ts": "2026-06-01T20:57:00.461", "type": "ack_observed"}
+{"seq": 22, "src": 9, "ts": "2026-06-01T20:57:00.461", "type": "ack_observed"}
+{"seq": 22, "src": 9, "ts": "2026-06-01T20:57:00.461", "type": "ack_observed"}
+{"seq": 22, "src": 9, "ts": "2026-06-01T20:57:00.461", "type": "ack_observed"}
+{"seq": 22, "src": 9, "ts": "2026-06-01T20:57:00.562", "type": "ack_observed"}
+{"seq": 22, "src": 9, "ts": "2026-06-01T20:57:00.562", "type": "ack_observed"}
+{"seq": 22, "src": 9, "ts": "2026-06-01T20:57:00.662", "type": "ack_observed"}
+{"seq": 22, "src": 9, "ts": "2026-06-01T20:57:00.662", "type": "ack_observed"}
+{"seq": 23, "src": 7, "ts": "2026-06-01T20:57:00.762", "type": "ack_observed"}
+{"ack_target": 7, "cost": 9.0, "demand": 8, "interval_s": 1.0, "latency_ms": 401.706282995292, "pair_target": 9, "phase": "gateway_to_source", "round": 2, "route": [0, 4, 7], "route_mode": "baseline_dijkstra", "seq": 23, "source": 7, "ts": "2026-06-01T20:57:00.762", "type": "round_ack"}
+{"command": "SEND 09 4 00 04 07 09 aabbcc", "cost": 19.0, "demand": 8, "interval_s": 1.0, "pair_target": 9, "phase": "gateway_to_target_via_source", "round": 2, "route": [0, 4, 7, 9], "route_fallback": false, "route_mode": "baseline_dijkstra", "source": 7, "source_to_target_route": [0, 4, 7, 9], "ts": "2026-06-01T20:57:00.762", "type": "round_send"}
+{"seq": 23, "src": 7, "ts": "2026-06-01T20:57:00.864", "type": "ack_observed"}
+{"seq": 23, "src": 7, "ts": "2026-06-01T20:57:00.864", "type": "ack_observed"}
+{"seq": 22, "src": 9, "ts": "2026-06-01T20:57:00.864", "type": "ack_observed"}
+{"ack_target": 9, "cost": 19.0, "demand": 8, "interval_s": 1.0, "latency_ms": 101.41268400184345, "pair_target": 9, "phase": "gateway_to_target_via_source", "round": 2, "route": [0, 4, 7, 9], "route_fallback": false, "route_mode": "baseline_dijkstra", "seq": 22, "source": 7, "source_to_target_route": [0, 4, 7, 9], "ts": "2026-06-01T20:57:00.864", "type": "round_ack"}
+{"seq": 22, "src": 9, "ts": "2026-06-01T20:57:00.964", "type": "ack_observed"}
+{"seq": 23, "src": 7, "ts": "2026-06-01T20:57:00.964", "type": "ack_observed"}
+{"seq": 22, "src": 9, "ts": "2026-06-01T20:57:00.964", "type": "ack_observed"}
+{"seq": 22, "src": 9, "ts": "2026-06-01T20:57:00.964", "type": "ack_observed"}
+{"seq": 23, "src": 7, "ts": "2026-06-01T20:57:00.964", "type": "ack_observed"}
+{"seq": 22, "src": 9, "ts": "2026-06-01T20:57:01.064", "type": "ack_observed"}
+{"seq": 23, "src": 7, "ts": "2026-06-01T20:57:01.065", "type": "ack_observed"}
+{"seq": 23, "src": 7, "ts": "2026-06-01T20:57:01.065", "type": "ack_observed"}
+{"seq": 23, "src": 7, "ts": "2026-06-01T20:57:01.165", "type": "ack_observed"}
+{"seq": 22, "src": 9, "ts": "2026-06-01T20:57:01.165", "type": "ack_observed"}
+{"seq": 22, "src": 9, "ts": "2026-06-01T20:57:01.165", "type": "ack_observed"}
+{"seq": 22, "src": 9, "ts": "2026-06-01T20:57:01.165", "type": "ack_observed"}
+{"seq": 22, "src": 9, "ts": "2026-06-01T20:57:01.265", "type": "ack_observed"}
+{"seq": 23, "src": 7, "ts": "2026-06-01T20:57:01.365", "type": "ack_observed"}
+{"seq": 22, "src": 9, "ts": "2026-06-01T20:57:01.365", "type": "ack_observed"}
+{"seq": 23, "src": 7, "ts": "2026-06-01T20:57:01.365", "type": "ack_observed"}
+{"seq": 23, "src": 7, "ts": "2026-06-01T20:57:01.365", "type": "ack_observed"}
+{"seq": 22, "src": 9, "ts": "2026-06-01T20:57:01.365", "type": "ack_observed"}
+{"seq": 22, "src": 9, "ts": "2026-06-01T20:57:01.365", "type": "ack_observed"}
+{"seq": 23, "src": 7, "ts": "2026-06-01T20:57:01.365", "type": "ack_observed"}
+{"seq": 22, "src": 9, "ts": "2026-06-01T20:57:01.466", "type": "ack_observed"}
+{"seq": 23, "src": 7, "ts": "2026-06-01T20:57:01.466", "type": "ack_observed"}
+{"seq": 23, "src": 7, "ts": "2026-06-01T20:57:01.466", "type": "ack_observed"}
+{"seq": 22, "src": 9, "ts": "2026-06-01T20:57:01.466", "type": "ack_observed"}
+{"seq": 22, "src": 9, "ts": "2026-06-01T20:57:01.566", "type": "ack_observed"}
+{"seq": 23, "src": 7, "ts": "2026-06-01T20:57:01.566", "type": "ack_observed"}
+{"seq": 23, "src": 7, "ts": "2026-06-01T20:57:01.566", "type": "ack_observed"}
+{"seq": 23, "src": 7, "ts": "2026-06-01T20:57:01.566", "type": "ack_observed"}
+{"seq": 22, "src": 9, "ts": "2026-06-01T20:57:01.666", "type": "ack_observed"}
+{"seq": 23, "src": 7, "ts": "2026-06-01T20:57:01.666", "type": "ack_observed"}
+{"seq": 22, "src": 9, "ts": "2026-06-01T20:57:01.666", "type": "ack_observed"}
+{"seq": 23, "src": 7, "ts": "2026-06-01T20:57:01.666", "type": "ack_observed"}
+{"seq": 22, "src": 9, "ts": "2026-06-01T20:57:01.666", "type": "ack_observed"}
+{"seq": 23, "src": 7, "ts": "2026-06-01T20:57:01.666", "type": "ack_observed"}
+{"seq": 22, "src": 9, "ts": "2026-06-01T20:57:01.766", "type": "ack_observed"}
+{"seq": 22, "src": 9, "ts": "2026-06-01T20:57:01.766", "type": "ack_observed"}
+{"seq": 22, "src": 9, "ts": "2026-06-01T20:57:01.766", "type": "ack_observed"}
+{"seq": 22, "src": 9, "ts": "2026-06-01T20:57:01.766", "type": "ack_observed"}
+{"seq": 22, "src": 9, "ts": "2026-06-01T20:57:01.867", "type": "ack_observed"}
+{"seq": 23, "src": 7, "ts": "2026-06-01T20:57:01.867", "type": "ack_observed"}
+{"seq": 23, "src": 7, "ts": "2026-06-01T20:57:01.867", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:01.867", "type": "ack_observed"}
+{"seq": 23, "src": 7, "ts": "2026-06-01T20:57:01.867", "type": "ack_observed"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 7, "target": 10, "ts": "2026-06-01T20:57:01.867", "type": "route_unreachable"}
+{"seq": 23, "src": 7, "ts": "2026-06-01T20:57:01.967", "type": "ack_observed"}
+{"seq": 23, "src": 7, "ts": "2026-06-01T20:57:01.967", "type": "ack_observed"}
+{"seq": 23, "src": 7, "ts": "2026-06-01T20:57:01.967", "type": "ack_observed"}
+{"seq": 23, "src": 7, "ts": "2026-06-01T20:57:02.068", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:02.068", "type": "ack_observed"}
+{"seq": 23, "src": 7, "ts": "2026-06-01T20:57:02.068", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:02.068", "type": "ack_observed"}
+{"seq": 23, "src": 7, "ts": "2026-06-01T20:57:02.268", "type": "ack_observed"}
+{"seq": 23, "src": 7, "ts": "2026-06-01T20:57:02.268", "type": "ack_observed"}
+{"seq": 23, "src": 7, "ts": "2026-06-01T20:57:02.268", "type": "ack_observed"}
+{"seq": 23, "src": 7, "ts": "2026-06-01T20:57:02.268", "type": "ack_observed"}
+{"seq": 23, "src": 7, "ts": "2026-06-01T20:57:02.369", "type": "ack_observed"}
+{"seq": 23, "src": 7, "ts": "2026-06-01T20:57:02.369", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:02.469", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:02.469", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:02.469", "type": "ack_observed"}
+{"seq": 23, "src": 7, "ts": "2026-06-01T20:57:02.569", "type": "ack_observed"}
+{"seq": 23, "src": 7, "ts": "2026-06-01T20:57:02.569", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:02.569", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:02.669", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:02.669", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:02.669", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:02.770", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:02.770", "type": "ack_observed"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 7, "target": 10, "ts": "2026-06-01T20:57:02.870", "type": "route_unreachable"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:02.970", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:03.071", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:03.071", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:03.071", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:03.071", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:03.171", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:03.171", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:03.171", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:03.271", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:03.271", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:03.271", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:03.371", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:03.371", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:03.371", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:03.472", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:03.572", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:03.672", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:03.772", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:03.772", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:03.873", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:03.873", "type": "ack_observed"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 8, "target": 1, "ts": "2026-06-01T20:57:03.873", "type": "route_unreachable"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:03.973", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:03.973", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:03.973", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:04.074", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:04.074", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:04.174", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:04.174", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:04.174", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:04.274", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:04.274", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:04.274", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:04.374", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:04.374", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:04.374", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:04.374", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:04.475", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:04.575", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:04.575", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:04.575", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:04.575", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:04.675", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:04.675", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:04.776", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:04.876", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:04.876", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:04.876", "type": "ack_observed"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 8, "target": 1, "ts": "2026-06-01T20:57:04.876", "type": "route_unreachable"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:04.977", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:05.077", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:05.077", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:05.077", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:05.077", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:05.177", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:05.177", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:05.277", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:05.277", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:05.277", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:05.277", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:05.378", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:05.378", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:05.478", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:05.478", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:05.478", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:05.578", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:05.578", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:05.578", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:05.678", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:05.679", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:05.679", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:05.779", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:05.779", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:05.779", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:05.779", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:05.879", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:05.879", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:05.879", "type": "ack_observed"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 8, "target": 2, "ts": "2026-06-01T20:57:05.879", "type": "route_unreachable"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:05.979", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:05.980", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:06.080", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:06.080", "type": "ack_observed"}
+{"seq": 24, "src": 9, "ts": "2026-06-01T20:57:06.080", "type": "ack_observed"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 8, "target": 2, "ts": "2026-06-01T20:57:06.881", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 8, "target": 3, "ts": "2026-06-01T20:57:07.883", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 8, "target": 3, "ts": "2026-06-01T20:57:08.885", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 8, "target": 4, "ts": "2026-06-01T20:57:09.887", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 8, "target": 4, "ts": "2026-06-01T20:57:10.889", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 8, "target": 5, "ts": "2026-06-01T20:57:11.891", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 8, "target": 5, "ts": "2026-06-01T20:57:12.892", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 8, "target": 6, "ts": "2026-06-01T20:57:13.894", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 8, "target": 6, "ts": "2026-06-01T20:57:14.900", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 8, "target": 7, "ts": "2026-06-01T20:57:15.902", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 8, "target": 7, "ts": "2026-06-01T20:57:19.122", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 8, "target": 9, "ts": "2026-06-01T20:57:20.124", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 8, "target": 9, "ts": "2026-06-01T20:57:21.126", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 8, "target": 10, "ts": "2026-06-01T20:57:22.130", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 8, "target": 10, "ts": "2026-06-01T20:57:23.134", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 9, "target": 1, "ts": "2026-06-01T20:57:24.138", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 9, "target": 1, "ts": "2026-06-01T20:57:25.142", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 9, "target": 2, "ts": "2026-06-01T20:57:26.147", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 9, "target": 2, "ts": "2026-06-01T20:57:27.150", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 9, "target": 3, "ts": "2026-06-01T20:57:28.153", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 9, "target": 3, "ts": "2026-06-01T20:57:29.154", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 9, "target": 4, "ts": "2026-06-01T20:57:30.157", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 9, "target": 4, "ts": "2026-06-01T20:57:31.159", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 9, "target": 5, "ts": "2026-06-01T20:57:32.161", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 9, "target": 5, "ts": "2026-06-01T20:57:33.162", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 9, "target": 6, "ts": "2026-06-01T20:57:34.164", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 9, "target": 6, "ts": "2026-06-01T20:57:35.166", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 9, "target": 7, "ts": "2026-06-01T20:57:36.168", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 9, "target": 7, "ts": "2026-06-01T20:57:37.169", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 9, "target": 8, "ts": "2026-06-01T20:57:38.171", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 9, "target": 8, "ts": "2026-06-01T20:57:39.173", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 9, "target": 10, "ts": "2026-06-01T20:57:40.175", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 9, "target": 10, "ts": "2026-06-01T20:57:41.176", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 10, "target": 1, "ts": "2026-06-01T20:57:42.178", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 10, "target": 1, "ts": "2026-06-01T20:57:43.180", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 10, "target": 2, "ts": "2026-06-01T20:57:44.182", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 10, "target": 2, "ts": "2026-06-01T20:57:45.184", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 10, "target": 3, "ts": "2026-06-01T20:57:46.186", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 10, "target": 3, "ts": "2026-06-01T20:57:47.187", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 10, "target": 4, "ts": "2026-06-01T20:57:48.190", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 10, "target": 4, "ts": "2026-06-01T20:57:49.192", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 10, "target": 5, "ts": "2026-06-01T20:57:50.194", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 10, "target": 5, "ts": "2026-06-01T20:57:53.368", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 10, "target": 6, "ts": "2026-06-01T20:57:54.373", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 10, "target": 6, "ts": "2026-06-01T20:57:55.379", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 10, "target": 7, "ts": "2026-06-01T20:57:56.384", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 10, "target": 7, "ts": "2026-06-01T20:57:57.390", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 10, "target": 8, "ts": "2026-06-01T20:57:58.395", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 10, "target": 8, "ts": "2026-06-01T20:57:59.403", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 10, "target": 9, "ts": "2026-06-01T20:58:00.409", "type": "route_unreachable"}
+{"gateway_route_status": "valid", "pair_route_status": "valid", "source": 10, "target": 9, "ts": "2026-06-01T20:58:01.417", "type": "route_unreachable"}
+{"ts": "2026-06-01T20:58:02.424", "type": "bench_end"}

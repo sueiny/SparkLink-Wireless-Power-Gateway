@@ -182,7 +182,12 @@ class D3QNPredictor:
     def _load(self, route_feature_dim: int, num_actions: int):
         if self._network is not None:
             if self._loaded_route_feature_dim != route_feature_dim:
-                raise D3QNUnavailable(f"route_feature_dim mismatch: loaded={self._loaded_route_feature_dim}, runtime={route_feature_dim}")
+                # 允许 checkpoint 的维度大于运行时维度（节点数量不同）
+                checkpoint_nodes = (self._loaded_route_feature_dim - len(DEFAULTS.demands) - 1) // 2
+                runtime_nodes = (route_feature_dim - len(DEFAULTS.demands) - 1) // 2
+                if checkpoint_nodes < runtime_nodes:
+                    raise D3QNUnavailable(f"route_feature_dim mismatch: loaded={self._loaded_route_feature_dim}, runtime={route_feature_dim}")
+                # 否则允许继续使用（checkpoint 维度更大）
             if self._loaded_num_actions != num_actions:
                 raise D3QNUnavailable(f"num_actions mismatch: loaded={self._loaded_num_actions}, runtime={num_actions}")
             return
@@ -249,7 +254,7 @@ class D3QNPredictor:
         }
 
     def decide(self, topology: Topology, src: int, dst: int, demand: int) -> D3QNDecision:
-        state = build_d3qn_state(topology)
+        state = build_d3qn_state(topology, src=src, dst=dst)
         nodes = sorted(int(node) for node in state["nodes"])
         if src not in nodes or dst not in nodes:
             return D3QNDecision("unreachable", src, dst, demand, None, [], [], [], str(self.checkpoint_path), "src or dst missing from topology")

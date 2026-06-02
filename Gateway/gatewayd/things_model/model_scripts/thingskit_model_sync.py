@@ -422,7 +422,7 @@ def main():
     
     # 物模型目录
     script_dir = Path(__file__).parent
-    model_dir = args.model_dir or str(script_dir.parent / "gatewayd" / "things_model")
+    model_dir = args.model_dir or str(script_dir.parent)
     
     print(f"""
 ╔══════════════════════════════════════════════════╗

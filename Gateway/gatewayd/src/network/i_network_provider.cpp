@@ -31,7 +31,12 @@ bool INetworkProvider::defaultHasIp(const std::string &ifname) const
 
 bool INetworkProvider::defaultCanReachCloud(const std::string &host, int port) const
 {
-    return tcpConnect(host, port, 3000);
+    return tcpConnect(host, port, 5000);
+}
+
+bool INetworkProvider::defaultCanReachCloud(const std::string &host, int port, const std::string &ifname) const
+{
+    return tcpConnectVia(host, port, 5000, ifname);
 }
 
 } // namespace gateway::network

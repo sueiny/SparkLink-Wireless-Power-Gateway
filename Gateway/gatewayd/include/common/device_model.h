@@ -9,8 +9,6 @@
 
 namespace gateway::model {
 
-// gatewayd 内部统一设备类型。
-// 物模型 product_id 仍来自配置/JSON，这里只表达程序需要分支处理的类别。
 enum class DeviceType {
     Gateway,
     SinglePhaseMeter,
@@ -19,32 +17,39 @@ enum class DeviceType {
     DtuNode,
 };
 
-// 电表角色用于模拟主表/支表拓扑和线损统计。
-enum class MeterRole {
-    None,
-    Main,
-    Branch,
+// DTU 节点物模型（V2：ID-based，无 MAC）
+struct DtuNodeModel {
+    uint16_t id = 0;                          // 节点 ID (1-255)
+    uint8_t role = 0;                         // SLE 角色: 0=Root, 1=Relay, 2=Leaf, 3=Gateway
+    std::string name;                         // "DTU_036"
+    bool online = false;                      // 路由表中存在即在线
+    uint16_t parent_id = 0;                   // 父节点 ID，0=无父节点
+    std::vector<uint16_t> child_ids;          // 子节点 ID 列表
 };
 
-// 配置文件中的设备清单。
-// 这些字段同时服务于模拟数据、命令目标匹配和 DTU 拓扑上报。
+// 外接设备配置（V2：用 station_id + dtu_id 替代 MAC）
 struct DeviceInfo {
-    std::string device_id;
+    std::string device_id;                    // ThingsKit 设备 ID，如 "METER_001"
     std::string product_id;
     std::string name;
     DeviceType type = DeviceType::Gateway;
-    MeterRole meter_role = MeterRole::None;
-    std::string parent_meter_id;
-    std::string mac;
-    std::string parent_mac;
-    std::string child_macs;
+    int station_id = 0;                       // Modbus 站号 (1-255)
+    int dtu_id = 0;                           // 挂载的 DTU 节点 ID
     int modbus_addr = 0;
-    int modbus_type = 0;
+    int modbus_type = 0;                      // 0x02=电表, 0x03=温湿度, 0x04=继电器
     bool online = true;
+    // V1 兼容字段（过渡期保留，后续删除）
+    int dtu_node_id = 0;
 };
 
-// 采集线程和状态补丁线程之间传递的内部遥测模型。
-// 它刻意不绑定 ThingsKit payload 形态，最终 JSON 由 ThingsKitCodec 统一生成。
+// DTU 节点配置（V2：ID-based）
+struct DtuDeviceInfo {
+    std::string device_id;                    // "DTU_036"
+    int node_id = 0;                          // SLE 节点 ID
+    int parent_id = 0;                        // 父节点 ID
+    std::string child_ids;                    // 子节点 ID 列表，逗号分隔
+};
+
 struct TelemetryData {
     std::string device_id;
     DeviceType type = DeviceType::Gateway;
@@ -53,8 +58,6 @@ struct TelemetryData {
     std::map<std::string, double> numeric_values;
     std::map<std::string, std::string> string_values;
     std::map<std::string, bool> bool_values;
-    // ThingsKit 的 STRUCT 物模型字段需要在 values 中携带嵌套 JSON 对象。
-    // 这里仅保存已经构造好的结构化值，不在模型层拼 topic 或 MQTT payload。
     std::map<std::string, nlohmann::json> object_values;
 
     nlohmann::json toFlatJson() const;
@@ -73,8 +76,15 @@ struct GatewayStatus {
 };
 
 DeviceType deviceTypeFromString(const std::string &text);
-MeterRole meterRoleFromString(const std::string &text);
 std::string toString(DeviceType type);
-std::string toString(MeterRole role);
+
+// 根据设备类型和站号生成设备名称：METER_001, RELAY_101, ENV_005
+std::string generateDeviceName(DeviceType type, int station_id);
+
+// 根据节点 ID 生成 DTU 名称：DTU_036
+std::string generateDtuName(int node_id);
+
+// SLE 角色 → 云端角色映射：Root(1)→0, Relay(2)/Leaf(3)→1
+uint8_t sleRoleToCloudRole(uint8_t sle_role);
 
 } // namespace gateway::model

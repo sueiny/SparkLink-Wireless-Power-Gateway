@@ -18,6 +18,7 @@ def rssi_to_capacity(rssi: int, defaults: D3QNDefaults = DEFAULTS) -> float:
 
 
 def k_candidate_paths(graph: dict[int, dict[int, float]], src: int, dst: int, k: int) -> list[list[int]]:
+    """生成候选路径：基于RSSI权重最短"""
     if src == dst:
         return [[src]]
     queue: list[tuple[float, tuple[int, ...]]] = [(0.0, (src,))]
@@ -57,21 +58,21 @@ def edge_betweenness(topology: Topology, k_paths: int) -> dict[str, float]:
     return {key: count / denominator for key, count in counts.items()}
 
 
-def build_d3qn_state(topology: Topology, summary: dict | None = None, defaults: D3QNDefaults = DEFAULTS) -> dict:
+def build_d3qn_state(topology: Topology, summary: dict | None = None, defaults: D3QNDefaults = DEFAULTS, src: int | None = None, dst: int | None = None) -> dict:
     graph = _planning_graph_with_reciprocal_edges(topology)
     betweenness = _edge_betweenness_from_graph(graph, sorted(topology.nodes), defaults.k_paths)
     edge_records = _planning_edge_records(topology)
     ordered_edges = sorted(edge_records)
-    edge_index = {edge_key(src, dst): index for index, (src, dst) in enumerate(ordered_edges)}
+    edge_index = {edge_key(s, d): index for index, (s, d) in enumerate(ordered_edges)}
 
     edge_features = []
-    for src, dst in ordered_edges:
-        edge = edge_records[(src, dst)]
+    for s, d in ordered_edges:
+        edge = edge_records[(s, d)]
         capacity = rssi_to_capacity(edge["rssi"], defaults)
         edge_features.append(
             {
-                "src": src,
-                "dst": dst,
+                "src": s,
+                "dst": d,
                 "rssi": real_field(edge["rssi"], edge["source"], "dBm"),
                 "rssi_weight": real_field(edge["weight"], "derived"),
                 "capacity": {"value": capacity, "source": "derived", "unit": "capacity_unit", "derived_from": "rssi_weight"},
@@ -80,16 +81,22 @@ def build_d3qn_state(topology: Topology, summary: dict | None = None, defaults: 
                 "packet_loss": {"value": defaults.packet_loss, "source": "default", "unit": "ratio"},
                 "delay": {"value": defaults.delay, "source": "default", "unit": "seconds"},
                 "queueing_delay": {"value": defaults.queueing_delay, "source": "default", "unit": "seconds"},
-                "betweenness": {"value": betweenness.get(edge_key(src, dst), 0.0), "source": "derived"},
+                "betweenness": {"value": betweenness.get(edge_key(s, d), 0.0), "source": "derived"},
             }
         )
 
     candidate_paths = {}
-    for src in sorted(topology.nodes):
-        for dst in sorted(topology.nodes):
-            if src == dst:
-                continue
-            candidate_paths[f"{src:02X}:{dst:02X}"] = k_candidate_paths(graph, src, dst, defaults.k_paths)
+    if src is not None and dst is not None:
+        # 只计算指定src-dst对的候选路径
+        key = f"{src:02X}:{dst:02X}"
+        candidate_paths[key] = k_candidate_paths(graph, src, dst, defaults.k_paths)
+    else:
+        # 计算所有节点对的候选路径（用于拓扑收集等场景）
+        for s in sorted(topology.nodes):
+            for d in sorted(topology.nodes):
+                if s == d:
+                    continue
+                candidate_paths[f"{s:02X}:{d:02X}"] = k_candidate_paths(graph, s, d, defaults.k_paths)
 
     return {
         "schema_version": 1,

@@ -3,12 +3,14 @@ CC := $(CROSS)gcc
 STRIP := $(CROSS)strip
 
 APP_DIR := .
+COMMON_DIR := ../common
 SLE_SDK := ../../evb3506_sle_app_demo_v112
 BUILD_DIR := $(APP_DIR)/build
 TARGET := $(APP_DIR)/sle_data_app
 
 INCLUDES := \
 	-I$(APP_DIR)/inc \
+	-I$(COMMON_DIR) \
 	-I$(SLE_SDK)/include/bsle/common \
 	-I$(SLE_SDK)/include/bsle/sle \
 	-I$(SLE_SDK)/include/libc_sec/include \
@@ -43,7 +45,6 @@ clean:
 	rm -rf $(TARGET) $(BUILD_DIR) $(APP_DIR)/src/*.o
 
 push: all
-	adb shell 'mkdir -p /userdata/gateway/bin /userdata/gateway/config /userdata/gateway/data/sle'
+	adb shell 'mkdir -p /userdata/gateway/bin /userdata/gateway/data/sle'
 	adb push $(TARGET) /userdata/gateway/bin/
-	adb push $(APP_DIR)/sle_data_app.json /userdata/gateway/config/
 	adb shell 'chmod +x /userdata/gateway/bin/sle_data_app'

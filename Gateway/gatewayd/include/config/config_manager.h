@@ -54,6 +54,19 @@ struct MockConfig {
     double humidity_base = 60.0;
 };
 
+// 单个 Root 节点配置（V2：ID-based，无 MAC）
+struct SleRootConfig {
+    int node_id = 0;             // Root 节点 ID (1/2/3)
+};
+
+// SLE 数据源配置。enable=true 时使用 SleDataSource 替代 MockDataSource。
+struct SleConfig {
+    bool enable = false;
+    std::string data_socket = "/var/run/gateway/sle_data.sock";
+    std::string cmd_socket = "/var/run/gateway/sle_cmd.sock";
+    std::vector<SleRootConfig> roots;  // Root 节点列表
+};
+
 struct EthernetConfig {
     bool enable = true;
     std::string ifname = "eth0";
@@ -94,7 +107,9 @@ struct AppConfig {
     PublishConfig publish;
     LogConfig log;
     MockConfig mock;
-    std::vector<model::DeviceInfo> devices;
+    SleConfig sle;
+    std::vector<model::DeviceInfo> devices;         // 外接设备（电表/继电器/温湿度）
+    std::vector<model::DtuDeviceInfo> dtu_devices;  // DTU 节点
 };
 
 class ConfigManager {

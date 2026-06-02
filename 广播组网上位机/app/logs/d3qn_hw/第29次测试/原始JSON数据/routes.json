@@ -1,0 +1,3000 @@
+{
+  "00:01": {
+    "candidate_paths": [
+      [
+        0,
+        1
+      ],
+      [
+        0,
+        9,
+        1
+      ],
+      [
+        0,
+        3,
+        1
+      ],
+      [
+        0,
+        3,
+        5,
+        1
+      ]
+    ],
+    "dst": 1,
+    "source": "d3qn_candidate_paths",
+    "src": 0
+  },
+  "00:02": {
+    "candidate_paths": [
+      [
+        0,
+        2
+      ],
+      [
+        0,
+        3,
+        2
+      ],
+      [
+        0,
+        1,
+        2
+      ],
+      [
+        0,
+        3,
+        5,
+        2
+      ]
+    ],
+    "dst": 2,
+    "source": "d3qn_candidate_paths",
+    "src": 0
+  },
+  "00:03": {
+    "candidate_paths": [
+      [
+        0,
+        3
+      ],
+      [
+        0,
+        7,
+        3
+      ],
+      [
+        0,
+        9,
+        3
+      ],
+      [
+        0,
+        4,
+        3
+      ]
+    ],
+    "dst": 3,
+    "source": "d3qn_candidate_paths",
+    "src": 0
+  },
+  "00:04": {
+    "candidate_paths": [
+      [
+        0,
+        4
+      ],
+      [
+        0,
+        3,
+        4
+      ],
+      [
+        0,
+        7,
+        3,
+        4
+      ],
+      [
+        0,
+        9,
+        3,
+        4
+      ]
+    ],
+    "dst": 4,
+    "source": "d3qn_candidate_paths",
+    "src": 0
+  },
+  "00:05": {
+    "candidate_paths": [
+      [
+        0,
+        3,
+        5
+      ],
+      [
+        0,
+        5
+      ],
+      [
+        0,
+        4,
+        5
+      ],
+      [
+        0,
+        1,
+        5
+      ]
+    ],
+    "dst": 5,
+    "source": "d3qn_candidate_paths",
+    "src": 0
+  },
+  "00:06": {
+    "candidate_paths": [
+      [
+        0,
+        6
+      ],
+      [
+        0,
+        3,
+        6
+      ],
+      [
+        0,
+        3,
+        8,
+        6
+      ],
+      [
+        0,
+        8,
+        6
+      ]
+    ],
+    "dst": 6,
+    "source": "d3qn_candidate_paths",
+    "src": 0
+  },
+  "00:07": {
+    "candidate_paths": [
+      [
+        0,
+        7
+      ],
+      [
+        0,
+        3,
+        7
+      ],
+      [
+        0,
+        3,
+        5,
+        7
+      ],
+      [
+        0,
+        3,
+        8,
+        7
+      ]
+    ],
+    "dst": 7,
+    "source": "d3qn_candidate_paths",
+    "src": 0
+  },
+  "00:08": {
+    "candidate_paths": [
+      [
+        0,
+        3,
+        8
+      ],
+      [
+        0,
+        8
+      ],
+      [
+        0,
+        9,
+        8
+      ],
+      [
+        0,
+        4,
+        8
+      ]
+    ],
+    "dst": 8,
+    "source": "d3qn_candidate_paths",
+    "src": 0
+  },
+  "00:09": {
+    "candidate_paths": [
+      [
+        0,
+        9
+      ],
+      [
+        0,
+        3,
+        9
+      ],
+      [
+        0,
+        4,
+        9
+      ],
+      [
+        0,
+        1,
+        9
+      ]
+    ],
+    "dst": 9,
+    "source": "d3qn_candidate_paths",
+    "src": 0
+  },
+  "00:0A": {
+    "candidate_paths": [
+      [
+        0,
+        4,
+        10
+      ],
+      [
+        0,
+        2,
+        10
+      ],
+      [
+        0,
+        3,
+        2,
+        10
+      ],
+      [
+        0,
+        3,
+        10
+      ]
+    ],
+    "dst": 10,
+    "source": "d3qn_candidate_paths",
+    "src": 0
+  },
+  "01:00": {
+    "candidate_paths": [
+      [
+        1,
+        0
+      ],
+      [
+        1,
+        3,
+        0
+      ],
+      [
+        1,
+        9,
+        0
+      ],
+      [
+        1,
+        3,
+        4,
+        0
+      ]
+    ],
+    "dst": 0,
+    "source": "d3qn_candidate_paths",
+    "src": 1
+  },
+  "01:02": {
+    "candidate_paths": [
+      [
+        1,
+        2
+      ],
+      [
+        1,
+        3,
+        2
+      ],
+      [
+        1,
+        5,
+        2
+      ],
+      [
+        1,
+        0,
+        2
+      ]
+    ],
+    "dst": 2,
+    "source": "d3qn_candidate_paths",
+    "src": 1
+  },
+  "01:03": {
+    "candidate_paths": [
+      [
+        1,
+        3
+      ],
+      [
+        1,
+        0,
+        3
+      ],
+      [
+        1,
+        9,
+        3
+      ],
+      [
+        1,
+        0,
+        7,
+        3
+      ]
+    ],
+    "dst": 3,
+    "source": "d3qn_candidate_paths",
+    "src": 1
+  },
+  "01:04": {
+    "candidate_paths": [
+      [
+        1,
+        0,
+        4
+      ],
+      [
+        1,
+        3,
+        4
+      ],
+      [
+        1,
+        0,
+        3,
+        4
+      ],
+      [
+        1,
+        3,
+        0,
+        4
+      ]
+    ],
+    "dst": 4,
+    "source": "d3qn_candidate_paths",
+    "src": 1
+  },
+  "01:05": {
+    "candidate_paths": [
+      [
+        1,
+        5
+      ],
+      [
+        1,
+        2,
+        5
+      ],
+      [
+        1,
+        3,
+        5
+      ],
+      [
+        1,
+        0,
+        3,
+        5
+      ]
+    ],
+    "dst": 5,
+    "source": "d3qn_candidate_paths",
+    "src": 1
+  },
+  "01:06": {
+    "candidate_paths": [
+      [
+        1,
+        0,
+        6
+      ],
+      [
+        1,
+        2,
+        6
+      ],
+      [
+        1,
+        2,
+        10,
+        6
+      ],
+      [
+        1,
+        3,
+        6
+      ]
+    ],
+    "dst": 6,
+    "source": "d3qn_candidate_paths",
+    "src": 1
+  },
+  "01:07": {
+    "candidate_paths": [
+      [
+        1,
+        0,
+        7
+      ],
+      [
+        1,
+        3,
+        7
+      ],
+      [
+        1,
+        5,
+        7
+      ],
+      [
+        1,
+        0,
+        3,
+        7
+      ]
+    ],
+    "dst": 7,
+    "source": "d3qn_candidate_paths",
+    "src": 1
+  },
+  "01:08": {
+    "candidate_paths": [
+      [
+        1,
+        3,
+        8
+      ],
+      [
+        1,
+        5,
+        8
+      ],
+      [
+        1,
+        9,
+        8
+      ],
+      [
+        1,
+        0,
+        3,
+        8
+      ]
+    ],
+    "dst": 8,
+    "source": "d3qn_candidate_paths",
+    "src": 1
+  },
+  "01:09": {
+    "candidate_paths": [
+      [
+        1,
+        9
+      ],
+      [
+        1,
+        0,
+        9
+      ],
+      [
+        1,
+        3,
+        9
+      ],
+      [
+        1,
+        0,
+        3,
+        9
+      ]
+    ],
+    "dst": 9,
+    "source": "d3qn_candidate_paths",
+    "src": 1
+  },
+  "01:0A": {
+    "candidate_paths": [
+      [
+        1,
+        2,
+        10
+      ],
+      [
+        1,
+        10
+      ],
+      [
+        1,
+        0,
+        4,
+        10
+      ],
+      [
+        1,
+        3,
+        2,
+        10
+      ]
+    ],
+    "dst": 10,
+    "source": "d3qn_candidate_paths",
+    "src": 1
+  },
+  "02:00": {
+    "candidate_paths": [
+      [
+        2,
+        1,
+        0
+      ],
+      [
+        2,
+        0
+      ],
+      [
+        2,
+        5,
+        1,
+        0
+      ],
+      [
+        2,
+        3,
+        0
+      ]
+    ],
+    "dst": 0,
+    "source": "d3qn_candidate_paths",
+    "src": 2
+  },
+  "02:01": {
+    "candidate_paths": [
+      [
+        2,
+        1
+      ],
+      [
+        2,
+        5,
+        1
+      ],
+      [
+        2,
+        9,
+        1
+      ],
+      [
+        2,
+        3,
+        1
+      ]
+    ],
+    "dst": 1,
+    "source": "d3qn_candidate_paths",
+    "src": 2
+  },
+  "02:03": {
+    "candidate_paths": [
+      [
+        2,
+        3
+      ],
+      [
+        2,
+        5,
+        7,
+        3
+      ],
+      [
+        2,
+        9,
+        3
+      ],
+      [
+        2,
+        1,
+        3
+      ]
+    ],
+    "dst": 3,
+    "source": "d3qn_candidate_paths",
+    "src": 2
+  },
+  "02:04": {
+    "candidate_paths": [
+      [
+        2,
+        1,
+        0,
+        4
+      ],
+      [
+        2,
+        0,
+        4
+      ],
+      [
+        2,
+        3,
+        4
+      ],
+      [
+        2,
+        5,
+        1,
+        0,
+        4
+      ]
+    ],
+    "dst": 4,
+    "source": "d3qn_candidate_paths",
+    "src": 2
+  },
+  "02:05": {
+    "candidate_paths": [
+      [
+        2,
+        5
+      ],
+      [
+        2,
+        3,
+        5
+      ],
+      [
+        2,
+        6,
+        5
+      ],
+      [
+        2,
+        10,
+        5
+      ]
+    ],
+    "dst": 5,
+    "source": "d3qn_candidate_paths",
+    "src": 2
+  },
+  "02:06": {
+    "candidate_paths": [
+      [
+        2,
+        6
+      ],
+      [
+        2,
+        10,
+        6
+      ],
+      [
+        2,
+        5,
+        6
+      ],
+      [
+        2,
+        5,
+        8,
+        6
+      ]
+    ],
+    "dst": 6,
+    "source": "d3qn_candidate_paths",
+    "src": 2
+  },
+  "02:07": {
+    "candidate_paths": [
+      [
+        2,
+        5,
+        7
+      ],
+      [
+        2,
+        3,
+        7
+      ],
+      [
+        2,
+        5,
+        8,
+        7
+      ],
+      [
+        2,
+        8,
+        7
+      ]
+    ],
+    "dst": 7,
+    "source": "d3qn_candidate_paths",
+    "src": 2
+  },
+  "02:08": {
+    "candidate_paths": [
+      [
+        2,
+        5,
+        8
+      ],
+      [
+        2,
+        8
+      ],
+      [
+        2,
+        3,
+        8
+      ],
+      [
+        2,
+        6,
+        8
+      ]
+    ],
+    "dst": 8,
+    "source": "d3qn_candidate_paths",
+    "src": 2
+  },
+  "02:09": {
+    "candidate_paths": [
+      [
+        2,
+        9
+      ],
+      [
+        2,
+        3,
+        9
+      ],
+      [
+        2,
+        10,
+        9
+      ],
+      [
+        2,
+        1,
+        9
+      ]
+    ],
+    "dst": 9,
+    "source": "d3qn_candidate_paths",
+    "src": 2
+  },
+  "02:0A": {
+    "candidate_paths": [
+      [
+        2,
+        10
+      ],
+      [
+        2,
+        5,
+        10
+      ],
+      [
+        2,
+        3,
+        10
+      ],
+      [
+        2,
+        6,
+        10
+      ]
+    ],
+    "dst": 10,
+    "source": "d3qn_candidate_paths",
+    "src": 2
+  },
+  "03:00": {
+    "candidate_paths": [
+      [
+        3,
+        0
+      ],
+      [
+        3,
+        1,
+        0
+      ],
+      [
+        3,
+        4,
+        0
+      ],
+      [
+        3,
+        7,
+        0
+      ]
+    ],
+    "dst": 0,
+    "source": "d3qn_candidate_paths",
+    "src": 3
+  },
+  "03:01": {
+    "candidate_paths": [
+      [
+        3,
+        1
+      ],
+      [
+        3,
+        5,
+        1
+      ],
+      [
+        3,
+        9,
+        1
+      ],
+      [
+        3,
+        2,
+        1
+      ]
+    ],
+    "dst": 1,
+    "source": "d3qn_candidate_paths",
+    "src": 3
+  },
+  "03:02": {
+    "candidate_paths": [
+      [
+        3,
+        2
+      ],
+      [
+        3,
+        5,
+        2
+      ],
+      [
+        3,
+        7,
+        2
+      ],
+      [
+        3,
+        8,
+        2
+      ]
+    ],
+    "dst": 2,
+    "source": "d3qn_candidate_paths",
+    "src": 3
+  },
+  "03:04": {
+    "candidate_paths": [
+      [
+        3,
+        4
+      ],
+      [
+        3,
+        0,
+        4
+      ],
+      [
+        3,
+        1,
+        0,
+        4
+      ],
+      [
+        3,
+        7,
+        0,
+        4
+      ]
+    ],
+    "dst": 4,
+    "source": "d3qn_candidate_paths",
+    "src": 3
+  },
+  "03:05": {
+    "candidate_paths": [
+      [
+        3,
+        5
+      ],
+      [
+        3,
+        2,
+        5
+      ],
+      [
+        3,
+        6,
+        5
+      ],
+      [
+        3,
+        7,
+        5
+      ]
+    ],
+    "dst": 5,
+    "source": "d3qn_candidate_paths",
+    "src": 3
+  },
+  "03:06": {
+    "candidate_paths": [
+      [
+        3,
+        6
+      ],
+      [
+        3,
+        8,
+        6
+      ],
+      [
+        3,
+        2,
+        6
+      ],
+      [
+        3,
+        2,
+        10,
+        6
+      ]
+    ],
+    "dst": 6,
+    "source": "d3qn_candidate_paths",
+    "src": 3
+  },
+  "03:07": {
+    "candidate_paths": [
+      [
+        3,
+        7
+      ],
+      [
+        3,
+        5,
+        7
+      ],
+      [
+        3,
+        8,
+        7
+      ],
+      [
+        3,
+        2,
+        5,
+        7
+      ]
+    ],
+    "dst": 7,
+    "source": "d3qn_candidate_paths",
+    "src": 3
+  },
+  "03:08": {
+    "candidate_paths": [
+      [
+        3,
+        8
+      ],
+      [
+        3,
+        5,
+        8
+      ],
+      [
+        3,
+        9,
+        8
+      ],
+      [
+        3,
+        2,
+        5,
+        8
+      ]
+    ],
+    "dst": 8,
+    "source": "d3qn_candidate_paths",
+    "src": 3
+  },
+  "03:09": {
+    "candidate_paths": [
+      [
+        3,
+        9
+      ],
+      [
+        3,
+        2,
+        9
+      ],
+      [
+        3,
+        7,
+        9
+      ],
+      [
+        3,
+        8,
+        9
+      ]
+    ],
+    "dst": 9,
+    "source": "d3qn_candidate_paths",
+    "src": 3
+  },
+  "03:0A": {
+    "candidate_paths": [
+      [
+        3,
+        2,
+        10
+      ],
+      [
+        3,
+        10
+      ],
+      [
+        3,
+        5,
+        2,
+        10
+      ],
+      [
+        3,
+        5,
+        10
+      ]
+    ],
+    "dst": 10,
+    "source": "d3qn_candidate_paths",
+    "src": 3
+  },
+  "04:00": {
+    "candidate_paths": [
+      [
+        4,
+        0
+      ],
+      [
+        4,
+        3,
+        0
+      ],
+      [
+        4,
+        9,
+        0
+      ],
+      [
+        4,
+        5,
+        1,
+        0
+      ]
+    ],
+    "dst": 0,
+    "source": "d3qn_candidate_paths",
+    "src": 4
+  },
+  "04:01": {
+    "candidate_paths": [
+      [
+        4,
+        0,
+        1
+      ],
+      [
+        4,
+        0,
+        9,
+        1
+      ],
+      [
+        4,
+        5,
+        1
+      ],
+      [
+        4,
+        9,
+        1
+      ]
+    ],
+    "dst": 1,
+    "source": "d3qn_candidate_paths",
+    "src": 4
+  },
+  "04:02": {
+    "candidate_paths": [
+      [
+        4,
+        0,
+        2
+      ],
+      [
+        4,
+        0,
+        3,
+        2
+      ],
+      [
+        4,
+        3,
+        2
+      ],
+      [
+        4,
+        5,
+        2
+      ]
+    ],
+    "dst": 2,
+    "source": "d3qn_candidate_paths",
+    "src": 4
+  },
+  "04:03": {
+    "candidate_paths": [
+      [
+        4,
+        0,
+        3
+      ],
+      [
+        4,
+        3
+      ],
+      [
+        4,
+        0,
+        7,
+        3
+      ],
+      [
+        4,
+        0,
+        9,
+        3
+      ]
+    ],
+    "dst": 3,
+    "source": "d3qn_candidate_paths",
+    "src": 4
+  },
+  "04:05": {
+    "candidate_paths": [
+      [
+        4,
+        5
+      ],
+      [
+        4,
+        0,
+        3,
+        5
+      ],
+      [
+        4,
+        0,
+        5
+      ],
+      [
+        4,
+        3,
+        5
+      ]
+    ],
+    "dst": 5,
+    "source": "d3qn_candidate_paths",
+    "src": 4
+  },
+  "04:06": {
+    "candidate_paths": [
+      [
+        4,
+        0,
+        6
+      ],
+      [
+        4,
+        8,
+        6
+      ],
+      [
+        4,
+        10,
+        6
+      ],
+      [
+        4,
+        0,
+        3,
+        6
+      ]
+    ],
+    "dst": 6,
+    "source": "d3qn_candidate_paths",
+    "src": 4
+  },
+  "04:07": {
+    "candidate_paths": [
+      [
+        4,
+        0,
+        7
+      ],
+      [
+        4,
+        0,
+        3,
+        7
+      ],
+      [
+        4,
+        3,
+        7
+      ],
+      [
+        4,
+        5,
+        7
+      ]
+    ],
+    "dst": 7,
+    "source": "d3qn_candidate_paths",
+    "src": 4
+  },
+  "04:08": {
+    "candidate_paths": [
+      [
+        4,
+        8
+      ],
+      [
+        4,
+        0,
+        3,
+        8
+      ],
+      [
+        4,
+        0,
+        8
+      ],
+      [
+        4,
+        0,
+        9,
+        8
+      ]
+    ],
+    "dst": 8,
+    "source": "d3qn_candidate_paths",
+    "src": 4
+  },
+  "04:09": {
+    "candidate_paths": [
+      [
+        4,
+        0,
+        9
+      ],
+      [
+        4,
+        9
+      ],
+      [
+        4,
+        0,
+        3,
+        9
+      ],
+      [
+        4,
+        3,
+        9
+      ]
+    ],
+    "dst": 9,
+    "source": "d3qn_candidate_paths",
+    "src": 4
+  },
+  "04:0A": {
+    "candidate_paths": [
+      [
+        4,
+        10
+      ],
+      [
+        4,
+        0,
+        2,
+        10
+      ],
+      [
+        4,
+        0,
+        3,
+        2,
+        10
+      ],
+      [
+        4,
+        0,
+        3,
+        10
+      ]
+    ],
+    "dst": 10,
+    "source": "d3qn_candidate_paths",
+    "src": 4
+  },
+  "05:00": {
+    "candidate_paths": [
+      [
+        5,
+        1,
+        0
+      ],
+      [
+        5,
+        0
+      ],
+      [
+        5,
+        7,
+        0
+      ],
+      [
+        5,
+        2,
+        1,
+        0
+      ]
+    ],
+    "dst": 0,
+    "source": "d3qn_candidate_paths",
+    "src": 5
+  },
+  "05:01": {
+    "candidate_paths": [
+      [
+        5,
+        1
+      ],
+      [
+        5,
+        2,
+        1
+      ],
+      [
+        5,
+        7,
+        3,
+        1
+      ],
+      [
+        5,
+        3,
+        1
+      ]
+    ],
+    "dst": 1,
+    "source": "d3qn_candidate_paths",
+    "src": 5
+  },
+  "05:02": {
+    "candidate_paths": [
+      [
+        5,
+        2
+      ],
+      [
+        5,
+        1,
+        2
+      ],
+      [
+        5,
+        7,
+        2
+      ],
+      [
+        5,
+        7,
+        3,
+        2
+      ]
+    ],
+    "dst": 2,
+    "source": "d3qn_candidate_paths",
+    "src": 5
+  },
+  "05:03": {
+    "candidate_paths": [
+      [
+        5,
+        7,
+        3
+      ],
+      [
+        5,
+        3
+      ],
+      [
+        5,
+        1,
+        3
+      ],
+      [
+        5,
+        2,
+        3
+      ]
+    ],
+    "dst": 3,
+    "source": "d3qn_candidate_paths",
+    "src": 5
+  },
+  "05:04": {
+    "candidate_paths": [
+      [
+        5,
+        1,
+        0,
+        4
+      ],
+      [
+        5,
+        4
+      ],
+      [
+        5,
+        0,
+        4
+      ],
+      [
+        5,
+        7,
+        0,
+        4
+      ]
+    ],
+    "dst": 4,
+    "source": "d3qn_candidate_paths",
+    "src": 5
+  },
+  "05:06": {
+    "candidate_paths": [
+      [
+        5,
+        6
+      ],
+      [
+        5,
+        8,
+        6
+      ],
+      [
+        5,
+        2,
+        6
+      ],
+      [
+        5,
+        2,
+        10,
+        6
+      ]
+    ],
+    "dst": 6,
+    "source": "d3qn_candidate_paths",
+    "src": 5
+  },
+  "05:07": {
+    "candidate_paths": [
+      [
+        5,
+        7
+      ],
+      [
+        5,
+        8,
+        7
+      ],
+      [
+        5,
+        3,
+        7
+      ],
+      [
+        5,
+        1,
+        0,
+        7
+      ]
+    ],
+    "dst": 7,
+    "source": "d3qn_candidate_paths",
+    "src": 5
+  },
+  "05:08": {
+    "candidate_paths": [
+      [
+        5,
+        8
+      ],
+      [
+        5,
+        2,
+        8
+      ],
+      [
+        5,
+        6,
+        8
+      ],
+      [
+        5,
+        7,
+        3,
+        8
+      ]
+    ],
+    "dst": 8,
+    "source": "d3qn_candidate_paths",
+    "src": 5
+  },
+  "05:09": {
+    "candidate_paths": [
+      [
+        5,
+        1,
+        9
+      ],
+      [
+        5,
+        2,
+        9
+      ],
+      [
+        5,
+        7,
+        3,
+        9
+      ],
+      [
+        5,
+        7,
+        9
+      ]
+    ],
+    "dst": 9,
+    "source": "d3qn_candidate_paths",
+    "src": 5
+  },
+  "05:0A": {
+    "candidate_paths": [
+      [
+        5,
+        2,
+        10
+      ],
+      [
+        5,
+        10
+      ],
+      [
+        5,
+        1,
+        2,
+        10
+      ],
+      [
+        5,
+        1,
+        10
+      ]
+    ],
+    "dst": 10,
+    "source": "d3qn_candidate_paths",
+    "src": 5
+  },
+  "06:00": {
+    "candidate_paths": [
+      [
+        6,
+        0
+      ],
+      [
+        6,
+        5,
+        1,
+        0
+      ],
+      [
+        6,
+        5,
+        0
+      ],
+      [
+        6,
+        5,
+        7,
+        0
+      ]
+    ],
+    "dst": 0,
+    "source": "d3qn_candidate_paths",
+    "src": 6
+  },
+  "06:01": {
+    "candidate_paths": [
+      [
+        6,
+        5,
+        1
+      ],
+      [
+        6,
+        9,
+        1
+      ],
+      [
+        6,
+        2,
+        1
+      ],
+      [
+        6,
+        5,
+        2,
+        1
+      ]
+    ],
+    "dst": 1,
+    "source": "d3qn_candidate_paths",
+    "src": 6
+  },
+  "06:02": {
+    "candidate_paths": [
+      [
+        6,
+        2
+      ],
+      [
+        6,
+        5,
+        2
+      ],
+      [
+        6,
+        8,
+        2
+      ],
+      [
+        6,
+        10,
+        2
+      ]
+    ],
+    "dst": 2,
+    "source": "d3qn_candidate_paths",
+    "src": 6
+  },
+  "06:03": {
+    "candidate_paths": [
+      [
+        6,
+        5,
+        7,
+        3
+      ],
+      [
+        6,
+        8,
+        3
+      ],
+      [
+        6,
+        8,
+        7,
+        3
+      ],
+      [
+        6,
+        9,
+        3
+      ]
+    ],
+    "dst": 3,
+    "source": "d3qn_candidate_paths",
+    "src": 6
+  },
+  "06:04": {
+    "candidate_paths": [
+      [
+        6,
+        0,
+        4
+      ],
+      [
+        6,
+        5,
+        1,
+        0,
+        4
+      ],
+      [
+        6,
+        5,
+        4
+      ],
+      [
+        6,
+        8,
+        4
+      ]
+    ],
+    "dst": 4,
+    "source": "d3qn_candidate_paths",
+    "src": 6
+  },
+  "06:05": {
+    "candidate_paths": [
+      [
+        6,
+        5
+      ],
+      [
+        6,
+        2,
+        5
+      ],
+      [
+        6,
+        8,
+        5
+      ],
+      [
+        6,
+        8,
+        2,
+        5
+      ]
+    ],
+    "dst": 5,
+    "source": "d3qn_candidate_paths",
+    "src": 6
+  },
+  "06:07": {
+    "candidate_paths": [
+      [
+        6,
+        5,
+        7
+      ],
+      [
+        6,
+        8,
+        7
+      ],
+      [
+        6,
+        5,
+        8,
+        7
+      ],
+      [
+        6,
+        2,
+        5,
+        7
+      ]
+    ],
+    "dst": 7,
+    "source": "d3qn_candidate_paths",
+    "src": 6
+  },
+  "06:08": {
+    "candidate_paths": [
+      [
+        6,
+        8
+      ],
+      [
+        6,
+        5,
+        8
+      ],
+      [
+        6,
+        9,
+        8
+      ],
+      [
+        6,
+        2,
+        5,
+        8
+      ]
+    ],
+    "dst": 8,
+    "source": "d3qn_candidate_paths",
+    "src": 6
+  },
+  "06:09": {
+    "candidate_paths": [
+      [
+        6,
+        9
+      ],
+      [
+        6,
+        8,
+        9
+      ],
+      [
+        6,
+        2,
+        9
+      ],
+      [
+        6,
+        5,
+        1,
+        9
+      ]
+    ],
+    "dst": 9,
+    "source": "d3qn_candidate_paths",
+    "src": 6
+  },
+  "06:0A": {
+    "candidate_paths": [
+      [
+        6,
+        10
+      ],
+      [
+        6,
+        2,
+        10
+      ],
+      [
+        6,
+        5,
+        2,
+        10
+      ],
+      [
+        6,
+        5,
+        10
+      ]
+    ],
+    "dst": 10,
+    "source": "d3qn_candidate_paths",
+    "src": 6
+  },
+  "07:00": {
+    "candidate_paths": [
+      [
+        7,
+        0
+      ],
+      [
+        7,
+        3,
+        0
+      ],
+      [
+        7,
+        3,
+        1,
+        0
+      ],
+      [
+        7,
+        3,
+        4,
+        0
+      ]
+    ],
+    "dst": 0,
+    "source": "d3qn_candidate_paths",
+    "src": 7
+  },
+  "07:01": {
+    "candidate_paths": [
+      [
+        7,
+        3,
+        1
+      ],
+      [
+        7,
+        3,
+        5,
+        1
+      ],
+      [
+        7,
+        3,
+        9,
+        1
+      ],
+      [
+        7,
+        5,
+        1
+      ]
+    ],
+    "dst": 1,
+    "source": "d3qn_candidate_paths",
+    "src": 7
+  },
+  "07:02": {
+    "candidate_paths": [
+      [
+        7,
+        2
+      ],
+      [
+        7,
+        3,
+        2
+      ],
+      [
+        7,
+        3,
+        5,
+        2
+      ],
+      [
+        7,
+        5,
+        2
+      ]
+    ],
+    "dst": 2,
+    "source": "d3qn_candidate_paths",
+    "src": 7
+  },
+  "07:03": {
+    "candidate_paths": [
+      [
+        7,
+        3
+      ],
+      [
+        7,
+        9,
+        3
+      ],
+      [
+        7,
+        0,
+        3
+      ],
+      [
+        7,
+        2,
+        3
+      ]
+    ],
+    "dst": 3,
+    "source": "d3qn_candidate_paths",
+    "src": 7
+  },
+  "07:04": {
+    "candidate_paths": [
+      [
+        7,
+        0,
+        4
+      ],
+      [
+        7,
+        3,
+        4
+      ],
+      [
+        7,
+        3,
+        0,
+        4
+      ],
+      [
+        7,
+        3,
+        1,
+        0,
+        4
+      ]
+    ],
+    "dst": 4,
+    "source": "d3qn_candidate_paths",
+    "src": 7
+  },
+  "07:05": {
+    "candidate_paths": [
+      [
+        7,
+        3,
+        5
+      ],
+      [
+        7,
+        5
+      ],
+      [
+        7,
+        2,
+        5
+      ],
+      [
+        7,
+        3,
+        2,
+        5
+      ]
+    ],
+    "dst": 5,
+    "source": "d3qn_candidate_paths",
+    "src": 7
+  },
+  "07:06": {
+    "candidate_paths": [
+      [
+        7,
+        3,
+        6
+      ],
+      [
+        7,
+        3,
+        8,
+        6
+      ],
+      [
+        7,
+        8,
+        6
+      ],
+      [
+        7,
+        2,
+        6
+      ]
+    ],
+    "dst": 6,
+    "source": "d3qn_candidate_paths",
+    "src": 7
+  },
+  "07:08": {
+    "candidate_paths": [
+      [
+        7,
+        3,
+        8
+      ],
+      [
+        7,
+        8
+      ],
+      [
+        7,
+        3,
+        5,
+        8
+      ],
+      [
+        7,
+        3,
+        9,
+        8
+      ]
+    ],
+    "dst": 8,
+    "source": "d3qn_candidate_paths",
+    "src": 7
+  },
+  "07:09": {
+    "candidate_paths": [
+      [
+        7,
+        3,
+        9
+      ],
+      [
+        7,
+        9
+      ],
+      [
+        7,
+        0,
+        9
+      ],
+      [
+        7,
+        2,
+        9
+      ]
+    ],
+    "dst": 9,
+    "source": "d3qn_candidate_paths",
+    "src": 7
+  },
+  "07:0A": {
+    "candidate_paths": [
+      [
+        7,
+        2,
+        10
+      ],
+      [
+        7,
+        3,
+        2,
+        10
+      ],
+      [
+        7,
+        3,
+        10
+      ],
+      [
+        7,
+        3,
+        5,
+        2,
+        10
+      ]
+    ],
+    "dst": 10,
+    "source": "d3qn_candidate_paths",
+    "src": 7
+  },
+  "08:00": {
+    "candidate_paths": [
+      [
+        8,
+        0
+      ],
+      [
+        8,
+        7,
+        0
+      ],
+      [
+        8,
+        3,
+        0
+      ],
+      [
+        8,
+        4,
+        0
+      ]
+    ],
+    "dst": 0,
+    "source": "d3qn_candidate_paths",
+    "src": 8
+  },
+  "08:01": {
+    "candidate_paths": [
+      [
+        8,
+        5,
+        1
+      ],
+      [
+        8,
+        6,
+        5,
+        1
+      ],
+      [
+        8,
+        9,
+        1
+      ],
+      [
+        8,
+        2,
+        1
+      ]
+    ],
+    "dst": 1,
+    "source": "d3qn_candidate_paths",
+    "src": 8
+  },
+  "08:02": {
+    "candidate_paths": [
+      [
+        8,
+        2
+      ],
+      [
+        8,
+        3,
+        2
+      ],
+      [
+        8,
+        5,
+        2
+      ],
+      [
+        8,
+        6,
+        2
+      ]
+    ],
+    "dst": 2,
+    "source": "d3qn_candidate_paths",
+    "src": 8
+  },
+  "08:03": {
+    "candidate_paths": [
+      [
+        8,
+        3
+      ],
+      [
+        8,
+        7,
+        3
+      ],
+      [
+        8,
+        9,
+        3
+      ],
+      [
+        8,
+        2,
+        3
+      ]
+    ],
+    "dst": 3,
+    "source": "d3qn_candidate_paths",
+    "src": 8
+  },
+  "08:04": {
+    "candidate_paths": [
+      [
+        8,
+        4
+      ],
+      [
+        8,
+        0,
+        4
+      ],
+      [
+        8,
+        7,
+        0,
+        4
+      ],
+      [
+        8,
+        3,
+        4
+      ]
+    ],
+    "dst": 4,
+    "source": "d3qn_candidate_paths",
+    "src": 8
+  },
+  "08:05": {
+    "candidate_paths": [
+      [
+        8,
+        5
+      ],
+      [
+        8,
+        6,
+        5
+      ],
+      [
+        8,
+        2,
+        5
+      ],
+      [
+        8,
+        3,
+        5
+      ]
+    ],
+    "dst": 5,
+    "source": "d3qn_candidate_paths",
+    "src": 8
+  },
+  "08:06": {
+    "candidate_paths": [
+      [
+        8,
+        6
+      ],
+      [
+        8,
+        2,
+        6
+      ],
+      [
+        8,
+        2,
+        10,
+        6
+      ],
+      [
+        8,
+        3,
+        6
+      ]
+    ],
+    "dst": 6,
+    "source": "d3qn_candidate_paths",
+    "src": 8
+  },
+  "08:07": {
+    "candidate_paths": [
+      [
+        8,
+        7
+      ],
+      [
+        8,
+        3,
+        7
+      ],
+      [
+        8,
+        5,
+        7
+      ],
+      [
+        8,
+        6,
+        5,
+        7
+      ]
+    ],
+    "dst": 7,
+    "source": "d3qn_candidate_paths",
+    "src": 8
+  },
+  "08:09": {
+    "candidate_paths": [
+      [
+        8,
+        9
+      ],
+      [
+        8,
+        3,
+        9
+      ],
+      [
+        8,
+        6,
+        9
+      ],
+      [
+        8,
+        7,
+        3,
+        9
+      ]
+    ],
+    "dst": 9,
+    "source": "d3qn_candidate_paths",
+    "src": 8
+  },
+  "08:0A": {
+    "candidate_paths": [
+      [
+        8,
+        2,
+        10
+      ],
+      [
+        8,
+        6,
+        10
+      ],
+      [
+        8,
+        10
+      ],
+      [
+        8,
+        3,
+        2,
+        10
+      ]
+    ],
+    "dst": 10,
+    "source": "d3qn_candidate_paths",
+    "src": 8
+  },
+  "09:00": {
+    "candidate_paths": [
+      [
+        9,
+        0
+      ],
+      [
+        9,
+        1,
+        0
+      ],
+      [
+        9,
+        3,
+        0
+      ],
+      [
+        9,
+        3,
+        1,
+        0
+      ]
+    ],
+    "dst": 0,
+    "source": "d3qn_candidate_paths",
+    "src": 9
+  },
+  "09:01": {
+    "candidate_paths": [
+      [
+        9,
+        1
+      ],
+      [
+        9,
+        3,
+        1
+      ],
+      [
+        9,
+        3,
+        5,
+        1
+      ],
+      [
+        9,
+        5,
+        1
+      ]
+    ],
+    "dst": 1,
+    "source": "d3qn_candidate_paths",
+    "src": 9
+  },
+  "09:02": {
+    "candidate_paths": [
+      [
+        9,
+        2
+      ],
+      [
+        9,
+        3,
+        2
+      ],
+      [
+        9,
+        1,
+        2
+      ],
+      [
+        9,
+        3,
+        5,
+        2
+      ]
+    ],
+    "dst": 2,
+    "source": "d3qn_candidate_paths",
+    "src": 9
+  },
+  "09:03": {
+    "candidate_paths": [
+      [
+        9,
+        3
+      ],
+      [
+        9,
+        1,
+        3
+      ],
+      [
+        9,
+        7,
+        3
+      ],
+      [
+        9,
+        8,
+        3
+      ]
+    ],
+    "dst": 3,
+    "source": "d3qn_candidate_paths",
+    "src": 9
+  },
+  "09:04": {
+    "candidate_paths": [
+      [
+        9,
+        0,
+        4
+      ],
+      [
+        9,
+        1,
+        0,
+        4
+      ],
+      [
+        9,
+        3,
+        4
+      ],
+      [
+        9,
+        4
+      ]
+    ],
+    "dst": 4,
+    "source": "d3qn_candidate_paths",
+    "src": 9
+  },
+  "09:05": {
+    "candidate_paths": [
+      [
+        9,
+        3,
+        5
+      ],
+      [
+        9,
+        5
+      ],
+      [
+        9,
+        1,
+        5
+      ],
+      [
+        9,
+        2,
+        5
+      ]
+    ],
+    "dst": 5,
+    "source": "d3qn_candidate_paths",
+    "src": 9
+  },
+  "09:06": {
+    "candidate_paths": [
+      [
+        9,
+        6
+      ],
+      [
+        9,
+        8,
+        6
+      ],
+      [
+        9,
+        3,
+        6
+      ],
+      [
+        9,
+        3,
+        8,
+        6
+      ]
+    ],
+    "dst": 6,
+    "source": "d3qn_candidate_paths",
+    "src": 9
+  },
+  "09:07": {
+    "candidate_paths": [
+      [
+        9,
+        3,
+        7
+      ],
+      [
+        9,
+        7
+      ],
+      [
+        9,
+        8,
+        7
+      ],
+      [
+        9,
+        3,
+        5,
+        7
+      ]
+    ],
+    "dst": 7,
+    "source": "d3qn_candidate_paths",
+    "src": 9
+  },
+  "09:08": {
+    "candidate_paths": [
+      [
+        9,
+        8
+      ],
+      [
+        9,
+        3,
+        8
+      ],
+      [
+        9,
+        3,
+        5,
+        8
+      ],
+      [
+        9,
+        5,
+        8
+      ]
+    ],
+    "dst": 8,
+    "source": "d3qn_candidate_paths",
+    "src": 9
+  },
+  "09:0A": {
+    "candidate_paths": [
+      [
+        9,
+        2,
+        10
+      ],
+      [
+        9,
+        3,
+        2,
+        10
+      ],
+      [
+        9,
+        3,
+        10
+      ],
+      [
+        9,
+        10
+      ]
+    ],
+    "dst": 10,
+    "source": "d3qn_candidate_paths",
+    "src": 9
+  },
+  "0A:00": {
+    "candidate_paths": [
+      [
+        10,
+        1,
+        0
+      ],
+      [
+        10,
+        2,
+        1,
+        0
+      ],
+      [
+        10,
+        2,
+        0
+      ],
+      [
+        10,
+        4,
+        0
+      ]
+    ],
+    "dst": 0,
+    "source": "d3qn_candidate_paths",
+    "src": 10
+  },
+  "0A:01": {
+    "candidate_paths": [
+      [
+        10,
+        1
+      ],
+      [
+        10,
+        2,
+        1
+      ],
+      [
+        10,
+        2,
+        5,
+        1
+      ],
+      [
+        10,
+        5,
+        1
+      ]
+    ],
+    "dst": 1,
+    "source": "d3qn_candidate_paths",
+    "src": 10
+  },
+  "0A:02": {
+    "candidate_paths": [
+      [
+        10,
+        2
+      ],
+      [
+        10,
+        5,
+        2
+      ],
+      [
+        10,
+        6,
+        2
+      ],
+      [
+        10,
+        6,
+        5,
+        2
+      ]
+    ],
+    "dst": 2,
+    "source": "d3qn_candidate_paths",
+    "src": 10
+  },
+  "0A:03": {
+    "candidate_paths": [
+      [
+        10,
+        2,
+        3
+      ],
+      [
+        10,
+        9,
+        3
+      ],
+      [
+        10,
+        3
+      ],
+      [
+        10,
+        2,
+        5,
+        7,
+        3
+      ]
+    ],
+    "dst": 3,
+    "source": "d3qn_candidate_paths",
+    "src": 10
+  },
+  "0A:04": {
+    "candidate_paths": [
+      [
+        10,
+        4
+      ],
+      [
+        10,
+        1,
+        0,
+        4
+      ],
+      [
+        10,
+        2,
+        1,
+        0,
+        4
+      ],
+      [
+        10,
+        2,
+        0,
+        4
+      ]
+    ],
+    "dst": 4,
+    "source": "d3qn_candidate_paths",
+    "src": 10
+  },
+  "0A:05": {
+    "candidate_paths": [
+      [
+        10,
+        2,
+        5
+      ],
+      [
+        10,
+        5
+      ],
+      [
+        10,
+        6,
+        5
+      ],
+      [
+        10,
+        2,
+        3,
+        5
+      ]
+    ],
+    "dst": 5,
+    "source": "d3qn_candidate_paths",
+    "src": 10
+  },
+  "0A:06": {
+    "candidate_paths": [
+      [
+        10,
+        6
+      ],
+      [
+        10,
+        2,
+        6
+      ],
+      [
+        10,
+        8,
+        6
+      ],
+      [
+        10,
+        2,
+        5,
+        6
+      ]
+    ],
+    "dst": 6,
+    "source": "d3qn_candidate_paths",
+    "src": 10
+  },
+  "0A:07": {
+    "candidate_paths": [
+      [
+        10,
+        2,
+        5,
+        7
+      ],
+      [
+        10,
+        5,
+        7
+      ],
+      [
+        10,
+        6,
+        5,
+        7
+      ],
+      [
+        10,
+        6,
+        8,
+        7
+      ]
+    ],
+    "dst": 7,
+    "source": "d3qn_candidate_paths",
+    "src": 10
+  },
+  "0A:08": {
+    "candidate_paths": [
+      [
+        10,
+        6,
+        8
+      ],
+      [
+        10,
+        8
+      ],
+      [
+        10,
+        2,
+        5,
+        8
+      ],
+      [
+        10,
+        2,
+        8
+      ]
+    ],
+    "dst": 8,
+    "source": "d3qn_candidate_paths",
+    "src": 10
+  },
+  "0A:09": {
+    "candidate_paths": [
+      [
+        10,
+        9
+      ],
+      [
+        10,
+        2,
+        9
+      ],
+      [
+        10,
+        6,
+        9
+      ],
+      [
+        10,
+        2,
+        3,
+        9
+      ]
+    ],
+    "dst": 9,
+    "source": "d3qn_candidate_paths",
+    "src": 10
+  }
+}

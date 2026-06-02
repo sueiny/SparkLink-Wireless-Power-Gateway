@@ -1,19 +1,22 @@
 {
   "properties": [
     {
+      "functionName": "DTU挂载ID",
+      "identifier": "dtu_id",
+      "functionType": "properties",
+      "accessMode": "r",
+      "specs": {
+        "dataType": {"type": "INT", "specs": {}}
+      }
+    },
+    {
       "functionName": "电压",
       "identifier": "voltage",
       "functionType": "properties",
       "accessMode": "r",
       "specs": {
-        "dataType": {
-          "type": "DOUBLE",
-          "specs": {
-            "unit": "V"
-          }
-        }
-      },
-      "extensionDesc": null
+        "dataType": {"type": "DOUBLE", "specs": {"unit": "V"}}
+      }
     },
     {
       "functionName": "电流",
@@ -21,14 +24,8 @@
       "functionType": "properties",
       "accessMode": "r",
       "specs": {
-        "dataType": {
-          "type": "DOUBLE",
-          "specs": {
-            "unit": "A"
-          }
-        }
-      },
-      "extensionDesc": null
+        "dataType": {"type": "DOUBLE", "specs": {"unit": "A"}}
+      }
     },
     {
       "functionName": "有功功率",
@@ -36,14 +33,8 @@
       "functionType": "properties",
       "accessMode": "r",
       "specs": {
-        "dataType": {
-          "type": "DOUBLE",
-          "specs": {
-            "unit": "W"
-          }
-        }
-      },
-      "extensionDesc": null
+        "dataType": {"type": "DOUBLE", "specs": {"unit": "W"}}
+      }
     },
     {
       "functionName": "功率因数",
@@ -51,12 +42,8 @@
       "functionType": "properties",
       "accessMode": "r",
       "specs": {
-        "dataType": {
-          "type": "DOUBLE",
-          "specs": {}
-        }
-      },
-      "extensionDesc": null
+        "dataType": {"type": "DOUBLE", "specs": {}}
+      }
     },
     {
       "functionName": "频率",
@@ -64,14 +51,8 @@
       "functionType": "properties",
       "accessMode": "r",
       "specs": {
-        "dataType": {
-          "type": "DOUBLE",
-          "specs": {
-            "unit": "Hz"
-          }
-        }
-      },
-      "extensionDesc": null
+        "dataType": {"type": "DOUBLE", "specs": {"unit": "Hz"}}
+      }
     },
     {
       "functionName": "总有功电能",
@@ -79,14 +60,8 @@
       "functionType": "properties",
       "accessMode": "r",
       "specs": {
-        "dataType": {
-          "type": "DOUBLE",
-          "specs": {
-            "unit": "kWh"
-          }
-        }
-      },
-      "extensionDesc": null
+        "dataType": {"type": "DOUBLE", "specs": {"unit": "kWh"}}
+      }
     },
     {
       "functionName": "拉合闸状态",
@@ -97,20 +72,11 @@
         "dataType": {
           "type": "ENUM",
           "specsList": [
-            {
-              "value": 0,
-              "name": "拉闸",
-              "dataType": "ENUM"
-            },
-            {
-              "value": 1,
-              "name": "合闸",
-              "dataType": "ENUM"
-            }
+            {"value": 0, "name": "拉闸", "dataType": "ENUM"},
+            {"value": 1, "name": "合闸", "dataType": "ENUM"}
           ]
         }
-      },
-      "extensionDesc": null
+      }
     },
     {
       "functionName": "电表角色",
@@ -121,20 +87,11 @@
         "dataType": {
           "type": "ENUM",
           "specsList": [
-            {
-              "value": 0,
-              "name": "支表",
-              "dataType": "ENUM"
-            },
-            {
-              "value": 1,
-              "name": "总表",
-              "dataType": "ENUM"
-            }
+            {"value": 0, "name": "支表", "dataType": "ENUM"},
+            {"value": 1, "name": "总表", "dataType": "ENUM"}
           ]
         }
-      },
-      "extensionDesc": null
+      }
     },
     {
       "functionName": "父级电表ID",
@@ -142,14 +99,8 @@
       "functionType": "properties",
       "accessMode": "r",
       "specs": {
-        "dataType": {
-          "type": "TEXT",
-          "specs": {
-            "length": 64
-          }
-        }
-      },
-      "extensionDesc": null
+        "dataType": {"type": "INT", "specs": {}}
+      }
     },
     {
       "functionName": "支表功率合计",
@@ -157,14 +108,8 @@
       "functionType": "properties",
       "accessMode": "r",
       "specs": {
-        "dataType": {
-          "type": "DOUBLE",
-          "specs": {
-            "unit": "W"
-          }
-        }
-      },
-      "extensionDesc": null
+        "dataType": {"type": "DOUBLE", "specs": {"unit": "W"}}
+      }
     },
     {
       "functionName": "线损功率",
@@ -172,14 +117,8 @@
       "functionType": "properties",
       "accessMode": "r",
       "specs": {
-        "dataType": {
-          "type": "DOUBLE",
-          "specs": {
-            "unit": "W"
-          }
-        }
-      },
-      "extensionDesc": null
+        "dataType": {"type": "DOUBLE", "specs": {"unit": "W"}}
+      }
     },
     {
       "functionName": "线损率",
@@ -187,14 +126,8 @@
       "functionType": "properties",
       "accessMode": "r",
       "specs": {
-        "dataType": {
-          "type": "DOUBLE",
-          "specs": {
-            "unit": "%"
-          }
-        }
-      },
-      "extensionDesc": null
+        "dataType": {"type": "DOUBLE", "specs": {"unit": "%"}}
+      }
     },
     {
       "functionName": "在线状态",
@@ -203,22 +136,13 @@
       "accessMode": "r",
       "specs": {
         "dataType": {
-          "type": "ENUM",
-          "specsList": [
-            {
-              "value": 0,
-              "name": "离线",
-              "dataType": "ENUM"
-            },
-            {
-              "value": 1,
-              "name": "在线",
-              "dataType": "ENUM"
-            }
-          ]
+          "type": "BOOL",
+          "specs": {
+            "boolClose": "离线",
+            "boolOpen": "在线"
+          }
         }
-      },
-      "extensionDesc": null
+      }
     }
   ],
   "events": [
@@ -228,26 +152,8 @@
       "functionType": "events",
       "eventType": "ALERT",
       "outputData": [
-        {
-          "functionName": "当前电压",
-          "identifier": "voltage",
-          "dataType": {
-            "type": "DOUBLE",
-            "specs": {
-              "unit": "V"
-            }
-          }
-        },
-        {
-          "functionName": "阈值",
-          "identifier": "threshold",
-          "dataType": {
-            "type": "DOUBLE",
-            "specs": {
-              "unit": "V"
-            }
-          }
-        }
+        {"functionName": "当前电压", "identifier": "voltage", "dataType": {"type": "DOUBLE", "specs": {"unit": "V"}}},
+        {"functionName": "阈值", "identifier": "threshold", "dataType": {"type": "DOUBLE", "specs": {"unit": "V"}}}
       ]
     },
     {
@@ -256,26 +162,8 @@
       "functionType": "events",
       "eventType": "ALERT",
       "outputData": [
-        {
-          "functionName": "当前电压",
-          "identifier": "voltage",
-          "dataType": {
-            "type": "DOUBLE",
-            "specs": {
-              "unit": "V"
-            }
-          }
-        },
-        {
-          "functionName": "阈值",
-          "identifier": "threshold",
-          "dataType": {
-            "type": "DOUBLE",
-            "specs": {
-              "unit": "V"
-            }
-          }
-        }
+        {"functionName": "当前电压", "identifier": "voltage", "dataType": {"type": "DOUBLE", "specs": {"unit": "V"}}},
+        {"functionName": "阈值", "identifier": "threshold", "dataType": {"type": "DOUBLE", "specs": {"unit": "V"}}}
       ]
     },
     {
@@ -284,26 +172,8 @@
       "functionType": "events",
       "eventType": "ALERT",
       "outputData": [
-        {
-          "functionName": "当前电流",
-          "identifier": "current",
-          "dataType": {
-            "type": "DOUBLE",
-            "specs": {
-              "unit": "A"
-            }
-          }
-        },
-        {
-          "functionName": "阈值",
-          "identifier": "threshold",
-          "dataType": {
-            "type": "DOUBLE",
-            "specs": {
-              "unit": "A"
-            }
-          }
-        }
+        {"functionName": "当前电流", "identifier": "current", "dataType": {"type": "DOUBLE", "specs": {"unit": "A"}}},
+        {"functionName": "阈值", "identifier": "threshold", "dataType": {"type": "DOUBLE", "specs": {"unit": "A"}}}
       ]
     }
   ],
@@ -320,16 +190,8 @@
           "dataType": {
             "type": "ENUM",
             "specsList": [
-              {
-                "value": 0,
-                "name": "拉闸",
-                "dataType": "ENUM"
-              },
-              {
-                "value": 1,
-                "name": "合闸",
-                "dataType": "ENUM"
-              }
+              {"value": 0, "name": "拉闸", "dataType": "ENUM"},
+              {"value": 1, "name": "合闸", "dataType": "ENUM"}
             ]
           }
         }
@@ -341,16 +203,8 @@
           "dataType": {
             "type": "ENUM",
             "specsList": [
-              {
-                "value": 0,
-                "name": "失败",
-                "dataType": "ENUM"
-              },
-              {
-                "value": 1,
-                "name": "成功",
-                "dataType": "ENUM"
-              }
+              {"value": 0, "name": "失败", "dataType": "ENUM"},
+              {"value": 1, "name": "成功", "dataType": "ENUM"}
             ]
           }
         }
@@ -369,16 +223,8 @@
           "dataType": {
             "type": "ENUM",
             "specsList": [
-              {
-                "value": 0,
-                "name": "失败",
-                "dataType": "ENUM"
-              },
-              {
-                "value": 1,
-                "name": "成功",
-                "dataType": "ENUM"
-              }
+              {"value": 0, "name": "失败", "dataType": "ENUM"},
+              {"value": 1, "name": "成功", "dataType": "ENUM"}
             ]
           }
         }

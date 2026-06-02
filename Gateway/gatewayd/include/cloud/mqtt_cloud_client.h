@@ -27,6 +27,9 @@ public:
     MqttCloudClient(const MqttCloudClient &) = delete;
     MqttCloudClient &operator=(const MqttCloudClient &) = delete;
 
+    // 设置绑定网络接口（可选）。在 connect() 前调用。
+    void setBindInterface(const std::string &ifname) { bind_interface_ = ifname; }
+
     // 建立 MQTT 连接并启动 libmosquitto 后台 loop。
     // 成功返回 true；认证失败、TCP 失败或等待连接回调超时都会返回 false。
     bool connect();
@@ -80,6 +83,7 @@ private:
     std::string telemetry_topic_;
     std::string attributes_topic_;
     std::string events_topic_;
+    std::string bind_interface_;
     MessageCallback message_callback_;
 };
 

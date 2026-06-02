@@ -68,21 +68,30 @@ bool GatewayApp::init()
     if (!service_registry_.load(config_path_, logger_))
         return false;
 
-    // 状态库先于数据源初始化。MockDataSource 每轮采集会读取状态覆盖值，
+    // 状态库先于数据源初始化。数据源每轮采集会读取状态覆盖值，
     // 这样云端命令写入的继电器/电表状态能在周期遥测中持续保持。
     state_store_ = std::make_shared<state::DeviceStateStore>();
     if (!state_store_->init(common::kDefaultDbPath, logger_))
         return false;
 
-    data_source_ = std::make_unique<datasource::MockDataSource>(
-        cfg.devices, cfg.mock, cfg.publish.interval_ms, state_store_);
-
-    if (!data_source_->init()) {
-        logger_.error("DATA", "failed to initialize MockDataSource");
-        return false;
+    // 根据 sle.enable 配置选择数据源：SLE 真实数据 或 模拟数据。
+    if (cfg.sle.enable) {
+        sle_data_source_ = std::make_unique<datasource::SleDataSource>(
+            cfg.devices, cfg.dtu_devices, state_store_, route_table_, logger_);
+        if (!sle_data_source_->init(cfg.sle.data_socket)) {
+            logger_.error("DATA", "failed to initialize SleDataSource");
+            return false;
+        }
+        logger_.info("DATA", "SleDataSource initialized, socket=" + cfg.sle.data_socket);
+    } else {
+        mock_data_source_ = std::make_unique<datasource::MockDataSource>(
+            cfg.devices, cfg.mock, cfg.publish.interval_ms, state_store_);
+        if (!mock_data_source_->init()) {
+            logger_.error("DATA", "failed to initialize MockDataSource");
+            return false;
+        }
+        logger_.info("DATA", "MockDataSource initialized");
     }
-
-    logger_.info("DATA", "MockDataSource initialized");
 
     if (!net_manager_.init(cfg.network, &logger_)) {
         logger_.error("NET", "failed to initialize NetManager");
@@ -108,11 +117,19 @@ bool GatewayApp::init()
         logger_.warn("CACHE", "telemetry cache disabled by config");
     }
 
-    collect_worker_ = std::make_unique<CollectWorker>(
-        cfg,
-        logger_,
-        *data_source_,
-        telemetry_queue_);
+    if (cfg.sle.enable) {
+        sle_ipc_worker_ = std::make_unique<SleIpcWorker>(
+            cfg,
+            logger_,
+            *sle_data_source_,
+            telemetry_queue_);
+    } else {
+        collect_worker_ = std::make_unique<CollectWorker>(
+            cfg,
+            logger_,
+            *mock_data_source_,
+            telemetry_queue_);
+    }
     network_worker_ = std::make_unique<NetworkWorker>(logger_, net_manager_);
     publish_manager_ = std::make_unique<PublishManager>(PublishManagerDeps{
         cfg,
@@ -137,7 +154,10 @@ bool GatewayApp::init()
 int GatewayApp::run(const std::atomic_bool &quit)
 {
     logger_.info("APP", "starting gatewayd worker threads");
-    collect_worker_->start();
+    if (collect_worker_)
+        collect_worker_->start();
+    if (sle_ipc_worker_)
+        sle_ipc_worker_->start();
     network_worker_->start();
     publish_manager_->start();
     command_manager_->start();
@@ -195,8 +215,13 @@ void GatewayApp::stopQueues()
 
 void GatewayApp::stopWorkers()
 {
+    // 先停止所有 worker，再释放资源。顺序很重要：
+    // SleIpcWorker 可能阻塞在 read()，必须先 stop() 使其退出循环，
+    // join() 确保线程退出后才能安全 deinit data source。
     if (collect_worker_)
         collect_worker_->stop();
+    if (sle_ipc_worker_)
+        sle_ipc_worker_->stop();
     if (network_worker_)
         network_worker_->stop();
     if (publish_manager_)
@@ -209,6 +234,11 @@ void GatewayApp::joinWorkers()
 {
     if (collect_worker_)
         collect_worker_->join();
+    if (sle_ipc_worker_)
+        sle_ipc_worker_->join();
+    // join 之后 worker 线程已退出，此时安全释放 data source
+    if (sle_data_source_)
+        sle_data_source_->deinit();
     if (command_manager_)
         command_manager_->join();
     if (publish_manager_)

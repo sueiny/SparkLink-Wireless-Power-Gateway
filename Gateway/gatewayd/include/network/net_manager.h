@@ -28,6 +28,7 @@ private:
     bool checkProvider(INetworkProvider &provider, bool allow_bring_up, bool *cloud_reachable);
 
     int priorityFor(const std::string &name) const;
+    void releaseCurrentProvider();
 
     config::NetworkConfig config_;
     log::Logger *logger_ = nullptr;

@@ -28,7 +28,7 @@ bool EthernetProvider::hasIp() const
 
 bool EthernetProvider::canReachCloud(const std::string &host, int port) const
 {
-    return defaultCanReachCloud(host, port);
+    return defaultCanReachCloud(host, port, config_.ifname);
 }
 
 } // namespace gateway::network

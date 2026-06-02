@@ -41,6 +41,7 @@ protected:
     bool defaultIsInterfaceUp(const std::string &ifname) const;
     bool defaultHasIp(const std::string &ifname) const;
     bool defaultCanReachCloud(const std::string &host, int port) const;
+    bool defaultCanReachCloud(const std::string &host, int port, const std::string &ifname) const;
 };
 
 std::string toString(NetworkType type);
