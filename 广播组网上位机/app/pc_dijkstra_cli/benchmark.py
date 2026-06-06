@@ -14,8 +14,13 @@ from .protocol import Ack, RssiReport, build_send_command, format_addr, parse_ad
 from .reporting import enrich_summary_with_metrics, path_text, route_hops, write_excel_summary, write_text_topology
 from .serial_client import RawSerialEvent, SerialClient
 from .topology import Topology, routes_to_dict, save_topology
-from .topology_svg import write_topology_svg
-from .routing import BASELINE_ROUTE_MODE, RELIABLE_ROUTE_MODE, Route
+from .topology_svg import write_topology_svg, write_topology_svgs_by_source
+from .routing import BASELINE_ROUTE_MODE, RELIABLE_ROUTE_MODE, SAMPLE_ROUTE_MODE, Route
+
+try:
+    from serial.serialutil import SerialException
+except ImportError:
+    SerialException = Exception
 
 
 @dataclass
@@ -137,7 +142,7 @@ def parse_route_mode_list(value: str) -> list[str]:
     values = [item.strip() for item in value.split(",") if item.strip()]
     if not values:
         raise ValueError("route modes must not be empty")
-    unsupported = [item for item in values if item not in {BASELINE_ROUTE_MODE, RELIABLE_ROUTE_MODE}]
+    unsupported = [item for item in values if item not in {BASELINE_ROUTE_MODE, RELIABLE_ROUTE_MODE, SAMPLE_ROUTE_MODE}]
     if unsupported:
         raise ValueError(f"unsupported route mode(s): {', '.join(unsupported)}")
     return values
@@ -171,7 +176,7 @@ def _drain_messages(client: SerialClient, logger: BenchmarkLogger, duration: flo
 def _drain_messages_until_quiet(
     client: SerialClient,
     logger: BenchmarkLogger,
-    idle_timeout: float = 1.0,
+    idle_timeout: float = 3.0,
     max_seconds: float = 10.0,
 ) -> list[object]:
     deadline = time.monotonic() + max_seconds
@@ -207,21 +212,32 @@ def collect_topology(
 ) -> Topology:
     relay_excluded = {dongle_addr} if dongle_addr is not None else set()
     topology = Topology(stale_seconds=None, edge_direction="src_to_neighbor", gateway=gateway, relay_excluded=relay_excluded, min_rssi=min_rssi, max_hops=max_hops)
-    for index in range(1, requests + 1):
+    collected = 0
+    attempts = 0
+    max_attempts = requests * 2  # 最多尝试次数，防止死循环
+    while collected < requests and attempts < max_attempts:
+        attempts += 1
+        print(f"\r📡 采集 RSSI [{collected+1}/{requests}]...", end="", flush=True)
         command = client.send_rssi_req()
-        logger.event("send_command", command=command.rstrip(), request=index)
-        for message in _drain_messages_until_quiet(client, logger, idle_timeout=1.0, max_seconds=10.0):
+        logger.event("send_command", command=command.rstrip(), request=collected+1, attempt=attempts)
+        messages = _drain_messages_until_quiet(client, logger, idle_timeout=3.0, max_seconds=10.0)
+        has_report = False
+        for message in messages:
             if isinstance(message, RssiReport):
+                has_report = True
                 updated = topology.update_from_rssi_report(message)
                 logger.event(
                     "topology_update",
                     src=message.src_addr,
                     edges=[asdict(edge) for edge in updated],
                 )
-                logger.topology_snapshot(topology, f"rssi_req_{index}")
-        if all(topology.route(gateway, node).status == "valid" for node in nodes):
-            logger.event("topology_ready", request=index)
-            break
+                logger.topology_snapshot(topology, f"rssi_req_{collected+1}")
+        if has_report:
+            collected += 1
+        else:
+            print(f"\r⚠️  未收到RSSI报告，重试...          ", flush=True)
+    print(f"\r✅ RSSI 采集完成 ({collected}次)          ", flush=True)
+    logger.event("topology_ready", request=collected, attempts=attempts)
     logger.topology_snapshot(topology, "post_collection")
     return topology
 
@@ -231,14 +247,10 @@ def _combine_gateway_path(gateway_route: list[int], pair_route: list[int]) -> li
         return []
     if gateway_route[-1] != pair_route[0]:
         return []
-    # A2: 去重防环 - 将网关路径和配对路径合并，去除重复节点
-    combined = list(gateway_route)
-    for node in pair_route[1:]:
-        # 如果节点已在路径中，截断到该节点之前
-        if node in combined:
-            idx = combined.index(node)
-            combined = combined[:idx]
-        combined.append(node)
+    combined = gateway_route + pair_route[1:]
+    # 两段路径共享中继节点会产生环路，固件 dedup 会丢弃，视为无效路径
+    if len(combined) != len(set(combined)):
+        return []
     return combined
 
 
@@ -474,10 +486,10 @@ def enrich_summary_with_rssi(summary: dict, topology: Topology) -> None:
             }
 
 
-def _write_routes_json(log_path: Path, topology: Topology, route_mode: str) -> float:
+def _write_routes_json(log_path: Path, topology: Topology, route_mode: str, hop_penalty: float = 0.0, congestion_penalty=None, bidirectional: bool = False) -> float:
     json_path = _json_dir(log_path)
     route_compute_start = time.perf_counter()
-    routes = routes_to_dict(topology.routes(route_mode=route_mode))
+    routes = routes_to_dict(topology.routes(route_mode=route_mode, hop_penalty=hop_penalty, congestion_penalty=congestion_penalty, bidirectional=bidirectional))
     route_compute_ms = (time.perf_counter() - route_compute_start) * 1000.0
     (json_path / "routes.json").write_text(json.dumps(routes, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return route_compute_ms
@@ -519,24 +531,13 @@ def _record_unreachable_rounds(
     logger.round(result)
 
 
-def _should_recollect(consecutive_failures: dict[tuple[int, int], int], source: int, target: int, threshold: int) -> bool:
-    return threshold > 0 and consecutive_failures.get((source, target), 0) >= threshold
-
-
-def _reset_recollect_counter(consecutive_failures: dict[tuple[int, int], int], source: int, target: int) -> None:
-    consecutive_failures[(source, target)] = 0
-
-
-def _mark_pair_result(consecutive_failures: dict[tuple[int, int], int], source: int, target: int, success: bool) -> None:
-    key = (source, target)
-    consecutive_failures[key] = 0 if success else consecutive_failures.get(key, 0) + 1
 
 
 def _path_key(path: list[int]) -> tuple[int, ...]:
     return tuple(int(item) for item in path)
 
 
-def _candidate_paths(graph: dict[int, dict[int, float]], src: int, dst: int, limit: int = 5, max_hops: int = 4) -> list[list[int]]:
+def _candidate_paths(graph: dict[int, dict[int, float]], src: int, dst: int, limit: int = 5, max_hops: int = 4, avoid_nodes: set[int] | None = None) -> list[list[int]]:
     if src == dst:
         return [[src]]
     queue: list[tuple[float, tuple[int, ...]]] = [(0.0, (src,))]
@@ -555,6 +556,8 @@ def _candidate_paths(graph: dict[int, dict[int, float]], src: int, dst: int, lim
             continue
         for neighbor, weight in sorted(graph.get(current, {}).items()):
             if neighbor in path_tuple:
+                continue
+            if avoid_nodes and neighbor in avoid_nodes and neighbor != dst:
                 continue
             heapq.heappush(queue, (cost + float(weight), path_tuple + (neighbor,)))
     return paths
@@ -604,47 +607,84 @@ def _select_dijkstra_pair_route(
     avoid_nodes: set[int] | None = None,
     candidate_limit: int = 5,
     max_hops: int = 4,
+    hop_penalty: float = 0.0,
+    congestion_penalty: dict[int, float] | None = None,
+    bidirectional: bool = False,
 ):
     graph = topology.graph(route_mode=route_mode)
     fallback_used = False
-    paths = _candidate_paths(graph, source, target, candidate_limit, max_hops=max_hops)
+    paths = _candidate_paths(graph, source, target, candidate_limit, max_hops=max_hops, avoid_nodes=avoid_nodes)
+    if not paths and avoid_nodes:
+        # 避开节点后无路可走，放开限制再找
+        paths = _candidate_paths(graph, source, target, candidate_limit, max_hops=max_hops)
     if not paths and route_mode != BASELINE_ROUTE_MODE:
         graph = topology.graph(route_mode=BASELINE_ROUTE_MODE)
-        paths = _candidate_paths(graph, source, target, candidate_limit, max_hops=max_hops)
+        paths = _candidate_paths(graph, source, target, candidate_limit, max_hops=max_hops, avoid_nodes=avoid_nodes)
+        if not paths and avoid_nodes:
+            paths = _candidate_paths(graph, source, target, candidate_limit, max_hops=max_hops)
         fallback_used = bool(paths)
+    
+    # Filter paths: only keep those where ACK return path exists
+    if bidirectional and paths:
+        bidi_graph = topology.graph(route_mode=route_mode, bidirectional=True)
+        valid_paths = []
+        for path in paths:
+            # Check reverse path exists for all edges after gateway
+            reverse_ok = True
+            for i in range(len(path)-1, 0, -1):
+                if path[i] not in bidi_graph or path[i-1] not in bidi_graph.get(path[i], {}):
+                    reverse_ok = False
+                    break
+            if reverse_ok:
+                valid_paths.append(path)
+        paths = valid_paths
+    
     if not paths:
-        return topology.route(source, target, route_mode=route_mode, fallback=False), fallback_used, None
+        return topology.route(source, target, route_mode=route_mode, fallback=False, hop_penalty=hop_penalty, congestion_penalty=congestion_penalty), fallback_used, None
+    
     scored = []
     for path in paths:
         # A4: 跳过包含环路的路径
         if len(path) != len(set(path)):
             continue
         
+        # 原汁原味 sample 模式：跳过历史/跳数/弱链路/拥塞等一切外加约束指数
+        is_sample = route_mode == SAMPLE_ROUTE_MODE
+
         history_key = (source, target, _path_key(path))
-        penalty, reason = _history_penalty(
-            path_history.get(history_key, []),
-            loss_threshold=loss_threshold,
-            avg_latency_threshold_ms=avg_latency_threshold_ms,
-            window=window,
-        )
-        # A1: 移除 avoid_nodes 惩罚
-        # A3: 增加跳数惩罚权重 (0.25 -> 2.0)
-        hop_penalty = max(0, len(path) - 2) * 2.0
-        
-        # 计算路径中弱 RSSI 链路的惩罚
+        if is_sample:
+            penalty, reason = 0.0, None
+        else:
+            penalty, reason = _history_penalty(
+                path_history.get(history_key, []),
+                loss_threshold=loss_threshold,
+                avg_latency_threshold_ms=avg_latency_threshold_ms,
+                window=window,
+            )
+        path_hop_penalty = max(0, len(path) - 2) * hop_penalty if (hop_penalty > 0 and not is_sample) else 0.0
+
+        # 计算路径中弱 RSSI 链路的惩罚（sample 模式不惩罚，仅记录 min_rssi 供展示）
         weak_rssi_penalty = 0.0
         min_rssi_in_path = 0
         for src, dst in zip(path[:-1], path[1:]):
             edge = topology.edges.get(f"{src:02X}:{dst:02X}")
             if edge is not None:
-                if edge.rssi < -80:
-                    weak_rssi_penalty += 10.0  # 强惩罚弱链路
-                elif edge.rssi < -75:
-                    weak_rssi_penalty += 5.0   # 中等惩罚
+                if not is_sample:
+                    if edge.rssi < -80:
+                        weak_rssi_penalty += 10.0  # 强惩罚弱链路
+                    elif edge.rssi < -75:
+                        weak_rssi_penalty += 5.0   # 中等惩罚
                 if min_rssi_in_path == 0 or edge.rssi < min_rssi_in_path:
                     min_rssi_in_path = edge.rssi
-        
-        total_cost = _path_base_cost(graph, path) + penalty + hop_penalty + weak_rssi_penalty
+
+        # 计算拥塞惩罚
+        congestion_cost = 0.0
+        if not is_sample:
+            for node in path[1:]:  # 排除起点
+                if congestion_penalty:
+                    congestion_cost += congestion_penalty.get(node, 0.0)
+
+        total_cost = _path_base_cost(graph, path) + penalty + path_hop_penalty + weak_rssi_penalty + congestion_cost
         scored.append((total_cost, path, reason, min_rssi_in_path))
     
     if not scored:
@@ -717,6 +757,26 @@ def _resolve_matrix_routes(topology: Topology, gateway: int, source: int, target
     return gateway_route, pair_route, full_path, route_fallback
 
 
+def _has_ack_return_path(path: list[int], bidi_graph: dict[int, dict[int, float]]) -> bool:
+    """Check if target can reach gateway through bidirectional edges (ACK uses mesh routing, not reverse path)."""
+    if len(path) < 2:
+        return True
+    target = path[-1]
+    gateway = path[0]
+    # BFS from target to gateway using bidirectional edges
+    visited = {target}
+    queue = [target]
+    while queue:
+        current = queue.pop(0)
+        if current == gateway:
+            return True
+        for neighbor in bidi_graph.get(current, {}):
+            if neighbor not in visited:
+                visited.add(neighbor)
+                queue.append(neighbor)
+    return False
+
+
 def _resolve_healthy_matrix_routes(
     topology: Topology,
     gateway: int,
@@ -729,12 +789,20 @@ def _resolve_healthy_matrix_routes(
     avg_latency_threshold_ms: float,
     window: int,
     max_hops: int = 4,
+    hop_penalty: float = 0.0,
+    congestion_penalty: dict[int, float] | None = None,
+    bidirectional: bool = False,
 ):
-    gateway_route = topology.route(gateway, source, route_mode=route_mode, fallback=False)
+    bidi_graph = topology.graph(route_mode=route_mode, bidirectional=True) if bidirectional else None
+    
+    gateway_route = topology.route(gateway, source, route_mode=route_mode, fallback=False, hop_penalty=hop_penalty, congestion_penalty=congestion_penalty)
+    if bidi_graph and gateway_route.status == "valid" and not _has_ack_return_path(gateway_route.path, bidi_graph):
+        gateway_route = Route(gateway, source, [], float("inf"), "unreachable")
     avoid_nodes = set(gateway_route.path[:-1]) - {target}
     
-    # 尝试从网关开始搜索到目标的直接路径
-    gateway_to_target_route = topology.route(gateway, target, route_mode=route_mode, fallback=False)
+    gateway_to_target_route = topology.route(gateway, target, route_mode=route_mode, fallback=False, hop_penalty=hop_penalty, congestion_penalty=congestion_penalty)
+    if bidi_graph and gateway_to_target_route.status == "valid" and not _has_ack_return_path(gateway_to_target_route.path, bidi_graph):
+        gateway_to_target_route = Route(gateway, target, [], float("inf"), "unreachable")
     
     # 如果网关到目标的路径存在且包含源节点，直接使用
     if gateway_to_target_route.status == "valid" and source in gateway_to_target_route.path:
@@ -755,6 +823,9 @@ def _resolve_healthy_matrix_routes(
             window=window,
             avoid_nodes=avoid_nodes,
             max_hops=max_hops,
+            hop_penalty=hop_penalty,
+            congestion_penalty=congestion_penalty,
+            bidirectional=bidirectional,
         )
         full_path = _combine_gateway_path(gateway_route.path, pair_route.path)
     return gateway_route, pair_route, full_path, route_fallback, health_reason
@@ -772,6 +843,7 @@ def write_report(log_dir: Path, summary: dict, topology: Topology) -> None:
         f"- Planned rounds: {summary['total'].get('planned_rounds')}",
         f"- Route failed/unreachable: {summary['total'].get('route_failed')}",
         f"- Total loss rate: {summary['total']['loss_rate']:.2%}" if summary["total"]["loss_rate"] is not None else "- Total loss rate: n/a",
+        f"- Pause count: {summary.get('pause_count', 0)}",
         f"- Inference time avg: {_fmt_ms(metrics.get('inference_latency', {}).get('avg_ms'))}",
         f"- Source-to-target latency avg: {_fmt_ms(metrics.get('source_to_target_latency', {}).get('avg_ms'))}",
         "",
@@ -1064,7 +1136,6 @@ def build_hardware_test_record(
     route_mode: str = BASELINE_ROUTE_MODE,
     optimization_target: dict | None = None,
     sources: list[int] | None = None,
-    recollect_consecutive_failures: int = 3,
     path_loss_degrade_threshold: float = 0.10,
     path_avg_degrade_ms: float = 220.0,
     path_health_window: int = 5,
@@ -1107,7 +1178,6 @@ def build_hardware_test_record(
                 "route_mode": route_mode,
                 "matrix_mode": "source in sources, target in nodes-source",
                 "two_send_latency_policy": "first SEND gateway->source, second SEND gateway->source->target; point_to_point_ms=second_ack_ms-first_ack_ms",
-                "recollect_consecutive_failures": recollect_consecutive_failures,
                 "optimization_target": optimization_target or {"loss_rate_min": 0.04, "loss_rate_max": 0.06, "ack_timeout_s": 2.0},
             },
         },
@@ -1295,6 +1365,7 @@ def build_readable_report(summary: dict, hardware_record: dict, aligned_metrics:
         f"- 最优参数组合：`interval={commands['command_interval_s']}s, rssi_requests={commands['rssi_requests']}, route_mode={commands.get('route_mode', routing.get('route_mode', BASELINE_ROUTE_MODE))}`",
         f"- 发包间隔：`{commands['command_interval_s']}s`",
         f"- 计划轮次：`{total.get('planned_rounds')}`，实际SEND：`{total['sent']}`，成功：`{total['success']}`，ACK timeout：`{total.get('ack_timeout_loss')}`，路由不可达：`{total.get('route_failed')}`，实际丢包率：`{_fmt_rate(total['loss_rate'])}`",
+        f"- 暂停次数：`{summary.get('pause_count', 0)}`",
         (
             f"- 总体成功 ACK 延时：平均 `{_fmt_ms(total['latency']['avg_ms'])}`，"
             f"最小 `{_fmt_ms(total['latency']['min_ms'])}`，最大 `{_fmt_ms(total['latency']['max_ms'])}`，"
@@ -1306,6 +1377,14 @@ def build_readable_report(summary: dict, hardware_record: dict, aligned_metrics:
         "![Dijkstra RSSI 拓扑图](拓扑图.svg)",
         "",
         "文本拓扑文件：[`拓扑图.txt`](拓扑图.txt)",
+        "",
+        "### 按源节点的拓扑图",
+        "",
+        "每个源节点的路由拓扑图：",
+        "",
+        "| 源节点 | 拓扑图 |",
+        "|---|---|",
+        *[f"| `{source:02X}` | [`拓扑图/源节点{source:02X}.svg`](拓扑图/源节点{source:02X}.svg) |" for source in range(1, 11)],
         "",
         "Excel 汇总文件：[`测试指标汇总.xlsx`](测试指标汇总.xlsx)",
         "",
@@ -1529,10 +1608,16 @@ def run_benchmark(
     route_mode: str = BASELINE_ROUTE_MODE,
     optimization_target: dict | None = None,
     sources: list[int] | None = None,
-    recollect_consecutive_failures: int = 3,
     path_loss_degrade_threshold: float = 0.10,
     path_avg_degrade_ms: float = 220.0,
     path_health_window: int = 5,
+    send_mode: str = "single_send",
+    hop_penalty: float = 0.0,
+    enable_congestion: bool = False,
+    no_retry: bool = False,
+    bidirectional: bool = False,
+    enable_pause: bool = False,
+    dynamic_pause: bool = False,
 ) -> dict:
     log_path = resolve_benchmark_log_dir(log_dir)
     logger = BenchmarkLogger(log_path)
@@ -1554,218 +1639,271 @@ def run_benchmark(
             payload=payload,
             demand=demand,
             matrix_mode=True,
+            send_mode=send_mode,
         )
+        topology = None
         _drain_messages(client, logger, boot_wait)
         topology = collect_topology(client, logger, rssi_seconds, rssi_requests, nodes, gateway, dongle_addr=dongle_addr, min_rssi=min_rssi, max_hops=max_hops)
-        # 验证路由表包含所有节点
-        expected_nodes = set(nodes)
-        actual_nodes = set(topology.nodes)
-        if not expected_nodes.issubset(actual_nodes):
-            missing = expected_nodes - actual_nodes
-            missing_hex = [f"0x{n:02X}" for n in sorted(missing)]
-            logger.event("route_table_incomplete", missing=missing_hex, expected=len(expected_nodes), actual=len(actual_nodes))
-            raise RuntimeError(f"failed: 路由表缺少节点 {missing_hex}，测试终止")
+        unreachable = [n for n in nodes if topology.route(gateway, n).status != "valid"]
+        if unreachable:
+            print(f"⚠️  不可达节点: {[f'0x{n:02X}' for n in unreachable]}", flush=True)
         json_path = _json_dir(log_path)
         save_topology(json_path / "state.json", topology)
-        route_compute_ms = _write_routes_json(log_path, topology, route_mode)
-        routes = routes_to_dict(topology.routes(route_mode=route_mode))
+        # 拥塞惩罚（可选）
+        congestion_penalty = None
+        if enable_congestion:
+            from .routing import _calculate_node_congestion_penalty
+            graph = topology.graph(route_mode=route_mode)
+            congestion_penalty = _calculate_node_congestion_penalty(graph, gateway)
+        route_compute_ms = _write_routes_json(log_path, topology, route_mode, hop_penalty=hop_penalty, congestion_penalty=congestion_penalty, bidirectional=bidirectional)
+        routes = routes_to_dict(topology.routes(route_mode=route_mode, hop_penalty=hop_penalty, congestion_penalty=congestion_penalty, bidirectional=bidirectional))
         logger.event("routes", routes=routes, algorithm_compute_latency_ms=route_compute_ms, route_mode=route_mode)
 
-        consecutive_failures: dict[tuple[int, int], int] = {}
         path_history: dict[tuple[int, int, tuple[int, ...]], list[dict]] = {}
-        for source, target in pairs:
-            for round_index in range(1, rounds + 1):
-                topology_recollected = False
-                if _should_recollect(consecutive_failures, source, target, recollect_consecutive_failures):
-                    topology, _, route_compute_ms = _recollect_topology(
-                        client=client,
-                        logger=logger,
-                        log_path=log_path,
-                        rssi_seconds=rssi_seconds,
-                        rssi_requests=rssi_requests,
-                        nodes=nodes,
-                        gateway=gateway,
-                        dongle_addr=dongle_addr,
-                        min_rssi=min_rssi,
+        
+        max_retries_val = 0 if no_retry else 1
+        pause_count = 0
+        dongle_dead = False
+        if enable_pause:
+            from .pause import check_pause_key, wait_for_resume, consume_pause
+        total_phases = 2 if dynamic_pause else 1
+        for phase in range(1, total_phases + 1):
+            if dynamic_pause and phase > 1:
+                from .pause import wait_for_dynamic_continue
+                wait_for_dynamic_continue(phase - 1, total_phases)
+            phase_offset = (phase - 1) * rounds
+            for source, target in pairs:
+                if dongle_dead:
+                    break
+                for round_index in range(phase_offset + 1, phase_offset + rounds + 1):
+                    topology_recollected = False
+
+                    # 计算路由
+                    route_compute_start = time.perf_counter()
+                    gateway_route, pair_route, full_path, route_fallback, health_reason = _resolve_healthy_matrix_routes(
+                        topology,
+                        gateway,
+                        source,
+                        target,
+                        route_mode,
+                        path_history,
+                        loss_threshold=path_loss_degrade_threshold,
+                        avg_latency_threshold_ms=path_avg_degrade_ms,
+                        window=path_health_window,
                         max_hops=max_hops,
-                        route_mode=route_mode,
-                        reason=f"consecutive_failures:{source:02X}:{target:02X}",
-                        old_topology=topology,
+                        hop_penalty=hop_penalty,
+                        congestion_penalty=congestion_penalty,
+                        bidirectional=bidirectional,
                     )
-                    routes = routes_to_dict(topology.routes(route_mode=route_mode))
-                    _reset_recollect_counter(consecutive_failures, source, target)
-                    topology_recollected = True
+                    route_compute_ms = (time.perf_counter() - route_compute_start) * 1000.0
+                
+                    if health_reason:
+                        logger.event(
+                            "dijkstra_path_health_penalty",
+                            source=source,
+                            target=target,
+                            route=pair_route.path,
+                            reason=health_reason,
+                        )
+                
+                    if send_mode == "single_send":
+                        # 单次SEND模式：使用网关到目标的完整路径
+                        if gateway_route.status != "valid" or pair_route.status != "valid" or not full_path:
+                            logger.event("route_unreachable", source=source, target=target,
+                                         gateway_route_status=gateway_route.status, pair_route_status=pair_route.status)
+                            _record_unreachable_rounds(
+                                logger=logger, results=results, source=source, target=target,
+                                round_index=round_index, payload=payload, demand=demand,
+                                interval=interval, route_mode=route_mode,
+                                error="route_unreachable", topology_recollected=topology_recollected,
+                            )
+                            _drain_messages(client, logger, interval)
+                            continue
 
-                gateway_route, pair_route, full_path, route_fallback, health_reason = _resolve_healthy_matrix_routes(
-                    topology,
-                    gateway,
-                    source,
-                    target,
-                    route_mode,
-                    path_history,
-                    loss_threshold=path_loss_degrade_threshold,
-                    avg_latency_threshold_ms=path_avg_degrade_ms,
-                    window=path_health_window,
-                    max_hops=max_hops,
-                )
-                if health_reason:
-                    logger.event(
-                        "dijkstra_path_health_penalty",
-                        source=source,
-                        target=target,
-                        route=pair_route.path,
-                        reason=health_reason,
-                    )
-                if gateway_route.status != "valid" or pair_route.status != "valid" or not full_path:
-                    logger.event(
-                        "route_unreachable",
-                        source=source,
-                        target=target,
-                        gateway_route_status=gateway_route.status,
-                        pair_route_status=pair_route.status,
-                    )
-                    _record_unreachable_rounds(
-                        logger=logger,
-                        results=results,
-                        source=source,
-                        target=target,
-                        round_index=round_index,
-                        payload=payload,
-                        demand=demand,
-                        interval=interval,
-                        route_mode=route_mode,
-                        error="gateway_to_source_or_source_to_target_unreachable",
-                        topology_recollected=topology_recollected,
-                    )
-                    _drain_messages(client, logger, interval)
-                    continue
+                        # 发送路径 = full_path (网关→源→目标)
+                        send_path = full_path
+                    
+                        target_success, e2e_latency_ms, ack_seq, ack_ts, send_ts, target_retries, ack_monotonic = _send_and_wait_ack_with_retry(
+                            client, logger, topology,
+                            dst=target, path=send_path, payload=payload,
+                            ack_timeout=ack_timeout, max_retries=max_retries_val, retry_interval=0.5,
+                            event_payload={
+                                "phase": "gateway_to_target_direct",
+                                "source": source, "pair_target": target, "round": round_index,
+                                "route": send_path, "cost": pair_route.cost,
+                                "demand": demand, "interval_s": interval,
+                                "route_mode": route_mode, "send_mode": "single_send",
+                            },
+                        )
 
-                gateway_success, gateway_to_source_ms, _, _, gateway_send_ts, gateway_retries, ack1_monotonic = _send_and_wait_ack_with_retry(
-                    client,
-                    logger,
-                    topology,
-                    dst=source,
-                    path=gateway_route.path,
-                    payload=payload,
-                    ack_timeout=ack_timeout,
-                    max_retries=1,
-                    retry_interval=0.5,
-                    event_payload={
-                        "phase": "gateway_to_source",
-                        "source": source,
-                        "pair_target": target,
-                        "round": round_index,
-                        "route": gateway_route.path,
-                        "cost": gateway_route.cost,
-                        "demand": demand,
-                        "interval_s": interval,
-                        "route_mode": route_mode,
-                    },
-                )
-                if not gateway_success:
-                    result = RoundResult(
-                        target=target,
-                        round_index=round_index,
-                        route=full_path,
-                        cost=pair_route.cost,
-                        command=build_send_command(source, gateway_route.path, payload).rstrip(),
-                        success=False,
-                        latency_ms=None,
-                        ack_seq=None,
-                        payload=payload,
-                        demand=demand,
-                        send_ts=gateway_send_ts,
-                        ack_ts=None,
-                        interval_s=interval,
-                        status="gateway_to_source_timeout",
-                        error="gateway_to_source_timeout",
-                        route_mode=route_mode,
-                        route_fallback=route_fallback,
-                        source=source,
-                        gateway_to_source_ms=gateway_to_source_ms,
-                        topology_recollected=topology_recollected,
-                    )
+                        inference_ms = route_compute_ms
+                        e2e_ms = e2e_latency_ms if target_success else None
+                        total_latency_ms = None
+                        if inference_ms is not None and e2e_ms is not None:
+                            total_latency_ms = inference_ms + e2e_ms
+
+                        success = target_success
+                        result = RoundResult(
+                            target=target, round_index=round_index, route=send_path,
+                            cost=pair_route.cost,
+                            command=build_send_command(target, send_path, payload).rstrip(),
+                            success=success, latency_ms=e2e_ms, ack_seq=ack_seq,
+                            payload=payload, demand=demand, send_ts=send_ts, ack_ts=ack_ts,
+                            interval_s=interval,
+                            status="success" if success else "target_timeout",
+                            error=None if success else "target_timeout",
+                            route_mode=route_mode, route_fallback=route_fallback,
+                            source=source,
+                            gateway_to_source_ms=None, gateway_to_target_ms=e2e_ms,
+                            point_to_point_ms=e2e_ms, total_latency_ms=total_latency_ms,
+                            inference_ms=inference_ms, source_to_target_ms=e2e_ms,
+                            topology_recollected=topology_recollected,
+                            ack1_monotonic=None, send2_monotonic=None,
+                        )
+                    else:
+                        # 两次SEND模式
+                        if gateway_route.status != "valid" or pair_route.status != "valid" or not full_path:
+                            logger.event(
+                                "route_unreachable", source=source, target=target,
+                                gateway_route_status=gateway_route.status, pair_route_status=pair_route.status,
+                            )
+                            _record_unreachable_rounds(
+                                logger=logger, results=results, source=source, target=target,
+                                round_index=round_index, payload=payload, demand=demand,
+                                interval=interval, route_mode=route_mode,
+                                error="gateway_to_source_or_source_to_target_unreachable",
+                                topology_recollected=topology_recollected,
+                            )
+                            _drain_messages(client, logger, interval)
+                            continue
+
+                        gateway_success, gateway_to_source_ms, _, _, gateway_send_ts, gateway_retries, ack1_monotonic = _send_and_wait_ack_with_retry(
+                            client, logger, topology,
+                            dst=source, path=gateway_route.path, payload=payload,
+                            ack_timeout=ack_timeout, max_retries=max_retries_val, retry_interval=0.5,
+                            event_payload={
+                                "phase": "gateway_to_source", "source": source, "pair_target": target,
+                                "round": round_index, "route": gateway_route.path, "cost": gateway_route.cost,
+                                "demand": demand, "interval_s": interval, "route_mode": route_mode,
+                            },
+                        )
+                        if not gateway_success:
+                            result = RoundResult(
+                                target=target, round_index=round_index, route=full_path,
+                                cost=pair_route.cost,
+                                command=build_send_command(source, gateway_route.path, payload).rstrip(),
+                                success=False, latency_ms=None, ack_seq=None,
+                                payload=payload, demand=demand, send_ts=gateway_send_ts, ack_ts=None,
+                                interval_s=interval, status="gateway_to_source_timeout",
+                                error="gateway_to_source_timeout", route_mode=route_mode,
+                                route_fallback=route_fallback, source=source,
+                                gateway_to_source_ms=gateway_to_source_ms,
+                                topology_recollected=topology_recollected,
+                            )
+                            results.append(result)
+                            logger.round(result)
+                            path_history.setdefault((source, target, _path_key(pair_route.path)), []).append({"success": False, "point_to_point_ms": None})
+                            _drain_messages(client, logger, interval)
+                            continue
+
+                        target_success, gateway_to_target_ms, ack_seq, ack_ts, send_ts, target_retries, ack2_monotonic = _send_and_wait_ack_with_retry(
+                            client, logger, topology,
+                            dst=target, path=full_path, payload=payload,
+                            ack_timeout=ack_timeout, max_retries=max_retries_val, retry_interval=0.5,
+                            event_payload={
+                                "phase": "gateway_to_target_via_source", "source": source, "pair_target": target,
+                                "round": round_index, "route": full_path, "source_to_target_route": pair_route.path,
+                                "cost": pair_route.cost, "demand": demand, "interval_s": interval,
+                                "route_mode": route_mode, "route_fallback": route_fallback,
+                            },
+                        )
+                        point_to_point_ms = None
+                        if gateway_to_source_ms is not None and gateway_to_target_ms is not None:
+                            point_to_point_ms = max(0.0, gateway_to_target_ms - gateway_to_source_ms)
+
+                        inference_ms = route_compute_ms
+                        source_to_target_ms = None
+                        total_latency_ms = None
+                        if gateway_to_source_ms is not None and gateway_to_target_ms is not None:
+                            source_to_target_ms = max(0.0, gateway_to_target_ms - gateway_to_source_ms)
+                            if inference_ms is not None:
+                                total_latency_ms = inference_ms + source_to_target_ms
+
+                        success = target_success and point_to_point_ms is not None
+                        result = RoundResult(
+                            target=target, round_index=round_index, route=full_path,
+                            cost=pair_route.cost,
+                            command=build_send_command(target, full_path, payload).rstrip(),
+                            success=success, latency_ms=point_to_point_ms, ack_seq=ack_seq,
+                            payload=payload, demand=demand, send_ts=send_ts, ack_ts=ack_ts,
+                            interval_s=interval,
+                            status="success" if success else ("latency_estimation_error" if target_success else "gateway_to_target_timeout"),
+                            error=None if success else ("latency_estimation_error" if target_success else "gateway_to_target_timeout"),
+                            route_mode=route_mode, route_fallback=route_fallback, source=source,
+                            gateway_to_source_ms=gateway_to_source_ms, gateway_to_target_ms=gateway_to_target_ms,
+                            point_to_point_ms=point_to_point_ms, total_latency_ms=total_latency_ms,
+                            inference_ms=inference_ms, source_to_target_ms=source_to_target_ms,
+                            topology_recollected=topology_recollected,
+                            ack1_monotonic=ack1_monotonic, send2_monotonic=None,
+                        )
                     results.append(result)
                     logger.round(result)
-                    path_history.setdefault((source, target, _path_key(pair_route.path)), []).append({"success": False, "point_to_point_ms": None})
-                    _mark_pair_result(consecutive_failures, source, target, False)
-                    _drain_messages(client, logger, interval)
-                    continue
+                    p2p_ms = e2e_ms if send_mode == "single_send" else point_to_point_ms
+                    path_history.setdefault((source, target, _path_key(pair_route.path)), []).append({"success": success, "point_to_point_ms": p2p_ms})
+                    try:
+                        _drain_messages(client, logger, interval)
+                    except SerialException as exc:
+                        logger.event("dongle_disconnect", error=str(exc),
+                                     pair=f"{source:02X}->{target:02X}", round=round_index,
+                                     completed=len(results))
+                        print(f"\n⚠️  Dongle 断开: {exc}", flush=True)
+                        print(f"   已完成 {len(results)} 轮，保存已有结果...", flush=True)
+                        dongle_dead = True
+                        break
 
-                target_success, gateway_to_target_ms, ack_seq, ack_ts, send_ts, target_retries, ack2_monotonic = _send_and_wait_ack_with_retry(
-                    client,
-                    logger,
-                    topology,
-                    dst=target,
-                    path=full_path,
-                    payload=payload,
-                    ack_timeout=ack_timeout,
-                    max_retries=1,
-                    retry_interval=0.5,
-                    event_payload={
-                        "phase": "gateway_to_target_via_source",
-                        "source": source,
-                        "pair_target": target,
-                        "round": round_index,
-                        "route": full_path,
-                        "source_to_target_route": pair_route.path,
-                        "cost": pair_route.cost,
-                        "demand": demand,
-                        "interval_s": interval,
-                        "route_mode": route_mode,
-                        "route_fallback": route_fallback,
-                    },
-                )
-                point_to_point_ms = None
-                if gateway_to_source_ms is not None and gateway_to_target_ms is not None:
-                    point_to_point_ms = max(0.0, gateway_to_target_ms - gateway_to_source_ms)
-                
-                # 推理时间 = Dijkstra路由计算耗时
-                inference_ms = locals().get("route_compute_ms")
-                
-                # 源到目标延时 = 下发路径→收到目标ACK的时间 - 网关到源的时间
-                source_to_target_ms = None
-                total_latency_ms = None
-                if gateway_to_source_ms is not None and gateway_to_target_ms is not None:
-                    source_to_target_ms = max(0.0, gateway_to_target_ms - gateway_to_source_ms)
-                    if inference_ms is not None:
-                        total_latency_ms = inference_ms + source_to_target_ms
-                
-                success = target_success and point_to_point_ms is not None
-                result = RoundResult(
-                    target=target,
-                    round_index=round_index,
-                    route=full_path,
-                    cost=pair_route.cost,
-                    command=build_send_command(target, full_path, payload).rstrip(),
-                    success=success,
-                    latency_ms=point_to_point_ms,
-                    ack_seq=ack_seq,
-                    payload=payload,
-                    demand=demand,
-                    send_ts=send_ts,
-                    ack_ts=ack_ts,
-                    interval_s=interval,
-                    status="success" if success else ("latency_estimation_error" if target_success else "gateway_to_target_timeout"),
-                    error=None if success else ("latency_estimation_error" if target_success else "gateway_to_target_timeout"),
-                    route_mode=route_mode,
-                    route_fallback=route_fallback,
-                    source=source,
-                    gateway_to_source_ms=gateway_to_source_ms,
-                    gateway_to_target_ms=gateway_to_target_ms,
-                    point_to_point_ms=point_to_point_ms,
-                    total_latency_ms=total_latency_ms,
-                    inference_ms=inference_ms,
-                    source_to_target_ms=source_to_target_ms,
-                    topology_recollected=topology_recollected,
-                    ack1_monotonic=ack1_monotonic,
-                    send2_monotonic=send2_monotonic,
-                )
-                results.append(result)
-                logger.round(result)
-                path_history.setdefault((source, target, _path_key(pair_route.path)), []).append({"success": success, "point_to_point_ms": point_to_point_ms})
-                _mark_pair_result(consecutive_failures, source, target, success)
-                _drain_messages(client, logger, interval)
+                    if enable_pause:
+                        if check_pause_key():
+                            pause_count += 1
+                            logger.event("bench_pause", pause_count=pause_count,
+                                         pair=f"{source:02X}->{target:02X}", round=round_index)
+                            wait_for_resume(pause_count)
+                            consume_pause()
+                            old_edges = len(topology.edges)
+                            new_topology = None
+                            for attempt in range(3):
+                                print(f"🔄 重新采集 RSSI (尝试 {attempt+1}/3)...", flush=True)
+                                try:
+                                    _drain_messages(client, logger, boot_wait)
+                                    new_topology = collect_topology(
+                                        client, logger, rssi_seconds, rssi_requests,
+                                        nodes, gateway, dongle_addr, min_rssi, max_hops,
+                                    )
+                                except SerialException as exc:
+                                    logger.event("dongle_disconnect", error=str(exc),
+                                                 context="pause_resume", completed=len(results))
+                                    print(f"\n⚠️  Dongle 断开: {exc}", flush=True)
+                                    dongle_dead = True
+                                    break
+                                unreachable = [n for n in nodes if new_topology.route(gateway, n).status != "valid"]
+                                if unreachable:
+                                    print(f"⚠️  不可达节点: {[f'0x{n:02X}' for n in unreachable]}", flush=True)
+                            if dongle_dead:
+                                print(f"   已完成 {len(results)} 轮，保存已有结果...", flush=True)
+                                break
+                            if new_topology and len(new_topology.edges) > 0:
+                                topology = new_topology
+                                print(f"✅ 拓扑更新: {old_edges} → {len(topology.edges)} 条边", flush=True)
+                            else:
+                                print(f"⚠️  RSSI 采集无数据，保留旧拓扑 ({old_edges} 条边)", flush=True)
+                            save_topology(json_path / "state.json", topology)
+                            routes = routes_to_dict(topology.routes(
+                                route_mode=route_mode, hop_penalty=hop_penalty,
+                                congestion_penalty=congestion_penalty, bidirectional=bidirectional,
+                            ))
+                            logger.event("bench_resume", pause_count=pause_count,
+                                         edges=len(topology.edges))
+                            _drain_messages(client, logger, boot_wait)
+                            consume_pause()  # 清空采集期间的残留 stdin
     except Exception as exc:
         logger.event("bench_error", error=str(exc))
         (log_path / "bench_error.json").write_text(
@@ -1797,6 +1935,7 @@ def run_benchmark(
     summary = summarize(results, nodes, sources)
     enrich_summary_with_rssi(summary, topology)
     summary["rounds"] = [asdict(result) for result in results]
+    summary["pause_count"] = pause_count
     summary["config"] = {
         "port": port,
         "baud": baud,
@@ -1806,7 +1945,6 @@ def run_benchmark(
         "rounds": rounds,
         "matrix_mode": True,
         "latency_policy": "two_send_point_to_point=gateway_to_target_ms-gateway_to_source_ms",
-        "recollect_consecutive_failures": recollect_consecutive_failures,
         "path_loss_degrade_threshold": path_loss_degrade_threshold,
         "path_avg_degrade_ms": path_avg_degrade_ms,
         "path_health_window": path_health_window,
@@ -1858,13 +1996,13 @@ def run_benchmark(
         route_mode=route_mode,
         optimization_target=optimization_target,
         sources=sources,
-        recollect_consecutive_failures=recollect_consecutive_failures,
     )
     (json_path / "hardware_test_record.json").write_text(
         json.dumps(hardware_record, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )
     write_topology_svg(log_path / "拓扑图.svg", topology, summary)
+    write_topology_svgs_by_source(log_path, topology, summary)
     write_text_topology(log_path / "拓扑图.txt", topology, summary, gateway=gateway)
     write_excel_summary(log_path / "测试指标汇总.xlsx", summary, topology, summary["config"])
     write_readable_report(log_path, summary, hardware_record, aligned_metrics)

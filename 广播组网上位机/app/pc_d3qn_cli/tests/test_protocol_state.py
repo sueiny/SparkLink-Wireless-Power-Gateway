@@ -27,7 +27,7 @@ def test_parse_text_ack():
 
 
 def test_send_command_format():
-    assert build_send_command(0x02, [0x00, 0x01, 0x02], "AABBCC") == "SEND 02 3 00 01 02 aabbcc\r\n"
+    assert build_send_command(0x02, [0x00, 0x01, 0x02], "AABBCC") == "SEND 2 3 00 01 02 aabbcc\r\n"
 
 
 def test_topology_and_d3qn_state_uses_src_to_neighbor():
@@ -36,10 +36,16 @@ def test_topology_and_d3qn_state_uses_src_to_neighbor():
 
     state = build_d3qn_state(topology)
 
+    # 与 sample 环境一致的无向图模型：edgesDict 两个方向都登记并指向同一条边索引
     assert "01:02" in state["edgesDict"]
-    assert "02:01" not in state["edgesDict"]
-    assert state["edge_features"][0]["rssi"]["source"] == "real_rssi"
-    assert state["edge_features"][0]["packet_loss"]["source"] == "default"
+    assert "02:01" in state["edgesDict"]
+    assert state["edgesDict"]["01:02"] == state["edgesDict"]["02:01"]
+    # edge_features 为唯一无向边(小节点在前)，来源为真实测量，无单独反向特征
+    feats = {(f["src"], f["dst"]): f for f in state["edge_features"]}
+    assert (0x01, 0x02) in feats
+    assert (0x02, 0x01) not in feats
+    assert feats[(0x01, 0x02)]["rssi"]["source"] == "real_rssi"
+    assert feats[(0x01, 0x02)]["packet_loss"]["source"] == "default"
 
 
 def test_candidate_paths_limited_to_k():

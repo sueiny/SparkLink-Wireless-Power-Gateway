@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import time
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Callable, Iterator
@@ -101,6 +102,8 @@ class SerialClient:
         )
         self.serial.dtr = False
         self.serial.rts = False
+        time.sleep(2.0)
+        self.serial.read(self.serial.in_waiting or 8192)
         self.reader = MixedMessageReader()
         self.raw_callback = raw_callback
 

@@ -76,6 +76,9 @@ def run_training(args: argparse.Namespace) -> int:
     import gym_environments  # noqa: F401
     import torch
     from d3qn_mpnn_torch import D3QNMPNNAgent, hparams, listofDemands
+    hparams = dict(hparams)
+    if os.environ.get("D3QN_GAMMA"):
+        hparams["gamma"] = float(os.environ["D3QN_GAMMA"])
 
     os.environ["PYTHONHASHSEED"] = str(args.seed)
     np.random.seed(args.seed)

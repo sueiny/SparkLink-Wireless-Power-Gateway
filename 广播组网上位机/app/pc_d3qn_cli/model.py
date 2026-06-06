@@ -125,6 +125,7 @@ def run_sample_training(
     hardware_rssi_profile: str | Path | None = None,
     reward_profile: dict | None = None,
     resume: str | Path | None = None,
+    gamma: float | None = None,
 ) -> Path:
     output_path = Path(output_dir)
     output_path.mkdir(parents=True, exist_ok=True)
@@ -163,6 +164,8 @@ def run_sample_training(
     if hardware_rssi_profile is not None:
         env["GRAPH_HARDWARE_RSSI_PROFILE"] = str(hardware_rssi_profile)
         env["GRAPH_NUM_NODES"] = "11"
+    if gamma is not None:
+        env["D3QN_GAMMA"] = str(gamma)
     for key, value in (reward_profile or {}).items():
         env[key] = str(value)
     subprocess.run(command, check=True, env=env)
@@ -178,6 +181,19 @@ class D3QNPredictor:
         self._device = None
         self._loaded_route_feature_dim = None
         self._loaded_num_actions = None
+        # 在线学习用：缓存最近一次有效 decide() 构建的输入张量与选中动作
+        self.last_decision_inputs: dict | None = None
+        # 拓扑缓存：第一次 decide() 时建立，整个测试期间不变（无 mid-test RSSI 更新）
+        self._cached_graph: dict | None = None
+        self._cached_edge_features = None       # numpy (E, 3)
+        self._cached_first: list[int] | None = None
+        self._cached_second: list[int] | None = None
+        self._cached_edges_dict: dict[str, int] | None = None
+        self._cached_ordered_edges: list[list[int]] | None = None
+        self._cached_nodes: list[int] | None = None
+        # Q 混合：冻结基线网络 + 在线更新计数
+        self._frozen_network = None
+        self._online_update_count: int = 0
 
     def _load(self, route_feature_dim: int, num_actions: int):
         if self._network is not None:
@@ -209,6 +225,7 @@ class D3QNPredictor:
         data = torch.load(self.checkpoint_path, map_location=self._device)
         hparams = dict(DEFAULT_HPARAMS)
         hparams.update(data.get("hparams", {}))
+        hparams["T"] = 1  # 推理时只需1轮消息传递，11节点拓扑足够，减少计算量
         requested_route_dim = int(route_feature_dim)
         checkpoint_route_dim = int(data.get("route_feature_dim", route_feature_dim))
         checkpoint_actions = int(data.get("num_actions", num_actions))
@@ -226,6 +243,10 @@ class D3QNPredictor:
         network.load_state_dict(state_dict)
         network.eval()
         self._network = network
+        # 冻结基线网络：用于首次在线更新后的 Q 混合（75% 冻结 + 25% 在线）
+        import copy
+        self._frozen_network = copy.deepcopy(network)
+        self._frozen_network.eval()
         self._checkpoint_data = data
         self._loaded_route_feature_dim = checkpoint_route_dim
         self._loaded_num_actions = checkpoint_actions
@@ -253,15 +274,54 @@ class D3QNPredictor:
             "num_actions": DEFAULTS.k_paths,
         }
 
+    def _refresh_topo_cache(self, topology: Topology) -> None:
+        """拓扑边集/权重变化时重建缓存。避免每轮重跑 betweenness(O(N²KE)) 和 first_second(O(E²))。"""
+        from .state import _planning_graph_undirected, _edge_betweenness_from_graph, _planning_edge_records, rssi_to_capacity
+
+        graph = _planning_graph_undirected(topology)
+        nodes = sorted(topology.nodes)
+        betweenness = _edge_betweenness_from_graph(graph, nodes, DEFAULTS.k_paths)
+        edge_records = _planning_edge_records(topology)
+        ordered_tuples = sorted(edge_records)
+
+        edge_index: dict[str, int] = {}
+        for idx, (s, d) in enumerate(ordered_tuples):
+            edge_index[edge_key(s, d)] = idx
+            edge_index[edge_key(d, s)] = idx
+
+        edge_features_dicts = []
+        for s, d in ordered_tuples:
+            rec = edge_records[(s, d)]
+            capacity = rssi_to_capacity(rec["rssi"])
+            edge_features_dicts.append({
+                "capacity": {"value": capacity},
+                "remaining_capacity": {"value": capacity - DEFAULTS.bw_allocated},
+                "betweenness": {"value": betweenness.get(edge_key(s, d), 0.0)},
+            })
+
+        ordered_edges_list = [list(e) for e in ordered_tuples]
+        self._cached_edge_features = self._edge_feature_array({"edge_features": edge_features_dicts})
+        self._cached_first, self._cached_second = self._first_second_indices(ordered_edges_list)
+        self._cached_edges_dict = edge_index
+        self._cached_ordered_edges = ordered_edges_list
+        self._cached_nodes = nodes
+        self._cached_graph = graph
+
     def decide(self, topology: Topology, src: int, dst: int, demand: int) -> D3QNDecision:
-        state = build_d3qn_state(topology, src=src, dst=dst)
-        nodes = sorted(int(node) for node in state["nodes"])
+        from .state import k_candidate_paths
+        import numpy as np
+
+        # 拓扑缓存：测试期间拓扑静止，第一次 decide() 时建立，之后直接复用
+        if self._cached_graph is None:
+            self._refresh_topo_cache(topology)
+
+        nodes = self._cached_nodes
         if src not in nodes or dst not in nodes:
             return D3QNDecision("unreachable", src, dst, demand, None, [], [], [], str(self.checkpoint_path), "src or dst missing from topology")
-        candidates = state["candidate_paths"].get(f"{src:02X}:{dst:02X}", [])
+        candidates = k_candidate_paths(self._cached_graph, src, dst, DEFAULTS.k_paths)
         if not candidates:
             return D3QNDecision("unreachable", src, dst, demand, None, [], [], [], str(self.checkpoint_path), "no candidate path")
-        if not state["ordered_edges"]:
+        if not self._cached_ordered_edges:
             return D3QNDecision("unreachable", src, dst, demand, None, [], candidates, [], str(self.checkpoint_path), "empty edge set")
 
         runtime_feature_dim = len(DEFAULTS.demands) + 1 + 2 * len(nodes)
@@ -289,29 +349,55 @@ class D3QNPredictor:
                 f"node cannot be mapped into checkpoint model space: src={src:02X} dst={dst:02X}",
                 node_mapping=node_to_index,
             )
-        edge_features = self._edge_feature_array(state)
         route_features = self._route_feature_array(demand, node_to_index[src], node_to_index[dst], model_num_nodes)
-        first, second = self._first_second_indices(state["ordered_edges"])
         try:
-            candidate_edge_indices = self._candidate_edge_indices(candidates, state["edgesDict"])
+            candidate_edge_indices = self._candidate_edge_indices(candidates, self._cached_edges_dict)
         except D3QNUnavailable as exc:
             return D3QNDecision("model_unavailable", src, dst, demand, None, [], candidates, [], str(self.checkpoint_path), str(exc), node_mapping=node_to_index)
-        import numpy as np
 
+        ef_t = torch.as_tensor(self._cached_edge_features, dtype=torch.float32, device=self._device).unsqueeze(0)
+        first_t = torch.as_tensor(self._cached_first, dtype=torch.long, device=self._device)
+        second_t = torch.as_tensor(self._cached_second, dtype=torch.long, device=self._device)
+        rf_t = torch.as_tensor(route_features, dtype=torch.float32, device=self._device).unsqueeze(0)
+        cand_t = [[torch.as_tensor(path, dtype=torch.long, device=self._device) for path in candidate_edge_indices]]
         with torch.no_grad():
-            q_values_tensor = self._network(
-                torch.as_tensor(edge_features, dtype=torch.float32, device=self._device).unsqueeze(0),
-                torch.as_tensor(first, dtype=torch.long, device=self._device),
-                torch.as_tensor(second, dtype=torch.long, device=self._device),
-                torch.as_tensor(route_features, dtype=torch.float32, device=self._device).unsqueeze(0),
-                [[torch.as_tensor(path, dtype=torch.long, device=self._device) for path in candidate_edge_indices]],
-            )[0]
+            q_online = self._network(ef_t, first_t, second_t, rf_t, cand_t)[0]
+            if self._online_update_count == 1 and self._frozen_network is not None:
+                # 首次在线更新后：75% 冻结基线Q + 25% 在线Q，防止单次更新跑偏
+                q_frozen = self._frozen_network(ef_t, first_t, second_t, rf_t, cand_t)[0]
+                q_values_tensor = 0.75 * q_frozen + 0.25 * q_online
+            else:
+                # 更新前（两者相同）或第二次更新后（直接信任在线Q）
+                q_values_tensor = q_online
         valid_count = min(len(candidates), DEFAULTS.k_paths)
         q_values = [float(value) for value in q_values_tensor[:valid_count].detach().cpu().tolist()]
         if not q_values:
             return D3QNDecision("unreachable", src, dst, demand, None, [], candidates, [], str(self.checkpoint_path), "no valid q values", node_mapping=node_to_index)
         selected_action = int(np.argmax(np.asarray(q_values, dtype=np.float32)))
+        # 缓存输入，供在线学习复用（避免重复构图）
+        self.last_decision_inputs = {
+            "edge_features": self._cached_edge_features,
+            "first": self._cached_first,
+            "second": self._cached_second,
+            "route_features": route_features,
+            "candidate_edge_indices": candidate_edge_indices,
+            "selected_action": selected_action,
+            "valid_count": valid_count,
+        }
         return D3QNDecision("valid", src, dst, demand, selected_action, candidates[selected_action], candidates, q_values, str(self.checkpoint_path), node_mapping=node_to_index)
+
+    def q_forward(self, inputs: dict):
+        """用缓存的输入重跑一次前向（带梯度），返回候选路径的 Q 值张量。供在线学习更新使用。"""
+        torch = self._torch
+        assert torch is not None and self._network is not None and self._device is not None
+        q_values_tensor = self._network(
+            torch.as_tensor(inputs["edge_features"], dtype=torch.float32, device=self._device).unsqueeze(0),
+            torch.as_tensor(inputs["first"], dtype=torch.long, device=self._device),
+            torch.as_tensor(inputs["second"], dtype=torch.long, device=self._device),
+            torch.as_tensor(inputs["route_features"], dtype=torch.float32, device=self._device).unsqueeze(0),
+            [[torch.as_tensor(path, dtype=torch.long, device=self._device) for path in inputs["candidate_edge_indices"]]],
+        )[0]
+        return q_values_tensor
 
     @staticmethod
     def _build_node_mapping(nodes: list[int], gateway: int, model_num_nodes: int) -> dict[int, int]:

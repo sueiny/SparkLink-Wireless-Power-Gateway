@@ -1,7 +1,0 @@
-{
-  "algorithm": "D3QN_MPNN",
-  "error": "failed: 路由表缺少节点 ['0x09']，测试终止",
-  "log_dir": "/home/sueiny/rk3506_linux6.1_v1.2.0/app/广播组网上位机/app/logs/d3qn_hw/第17次测试",
-  "status": "error",
-  "ts": "2026-06-02T11:31:30.019"
-}

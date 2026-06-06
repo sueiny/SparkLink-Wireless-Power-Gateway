@@ -1,7 +1,0 @@
-{
-  "algorithm": "D3QN_MPNN",
-  "error": "D3QN checkpoint preflight failed: route_feature_dim mismatch: checkpoint=24, runtime=26",
-  "log_dir": "/home/sueiny/rk3506_linux6.1_v1.2.0/app/广播组网上位机/app/logs/d3qn_hw/第18次测试",
-  "status": "error",
-  "ts": "2026-06-02T12:16:31.511"
-}

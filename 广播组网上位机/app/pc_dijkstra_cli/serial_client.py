@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import time
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Callable, Iterator
@@ -22,7 +23,11 @@ class FrameReader:
         self.buffer.extend(data)
         frames = []
         while True:
-            frame = self._pop_next_frame()
+            try:
+                frame = self._pop_next_frame()
+            except ProtocolError:
+                # 跳过不支持的坏帧(magic 已被消费),继续解析后续帧，不丢弃整批
+                continue
             if frame is None:
                 break
             frames.append(frame)
@@ -63,7 +68,11 @@ class MixedMessageReader:
 
     def feed(self, data: bytes):
         messages = []
-        messages.extend(parse_frame(frame) for frame in self.frame_reader.feed(data))
+        for frame in self.frame_reader.feed(data):
+            try:
+                messages.append(parse_frame(frame))
+            except ProtocolError:
+                continue  # 单帧解析失败不影响同批其它帧
 
         self.line_buffer.extend(data)
         while True:
@@ -73,7 +82,10 @@ class MixedMessageReader:
             raw_line = bytes(self.line_buffer[: newline_index + 1])
             del self.line_buffer[: newline_index + 1]
             line = raw_line.decode("ascii", errors="ignore")
-            message = parse_text_message(line)
+            try:
+                message = parse_text_message(line)
+            except ProtocolError:
+                message = None  # 单行(如 count 不匹配)解析失败不影响同批其它行
             if message is not None:
                 messages.append(message)
         if len(self.line_buffer) > 4096:
@@ -102,8 +114,13 @@ class SerialClient:
             rtscts=False,
             dsrdtr=False,
         )
+        # DTR/RTS toggle to reset CH340 dongle
         self.serial.dtr = False
         self.serial.rts = False
+        # Wait for dongle to settle
+        time.sleep(2.0)
+        # Flush any pending data
+        self.serial.read(self.serial.in_waiting or 8192)
         self.reader = MixedMessageReader()
         self.raw_callback = raw_callback
 

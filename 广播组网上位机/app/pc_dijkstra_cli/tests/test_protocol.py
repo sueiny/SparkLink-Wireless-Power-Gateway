@@ -37,7 +37,8 @@ class ProtocolTest(unittest.TestCase):
     def test_build_send_command(self):
         command = build_send_command(0x12, [0x05, 0x08, 0x12], "01 02 03 04")
 
-        self.assertEqual(command, "SEND 12 3 05 08 12 01020304\r\n")
+        # 目标地址用十进制(0x12=18)，路径用十六进制(05 08 12)
+        self.assertEqual(command, "SEND 18 3 05 08 12 01020304\r\n")
 
     def test_build_send_command_rejects_wrong_destination(self):
         with self.assertRaises(ProtocolError):

@@ -59,6 +59,7 @@ def cmd_train(args: argparse.Namespace) -> int:
         hardware_rssi_profile=args.hardware_rssi_profile,
         reward_profile=reward_profile,
         resume=getattr(args, "resume", None),
+        gamma=args.gamma,
     )
     print(f"checkpoint: {checkpoint}")
     return 0
@@ -95,6 +96,13 @@ def cmd_train_fast(args: argparse.Namespace) -> int:
 
 
 def cmd_bench(args: argparse.Namespace) -> int:
+    checkpoint = args.checkpoint
+    # 在线学习默认以 best.pt 为基线（用户确认）：仅当未显式改 --checkpoint 时自动切换
+    if getattr(args, "online_learn", False) and Path(args.checkpoint) == Path(str(LATEST_CHECKPOINT)):
+        best = LATEST_CHECKPOINT.parent / "best.pt"
+        if best.exists():
+            checkpoint = str(best)
+            print(f"[online-learn] 以 best.pt 为基线: {checkpoint}")
     summary = run_benchmark(
         port=args.port,
         baud=args.baud,
@@ -102,7 +110,7 @@ def cmd_bench(args: argparse.Namespace) -> int:
         rounds=args.rounds,
         payload=args.payload,
         log_dir=args.log_dir,
-        checkpoint=args.checkpoint,
+        checkpoint=checkpoint,
         boot_wait=args.boot_wait,
         rssi_requests=args.rssi_requests,
         ack_timeout=args.ack_timeout,
@@ -110,12 +118,17 @@ def cmd_bench(args: argparse.Namespace) -> int:
         gateway=parse_addr(args.gateway),
         dongle_addr=parse_addr(args.dongle_addr) if args.dongle_addr else None,
         sources=parse_optional_node_list(args.sources),
-        recollect_consecutive_failures=args.recollect_consecutive_failures,
         path_loss_degrade_threshold=args.path_loss_degrade_threshold,
         path_p95_degrade_ms=args.path_p95_degrade_ms,
         path_avg_degrade_ms=args.path_avg_degrade_ms,
         path_health_window=args.path_health_window,
         send_mode=args.send_mode,
+        enable_online_learn=args.online_learn,
+        online_interval=args.online_interval,
+        online_lr=args.online_lr,
+        online_epochs=args.online_epochs,
+        online_nudge=args.online_nudge,
+        enable_pause=args.enable_pause,
     )
     print(
         f"D3QN bench complete: sent={summary['total']['sent']} "
@@ -198,6 +211,7 @@ def _add_training_shape_args(parser: argparse.ArgumentParser, *, fast: bool = Fa
     parser.add_argument("--reward-hop-weight", type=float, default=0.18)
     parser.add_argument("--reward-weak-rssi-weight", type=float, default=2.4)
     parser.add_argument("--reward-overload-weight", type=float, default=8.0)
+    parser.add_argument("--gamma", type=float, default=None, help="折扣因子，覆盖默认值0.15（越大越注重长远奖励）")
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -266,12 +280,17 @@ def build_parser() -> argparse.ArgumentParser:
     bench.add_argument("--ack-timeout", type=float, default=2.0)
     bench.add_argument("--interval", type=float, default=0.5)
     bench.add_argument("--sources", default=None, help="comma-separated source nodes; default uses all --nodes")
-    bench.add_argument("--recollect-consecutive-failures", type=int, default=3)
     bench.add_argument("--path-loss-degrade-threshold", type=float, default=0.10)
     bench.add_argument("--path-p95-degrade-ms", type=float, default=700.0)
     bench.add_argument("--path-avg-degrade-ms", type=float, default=220.0)
     bench.add_argument("--path-health-window", type=int, default=5)
     bench.add_argument("--send-mode", default="single_send", choices=["single_send", "two_send"], help="single_send: gateway->target direct, two_send: gateway->source->target")
+    bench.add_argument("--online-learn", action=argparse.BooleanOptionalAction, default=True, help="测试期在线学习：每 N 轮用真实 ACK 经验微调模型并存独立 checkpoint(基线默认 best.pt)，学习耗时计入推理时间；默认开启，--no-online-learn 关闭")
+    bench.add_argument("--online-interval", type=int, default=50, help="每多少传输轮触发一次在线更新(默认50，越大学习开销越低)")
+    bench.add_argument("--online-lr", type=float, default=1e-4, help="在线学习率(默认1e-4，小步避免破坏预训练)")
+    bench.add_argument("--online-epochs", type=int, default=2, help="每次更新在经验窗口上的训练轮数(默认2)")
+    bench.add_argument("--online-nudge", type=float, default=0.5, help="方向性 bandit 步长：目标=当前Q+步长×奖励(默认0.5)")
+    bench.add_argument("--enable-pause", action="store_true", default=False, help="启用键盘控制：s=暂停/恢复，y=重采 RSSI 后继续")
     bench.set_defaults(func=cmd_bench)
 
     bench10 = subparsers.add_parser("bench10", help="run repeated D3QN hardware benchmark and aggregate results")

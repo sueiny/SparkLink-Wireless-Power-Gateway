@@ -93,8 +93,8 @@ def cmd_bench(args: argparse.Namespace) -> int:
         payload=args.payload,
         log_dir=args.log_dir,
         boot_wait=args.boot_wait,
-        rssi_seconds=args.rssi_seconds,
-        rssi_requests=args.rssi_requests,
+        rssi_seconds=20.0,
+        rssi_requests=5,
         ack_timeout=args.ack_timeout,
         interval=args.interval,
         gateway=parse_addr(args.gateway),
@@ -103,7 +103,14 @@ def cmd_bench(args: argparse.Namespace) -> int:
         max_hops=args.max_hops,
         route_mode=args.route_mode,
         sources=parse_optional_node_list(args.sources),
-        recollect_consecutive_failures=args.recollect_consecutive_failures,
+
+        send_mode=args.send_mode,
+        hop_penalty=args.hop_penalty,
+        enable_congestion=args.enable_congestion,
+        no_retry=args.no_retry,
+        bidirectional=args.bidirectional,
+        enable_pause=args.enable_pause,
+        dynamic_pause=args.dynamic_pause,
     )
     print(f"bench complete: sent={summary['total']['sent']} success={summary['total']['success']} loss={_format_rate(summary['total']['loss_rate'])}")
     report_dir = Path(summary.get("log_dir") or summary.get("config", {}).get("log_dir") or args.log_dir)
@@ -236,13 +243,17 @@ def build_parser() -> argparse.ArgumentParser:
     bench.add_argument("--min-rssi", type=int, default=-100, help="minimum RSSI threshold for routing edges")
     bench.add_argument("--max-hops", type=int, default=6, help="maximum hop count for routing paths")
     bench.add_argument("--boot-wait", type=float, default=5.0)
-    bench.add_argument("--rssi-seconds", type=float, default=8.0)
-    bench.add_argument("--rssi-requests", type=int, default=5)
     bench.add_argument("--ack-timeout", type=float, default=2.0)
     bench.add_argument("--interval", type=float, default=1.0)
-    bench.add_argument("--route-mode", choices=["baseline_dijkstra", "reliable_dijkstra_v1"], default="baseline_dijkstra")
+    bench.add_argument("--route-mode", choices=["baseline_dijkstra", "reliable_dijkstra_v1", "sample_dijkstra"], default="baseline_dijkstra")
     bench.add_argument("--sources", default=None, help="comma-separated source nodes; default uses all --nodes")
-    bench.add_argument("--recollect-consecutive-failures", type=int, default=3)
+    bench.add_argument("--send-mode", default="single_send", choices=["single_send", "two_send"], help="single_send: gateway->target direct, two_send: gateway->source->target")
+    bench.add_argument("--hop-penalty", type=float, default=0.0, help="per-hop penalty added to Dijkstra edge cost (0 to disable)")
+    bench.add_argument("--enable-congestion", action="store_true", default=False, help="enable node congestion penalty based on degree")
+    bench.add_argument("--no-retry", action="store_true", default=False, help="disable ACK timeout retry (max_retries=0)")
+    bench.add_argument("--bidirectional", action="store_true", default=False, help="only use bidirectional edges for routing (ensures ACK return path)")
+    bench.add_argument("--enable-pause", action="store_true", default=False, help="press s to pause test, move nodes, press y to re-collect RSSI and resume")
+    bench.add_argument("--dynamic-pause", action="store_true", default=False, help="动态模式：跑完一轮所有路径后自动暂停，按 s 继续第二轮，总轮次自动 ×2")
     bench.set_defaults(func=cmd_bench)
 
     sweep = subparsers.add_parser("sweep", help="run benchmark across command intervals")
@@ -258,7 +269,7 @@ def build_parser() -> argparse.ArgumentParser:
     sweep.add_argument("--rssi-seconds", type=float, default=15.0)
     sweep.add_argument("--rssi-requests", type=int, default=5)
     sweep.add_argument("--ack-timeout", type=float, default=2.0)
-    sweep.add_argument("--route-mode", choices=["baseline_dijkstra", "reliable_dijkstra_v1"], default="baseline_dijkstra")
+    sweep.add_argument("--route-mode", choices=["baseline_dijkstra", "reliable_dijkstra_v1", "sample_dijkstra"], default="baseline_dijkstra")
     sweep.set_defaults(func=cmd_sweep)
 
     optimize = subparsers.add_parser("optimize", help="scan route modes and safe command intervals for target loss")

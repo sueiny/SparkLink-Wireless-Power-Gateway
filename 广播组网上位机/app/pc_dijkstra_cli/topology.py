@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Dict, Iterable, List
 
 from .protocol import RssiReport
-from .routing import BASELINE_ROUTE_MODE, RELIABLE_ROUTE_MODE, ROUTE_MODES, Route, build_route_table, dijkstra, rssi_to_reliable_weight, rssi_to_weight
+from .routing import BASELINE_ROUTE_MODE, RELIABLE_ROUTE_MODE, SAMPLE_ROUTE_MODE, ROUTE_MODES, Route, build_route_table, dijkstra, rssi_to_reliable_weight, rssi_to_weight, sample_capacity_weight
 
 
 @dataclass
@@ -64,9 +64,9 @@ class Topology:
             updated.append(edge)
         return updated
 
-    def graph(self, now: float | None = None, route_mode: str = BASELINE_ROUTE_MODE, min_rssi: int = -85) -> Dict[int, Dict[int, float]]:
+    def graph(self, now: float | None = None, route_mode: str = BASELINE_ROUTE_MODE, min_rssi: int = -85, bidirectional: bool = False) -> Dict[int, Dict[int, float]]:
         if route_mode not in ROUTE_MODES:
-            raise ValueError(f"unsupported route mode: {route_mode}")
+            raise ValueError(f"unsupported route mode")
         timestamp = time.time() if now is None else float(now)
         graph: Dict[int, Dict[int, float]] = {}
         for edge in self.edges.values():
@@ -76,26 +76,52 @@ class Topology:
                 continue
             if edge.src in self.relay_excluded or edge.dst in self.relay_excluded:
                 continue
-            if edge.rssi < min_rssi:
-                continue
+            # Removed min_rssi filter: any detected edge is usable
             if route_mode == RELIABLE_ROUTE_MODE:
                 weight = rssi_to_reliable_weight(edge.rssi)
                 if weight is None:
                     continue
                 weight += 0.5
+            elif route_mode == SAMPLE_ROUTE_MODE:
+                # 仿真对齐：weight = 1/remaining_capacity，capacity 由 RSSI 推导
+                # 强信号→大容量→小权重（优先），弱信号→大权重（自动绕中继）
+                weight = sample_capacity_weight(edge.rssi)
             else:
                 weight = float(edge.weight)
             graph.setdefault(edge.src, {})[edge.dst] = weight
+        if bidirectional or route_mode == SAMPLE_ROUTE_MODE:
+            # 无向图：两个方向取 cost 更小（信号更好）的那条，对两侧均生效
+            # 消除有向边处理顺序带来的不确定性，与仿真/D3QN 的双向等权逻辑对齐
+            # 网关无中继能力：不添加 gateway→node 的反向边
+            undirected: Dict[int, Dict[int, float]] = {}
+            for src, neighbors in graph.items():
+                for dst, weight in neighbors.items():
+                    existing = undirected.get(src, {}).get(dst)
+                    if existing is None or weight < existing:
+                        undirected.setdefault(src, {})[dst] = weight
+                        if self.gateway is None or src != self.gateway:
+                            undirected.setdefault(dst, {})[src] = weight
+            return undirected
         return graph
 
-    def route(self, src: int, dst: int, route_mode: str = BASELINE_ROUTE_MODE, fallback: bool = True) -> Route:
-        route = dijkstra(self.graph(route_mode=route_mode, min_rssi=self.min_rssi), src, dst, max_hops=self.max_hops)
+    def route(self, src: int, dst: int, route_mode: str = BASELINE_ROUTE_MODE, fallback: bool = True, hop_penalty: float = 0.0, congestion_penalty=None, bidirectional: bool = False) -> Route:
+        if route_mode == SAMPLE_ROUTE_MODE:
+            # 原汁原味模式：忽略一切外加约束指数
+            hop_penalty = 0.0
+            congestion_penalty = None
+        graph = self.graph(route_mode=route_mode, min_rssi=self.min_rssi)
+        route = dijkstra(graph, src, dst, max_hops=self.max_hops, hop_penalty=hop_penalty, congestion_penalty=congestion_penalty)
         if route.status != "valid" and route_mode != BASELINE_ROUTE_MODE and fallback:
-            return dijkstra(self.graph(route_mode=BASELINE_ROUTE_MODE, min_rssi=self.min_rssi), src, dst, max_hops=self.max_hops)
+            graph_baseline = self.graph(route_mode=BASELINE_ROUTE_MODE, min_rssi=self.min_rssi)
+            return dijkstra(graph_baseline, src, dst, max_hops=self.max_hops, hop_penalty=hop_penalty, congestion_penalty=congestion_penalty)
         return route
 
-    def routes(self, route_mode: str = BASELINE_ROUTE_MODE) -> Dict[str, Route]:
-        return build_route_table(self.graph(route_mode=route_mode, min_rssi=self.min_rssi), self.nodes, max_hops=self.max_hops)
+    def routes(self, route_mode: str = BASELINE_ROUTE_MODE, hop_penalty: float = 0.0, congestion_penalty=None, bidirectional: bool = False) -> Dict[str, Route]:
+        if route_mode == SAMPLE_ROUTE_MODE:
+            hop_penalty = 0.0
+            congestion_penalty = None
+        graph = self.graph(route_mode=route_mode, min_rssi=self.min_rssi)
+        return build_route_table(graph, self.nodes, max_hops=self.max_hops, gateway=self.gateway, hop_penalty=hop_penalty, congestion_penalty=congestion_penalty)
 
     def to_dict(self) -> dict:
         return {

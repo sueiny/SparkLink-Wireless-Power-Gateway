@@ -1,7 +1,0 @@
-{
-  "algorithm": "D3QN_MPNN",
-  "error": "device reports readiness to read but returned no data (device disconnected or multiple access on port?)",
-  "log_dir": "/home/sueiny/rk3506_linux6.1_v1.2.0/app/广播组网上位机/app/logs/d3qn_hw/第23次测试",
-  "status": "error",
-  "ts": "2026-06-02T16:36:03.155"
-}

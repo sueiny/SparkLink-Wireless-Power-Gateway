@@ -49,6 +49,7 @@ class RoundResult:
     all_candidates_degraded: bool = False
     ack1_monotonic: float | None = None
     send2_monotonic: float | None = None
+    online_learn_ms: float = 0.0  # 本轮触发在线学习更新的耗时（计入 inference_ms，单独记录供分析）
 
 
 class BenchmarkLogger:
@@ -181,15 +182,17 @@ def _drain_until_quiet(client: SerialClient, logger: BenchmarkLogger, topology: 
 def collect_topology(client: SerialClient, logger: BenchmarkLogger, rssi_requests: int, nodes: list[int], gateway: int, dongle_addr: int | None = None) -> Topology:
     relay_excluded = {dongle_addr} if dongle_addr is not None else set()
     topology = Topology(stale_seconds=None, edge_direction="src_to_neighbor", gateway=gateway, relay_excluded=relay_excluded)
-    for index in range(1, rssi_requests + 1):
+    # 固定采集 5 次，每次发 1 个 RSSI_REQ，间隔 3 秒，不提前退出。
+    # 无向图保证：A 听到 B 即视为 B 可达（即便网关未直接听到 B）。
+    FIXED_ROUNDS = 5
+    REQ_INTERVAL = 3.0
+    for index in range(1, FIXED_ROUNDS + 1):
         command = client.send_rssi_req()
         logger.event("send_command", command=command.rstrip(), request=index)
         _drain_until_quiet(client, logger, topology, idle_timeout=1.0, max_seconds=10.0)
         logger.topology_snapshot(topology, f"rssi_req_{index}")
-        state = build_d3qn_state(topology)
-        if all(state["candidate_paths"].get(f"{gateway:02X}:{node:02X}") for node in nodes):
-            logger.event("topology_ready", request=index)
-            break
+        if index < FIXED_ROUNDS:
+            time.sleep(REQ_INTERVAL)
     logger.topology_snapshot(topology, "post_collection")
     return topology
 
@@ -236,87 +239,6 @@ def _is_ack_timeout(result: RoundResult) -> bool:
 
 def _path_key(path: list[int]) -> tuple[int, ...]:
     return tuple(int(item) for item in path)
-
-
-def _history_degraded(
-    records: list[dict],
-    *,
-    loss_threshold: float,
-    p95_threshold_ms: float,
-    avg_latency_threshold_ms: float,
-    window: int,
-) -> tuple[bool, str | None]:
-    recent = records[-window:]
-    if len(recent) < window:
-        return False, None
-    loss_rate = len([item for item in recent if not item.get("success")]) / len(recent)
-    if loss_rate >= loss_threshold:
-        return True, f"loss_rate>={loss_threshold:.0%}"
-    latencies = sorted(float(item["point_to_point_ms"]) for item in recent if item.get("success") and item.get("point_to_point_ms") is not None)
-    if latencies:
-        avg_latency = statistics.fmean(latencies)
-        if avg_latency >= avg_latency_threshold_ms:
-            return True, f"avg_latency>={avg_latency_threshold_ms:g}ms"
-        p95_index = min(len(latencies) - 1, max(0, int(0.95 * len(latencies) + 0.999999) - 1))
-        if latencies[p95_index] >= p95_threshold_ms:
-            return True, f"p95>={p95_threshold_ms:g}ms"
-    return False, None
-
-
-def _select_healthy_candidate(
-    decision: D3QNDecision,
-    path_history: dict[tuple[int, int, tuple[int, ...]], list[dict]],
-    *,
-    source: int,
-    target: int,
-    loss_threshold: float,
-    p95_threshold_ms: float,
-    avg_latency_threshold_ms: float,
-    window: int,
-    avoid_nodes: set[int] | None = None,
-    max_hops: int = 4,
-) -> tuple[list[int], int | None, str | None, bool]:
-    if not decision.candidate_paths:
-        return [], decision.selected_action, "no_candidate_path", False
-    q_order = sorted(range(min(len(decision.candidate_paths), len(decision.q_values))), key=lambda index: decision.q_values[index], reverse=True)
-    if not q_order:
-        q_order = list(range(len(decision.candidate_paths)))
-    avoid_nodes = set(avoid_nodes or set())
-    # 允许候选路径使用网关路由中的中继节点，但要确保组合后无环路
-    # 不过滤重叠节点，而是在组合时检查环路
-    non_overlapping = q_order  # 不过滤，让所有候选路径都参与选择
-    overlap_avoided = bool(non_overlapping) and len(non_overlapping) < len(q_order)
-    if non_overlapping:
-        q_order = non_overlapping
-    degraded_reasons: list[str] = []
-    for action in q_order:
-        path = decision.candidate_paths[action]
-        # 环路检测：检查路径中是否有重复节点
-        if len(path) != len(set(path)):
-            degraded_reasons.append(f"action_{action}:loop_detected")
-            continue
-        # 跳数限制
-        if len(path) - 1 > max_hops:
-            degraded_reasons.append(f"action_{action}:too_many_hops({len(path)-1})")
-            continue
-        degraded, reason = _history_degraded(
-            path_history.get((source, target, _path_key(path)), []),
-            loss_threshold=loss_threshold,
-            p95_threshold_ms=p95_threshold_ms,
-            avg_latency_threshold_ms=avg_latency_threshold_ms,
-            window=window,
-        )
-        if not degraded:
-            default_action = decision.selected_action
-            if default_action is not None and action != default_action:
-                detail = ",".join(degraded_reasons) if degraded_reasons else "candidate_degraded"
-                return path, action, f"switch_from_action_{default_action}:{detail}", False
-            if overlap_avoided:
-                return path, action, "gateway_overlap_avoided", False
-            return path, action, None, False
-        degraded_reasons.append(f"action_{action}:{reason}")
-    action = q_order[0]
-    return decision.candidate_paths[action], action, "all_candidates_degraded;" + ",".join(degraded_reasons), True
 
 
 def _gateway_route(topology: Topology, gateway: int, source: int) -> list[int]:
@@ -400,13 +322,6 @@ def _write_runtime_state(log_path: Path, topology: Topology, summary: dict | Non
     (json_path / "routes.json").write_text(json.dumps(routes, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return state
 
-
-def _should_recollect(consecutive_failures: dict[tuple[int, int], int], source: int, target: int, threshold: int) -> bool:
-    return threshold > 0 and consecutive_failures.get((source, target), 0) >= threshold
-
-
-def _mark_pair_result(consecutive_failures: dict[tuple[int, int], int], source: int, target: int, success: bool) -> None:
-    consecutive_failures[(source, target)] = 0 if success else consecutive_failures.get((source, target), 0) + 1
 
 
 def _recollect_topology(
@@ -544,6 +459,11 @@ def summarize(results: Iterable[RoundResult], nodes: list[int], gateway: int, so
     all_inference = [float(result.inference_ms) for result in result_list if result.inference_ms is not None]
     all_source_to_target = [float(result.source_to_target_ms) for result in result_list if result.success and result.source_to_target_ms is not None]
     all_d3qn_total = [float(result.d3qn_total_latency_ms) for result in result_list if result.success and result.d3qn_total_latency_ms is not None]
+    all_learn = [float(result.online_learn_ms) for result in result_list if result.online_learn_ms > 0]
+    learn_events = [
+        {"round_index": result.round_index, "source": result.source, "target": result.target, "ms": float(result.online_learn_ms)}
+        for result in result_list if result.online_learn_ms > 0
+    ]
     return {
         "total": {
             "sent": total_sent,
@@ -552,6 +472,13 @@ def summarize(results: Iterable[RoundResult], nodes: list[int], gateway: int, so
             "loss_rate": (total_sent - total_success) / total_sent if total_sent else None,
             "latency": _latency_stats(all_latencies),
             "inference_latency": _latency_stats(all_inference),
+            "online_learn_latency": {
+                "update_count": len(all_learn),
+                "total_ms": sum(all_learn),
+                "avg_per_update_ms": sum(all_learn) / len(all_learn) if all_learn else None,
+                "amortized_per_round_ms": sum(all_learn) / len(result_list) if result_list else None,
+                "events": learn_events,
+            },
             "source_to_target_latency": _latency_stats(all_source_to_target),
             "d3qn_total_latency": _latency_stats(all_d3qn_total),
             "planned_rounds": len(result_list),
@@ -598,7 +525,6 @@ def build_hardware_record(summary: dict, topology: Topology, config: dict, check
                 "rssi_requests": config["rssi_requests"],
                 "matrix_mode": "source in sources, target in nodes-source",
                 "two_send_latency_policy": "first SEND gateway->source, second SEND gateway->source->target; point_to_point_ms=second_ack_ms-first_ack_ms",
-                "recollect_consecutive_failures": config.get("recollect_consecutive_failures", 3),
             },
         },
         "routing_params": {
@@ -642,12 +568,17 @@ def run_benchmark(
     gateway: int = 0x00,
     dongle_addr: int | None = None,
     sources: list[int] | None = None,
-    recollect_consecutive_failures: int = 3,
     path_loss_degrade_threshold: float = 0.10,
     path_p95_degrade_ms: float = 700.0,
     path_avg_degrade_ms: float = 220.0,
     path_health_window: int = 5,
     send_mode: str = "single_send",
+    enable_online_learn: bool = False,
+    online_interval: int = 50,
+    online_lr: float = 1e-4,
+    online_epochs: int = 2,
+    online_nudge: float = 0.5,
+    enable_pause: bool = False,
 ) -> dict:
     log_path = resolve_log_dir(log_dir)
     logger = BenchmarkLogger(log_path)
@@ -656,8 +587,6 @@ def run_benchmark(
     results: list[RoundResult] = []
     topology: Topology | None = None
     model_compute_values: list[float] = []
-    consecutive_failures: dict[tuple[int, int], int] = {}
-    path_history: dict[tuple[int, int, tuple[int, ...]], list[dict]] = {}
     demand = demand_for_payload(payload)
     try:
         client = SerialClient(port, baud, raw_callback=logger.raw_callback)
@@ -679,14 +608,15 @@ def run_benchmark(
         _drain_messages(client, logger, boot_wait)
         topology = collect_topology(client, logger, rssi_requests, nodes, gateway, dongle_addr=dongle_addr)
         _write_runtime_state(log_path, topology)
-        # 验证路由表包含所有节点
+        # 节点存在性检查：改为警告，不终止测试。
+        # 无向图下"被听到即可达"，物理掉线节点的轮次会以 route_failed 记录，不影响其他节点测试。
         expected_nodes = set(nodes)
         actual_nodes = set(topology.nodes)
         if not expected_nodes.issubset(actual_nodes):
             missing = expected_nodes - actual_nodes
             missing_hex = [f"0x{n:02X}" for n in sorted(missing)]
             logger.event("route_table_incomplete", missing=missing_hex, expected=len(expected_nodes), actual=len(actual_nodes))
-            raise RuntimeError(f"failed: 路由表缺少节点 {missing_hex}，测试终止")
+            # 仅记录警告，继续测试（掉线节点的轮次会以 unreachable 记录）
         try:
             metadata = predictor.validate_topology(topology)
             logger.event("d3qn_checkpoint_preflight_ok", **metadata)
@@ -694,23 +624,29 @@ def run_benchmark(
             logger.event("d3qn_checkpoint_preflight_failed", error=str(exc), checkpoint=str(checkpoint))
             raise RuntimeError(f"D3QN checkpoint preflight failed: {exc}") from exc
 
+        online_learner = None
+        if enable_online_learn:
+            from .online_learn import OnlineD3QNLearner
+            online_learner = OnlineD3QNLearner(
+                predictor,
+                save_dir=log_path,
+                base_checkpoint=checkpoint,
+                interval=online_interval,
+                lr=online_lr,
+                epochs=online_epochs,
+                nudge_step=online_nudge,
+                latency_norm_ms=max(1000.0, ack_timeout * 1000.0),
+                logger=logger,
+            )
+            logger.event(
+                "d3qn_online_learn_enabled",
+                interval=online_interval, lr=online_lr, epochs=online_epochs,
+                nudge_step=online_nudge, base_checkpoint=str(checkpoint),
+            )
+
         for source, target in pairs:
             for round_index in range(1, rounds + 1):
                 topology_recollected = False
-                if _should_recollect(consecutive_failures, source, target, recollect_consecutive_failures):
-                    topology, _ = _recollect_topology(
-                        client=client,
-                        logger=logger,
-                        log_path=log_path,
-                        rssi_requests=rssi_requests,
-                        nodes=nodes,
-                        gateway=gateway,
-                        dongle_addr=dongle_addr,
-                        reason=f"consecutive_failures:{source:02X}:{target:02X}",
-                        old_topology=topology,
-                    )
-                    consecutive_failures[(source, target)] = 0
-                    topology_recollected = True
 
                 decision_started = time.perf_counter()
                 try:
@@ -751,18 +687,11 @@ def run_benchmark(
                     continue
 
                 gateway_route = _gateway_route(topology, gateway, source)
-                selected_path, selected_action, path_switch_reason, all_candidates_degraded = _select_healthy_candidate(
-                    decision,
-                    path_history,
-                    source=source,
-                    target=target,
-                    loss_threshold=path_loss_degrade_threshold,
-                    p95_threshold_ms=path_p95_degrade_ms,
-                    avg_latency_threshold_ms=path_avg_degrade_ms,
-                    window=path_health_window,
-                    avoid_nodes=set(gateway_route[:-1]) - {target},
-                    max_hops=6,
-                )
+                # 纯 D3QN 决策：直接用 argmax(Q)，与 sample 评估模式一致
+                selected_action = decision.selected_action if decision.selected_action is not None else 0
+                selected_path = decision.selected_path
+                path_switch_reason = None
+                all_candidates_degraded = False
                 logger.decision(
                     decision,
                     compute_ms,
@@ -775,13 +704,14 @@ def run_benchmark(
                 )
 
                 if send_mode == "single_send":
-                    # 单次SEND模式：直接从网关发送到目标
-                    if not selected_path:
+                    # 单次SEND模式：使用网关到目标的完整路径
+                    full_path = _combine_gateway_path(gateway_route, selected_path)
+                    if not gateway_route or not selected_path or not full_path:
                         result = RoundResult(
                             source=source,
                             target=target,
                             round_index=round_index,
-                            route=[],
+                            route=full_path or selected_path or [],
                             command="",
                             success=False,
                             latency_ms=None,
@@ -792,13 +722,13 @@ def run_benchmark(
                             ack_ts=None,
                             interval_s=interval,
                             status="d3qn_route_failed",
-                            error="no_valid_path",
+                            error="gateway_to_target_unreachable",
                             selected_action=selected_action,
                             candidate_path_count=len(decision.candidate_paths),
                             model_q_values=decision.q_values,
                             inference_ms=compute_ms,
                             topology_recollected=topology_recollected,
-                            path_switch_reason=path_switch_reason or "no_valid_path",
+                            path_switch_reason=path_switch_reason or "gateway_route_missing",
                             all_candidates_degraded=all_candidates_degraded,
                         )
                         results.append(result)
@@ -806,8 +736,8 @@ def run_benchmark(
                         _drain_messages(client, logger, interval, topology, f"failed_{source:02X}_{target:02X}_{round_index}")
                         continue
 
-                    # 构建发送路径：网关 + selected_path
-                    send_path = [gateway] + selected_path if selected_path[0] != gateway else selected_path
+                    # 发送路径 = full_path (网关→源→目标)
+                    send_path = full_path
                     
                     # 单次SEND：网关直接到目标
                     target_success, e2e_latency_ms, ack_seq, ack_ts, send_ts, ack_monotonic = _send_and_wait_ack(
@@ -843,6 +773,7 @@ def run_benchmark(
                         total_latency_ms = inference_ms + e2e_ms
 
                     success = target_success
+                    point_to_point_ms = e2e_ms
                     result = RoundResult(
                         source=source,
                         target=target,
@@ -954,8 +885,6 @@ def run_benchmark(
                         )
                         results.append(result)
                         logger.round(result)
-                        path_history.setdefault((source, target, _path_key(selected_path)), []).append({"success": False, "point_to_point_ms": None})
-                        _mark_pair_result(consecutive_failures, source, target, False)
                         _drain_messages(client, logger, interval, topology, f"post_gateway_timeout_{source:02X}_{target:02X}_{round_index}")
                         continue
 
@@ -1027,11 +956,43 @@ def run_benchmark(
                         ack1_monotonic=ack1_monotonic,
                     send2_monotonic=send2_monotonic,
                 )
+                if online_learner is not None:
+                    # 记录本轮经验，到点触发学习更新；更新耗时计入 inference/总延时，并单独记录在 online_learn_ms
+                    online_learner.record(result.success, _result_latency_ms(result))
+                    update_ms = online_learner.maybe_update()
+                    if update_ms > 0.0:
+                        result.online_learn_ms = update_ms
+                        if result.inference_ms is not None:
+                            result.inference_ms += update_ms
+                        if result.total_latency_ms is not None:
+                            result.total_latency_ms += update_ms
+                        if result.d3qn_total_latency_ms is not None:
+                            result.d3qn_total_latency_ms += update_ms
                 results.append(result)
                 logger.round(result)
-                path_history.setdefault((source, target, _path_key(selected_path)), []).append({"success": success, "point_to_point_ms": point_to_point_ms})
-                _mark_pair_result(consecutive_failures, source, target, success)
-                _drain_messages(client, logger, interval, topology, f"post_round_{source:02X}_{target:02X}_{round_index}")
+                # 成功收到目标 ACK 后无需继续 drain（后续 ACK 都是中继/旁路帧，记录无意义）
+                # 只在失败时 drain 清缓冲区，避免残留帧干扰下一轮
+                if not result.success:
+                    _drain_messages(client, logger, interval, topology, f"post_round_{source:02X}_{target:02X}_{round_index}")
+                # 键盘控制：s=暂停/恢复，y=重采 RSSI 后继续
+                if enable_pause:
+                    from .pause import poll_key, wait_for_key
+                    key = poll_key()
+                    if key == "y" or key == "s":
+                        if key == "s":
+                            print(f"\n⏸  已暂停（轮次 {len(results)}）。按 s 继续，按 y 重采 RSSI 后继续...", flush=True)
+                            key = wait_for_key()
+                        if key == "y":
+                            print("📡  重新采集 RSSI...", flush=True)
+                            logger.event("pause_rssi_collect", completed_rounds=len(results))
+                            new_topo = collect_topology(client, logger, rssi_requests, nodes, gateway, dongle_addr=dongle_addr)
+                            topology = new_topo
+                            predictor._cached_graph = None  # 拓扑变了，下轮重建缓存
+                            _write_runtime_state(log_path, topology)
+                            logger.event("pause_rssi_complete", completed_rounds=len(results))
+                            print("▶  RSSI 已更新，继续测试...", flush=True)
+                        else:
+                            print("▶  继续测试...", flush=True)
     except Exception as exc:
         logger.event("bench_error", error=str(exc))
         (log_path / "bench_error.json").write_text(
@@ -1074,7 +1035,6 @@ def run_benchmark(
         "matrix_mode": True,
         "latency_policy": "two_send_point_to_point=gateway_to_target_ms-gateway_to_source_ms",
         "d3qn_total_latency_policy": "inference_ms + point_to_point_ms",
-        "recollect_consecutive_failures": recollect_consecutive_failures,
         "path_loss_degrade_threshold": path_loss_degrade_threshold,
         "path_p95_degrade_ms": path_p95_degrade_ms,
         "path_avg_degrade_ms": path_avg_degrade_ms,

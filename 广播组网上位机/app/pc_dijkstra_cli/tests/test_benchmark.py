@@ -194,7 +194,7 @@ class BenchmarkTest(unittest.TestCase):
 
         self.assertIn("<svg", svg)
         self.assertIn("Dijkstra RSSI Layered Topology", svg)
-        self.assertIn("优  -45dBm  w=1", svg)
+        self.assertIn("优  -45dBm  w=4", svg)
         self.assertIn("#111827", svg)
         self.assertNotIn("marker-end", svg)
         self.assertNotIn("<marker", svg)

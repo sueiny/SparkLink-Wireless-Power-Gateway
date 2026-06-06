@@ -18,7 +18,7 @@ def rssi_to_capacity(rssi: int, defaults: D3QNDefaults = DEFAULTS) -> float:
 
 
 def k_candidate_paths(graph: dict[int, dict[int, float]], src: int, dst: int, k: int) -> list[list[int]]:
-    """生成候选路径：基于RSSI权重最短"""
+    """与 sample 环境 _weighted_k_shortest_paths 一致：纯RSSI权重，无hop_penalty，无向图，按(跳数,字典序)排序"""
     if src == dst:
         return [[src]]
     queue: list[tuple[float, tuple[int, ...]]] = [(0.0, (src,))]
@@ -37,12 +37,17 @@ def k_candidate_paths(graph: dict[int, dict[int, float]], src: int, dst: int, k:
             if neighbor in path_tuple:
                 continue
             heapq.heappush(queue, (cost + float(weight), path_tuple + (neighbor,)))
-    return paths
+    # 与 sample 一致：按跳数→字典序排序
+    return sorted(paths, key=lambda item: (len(item), item))[:k]
 
 
 def edge_betweenness(topology: Topology, k_paths: int) -> dict[str, float]:
     graph = topology.graph()
-    counts = {edge_key(edge.src, edge.dst): 0 for edge in topology.edges.values()}
+    def _undirected_key(a: int, b: int) -> str:
+        return edge_key(min(a, b), max(a, b))
+    counts: dict[str, int] = {}
+    for edge in topology.edges.values():
+        counts[_undirected_key(edge.src, edge.dst)] = 0
     total = 0
     nodes = sorted(topology.nodes)
     for src in nodes:
@@ -52,18 +57,22 @@ def edge_betweenness(topology: Topology, k_paths: int) -> dict[str, float]:
             for path in k_candidate_paths(graph, src, dst, k_paths):
                 total += 1
                 for start, end in zip(path[:-1], path[1:]):
-                    key = edge_key(start, end)
+                    key = _undirected_key(start, end)
                     counts[key] = counts.get(key, 0) + 1
     denominator = max(1, total)
     return {key: count / denominator for key, count in counts.items()}
 
 
 def build_d3qn_state(topology: Topology, summary: dict | None = None, defaults: D3QNDefaults = DEFAULTS, src: int | None = None, dst: int | None = None) -> dict:
-    graph = _planning_graph_with_reciprocal_edges(topology)
+    graph = _planning_graph_undirected(topology)
     betweenness = _edge_betweenness_from_graph(graph, sorted(topology.nodes), defaults.k_paths)
     edge_records = _planning_edge_records(topology)
     ordered_edges = sorted(edge_records)
-    edge_index = {edge_key(s, d): index for index, (s, d) in enumerate(ordered_edges)}
+    # 与 sample 环境一致：双向注册 edge_index，无向图路径可能走任意方向
+    edge_index: dict[str, int] = {}
+    for index, (s, d) in enumerate(ordered_edges):
+        edge_index[edge_key(s, d)] = index
+        edge_index[edge_key(d, s)] = index
 
     edge_features = []
     for s, d in ordered_edges:
@@ -114,37 +123,42 @@ def build_d3qn_state(topology: Topology, summary: dict | None = None, defaults: 
 
 
 def _planning_edge_records(topology: Topology) -> dict[tuple[int, int], dict]:
+    """与 sample 环境一致：小节点在前，不生成反向边"""
     records: dict[tuple[int, int], dict] = {}
     for edge in topology.edges.values():
-        records[(edge.src, edge.dst)] = {
-            "src": edge.src,
-            "dst": edge.dst,
-            "rssi": edge.rssi,
-            "weight": edge.weight,
-            "source": "real_rssi",
-        }
-    for edge in topology.edges.values():
-        reverse = (edge.dst, edge.src)
-        if reverse not in records:
-            records[reverse] = {
-                "src": edge.dst,
-                "dst": edge.src,
+        # 与 sample environment1.py:472 一致：tuple(sorted(edge))
+        a, b = sorted((edge.src, edge.dst))
+        key = (a, b)
+        if key not in records:
+            records[key] = {
+                "src": a,
+                "dst": b,
                 "rssi": edge.rssi,
-                "weight": edge.weight + 8,
-                "source": "derived_reciprocal_rssi",
+                "weight": edge.weight,
+                "source": "real_rssi",
             }
     return records
 
 
-def _planning_graph_with_reciprocal_edges(topology: Topology) -> dict[int, dict[int, float]]:
+def _planning_graph_undirected(topology: Topology) -> dict[int, dict[int, float]]:
+    """与 sample 环境一致：无向图，双向等权"""
     graph: dict[int, dict[int, float]] = {}
-    for (src, dst), edge in _planning_edge_records(topology).items():
-        graph.setdefault(src, {})[dst] = float(edge["weight"])
+    for edge in topology.edges.values():
+        graph.setdefault(edge.src, {})[edge.dst] = float(edge.weight)
+        graph.setdefault(edge.dst, {})[edge.src] = float(edge.weight)
     return graph
 
 
 def _edge_betweenness_from_graph(graph: dict[int, dict[int, float]], nodes: list[int], k_paths: int) -> dict[str, float]:
-    counts = {edge_key(src, dst): 0 for src, neighbors in graph.items() for dst in neighbors}
+    """与 sample 环境一致：原始 betweenness 计数后做 z-score 标准化，无向边用统一 key"""
+    # 无向边只用小节点在前的 key
+    def _undirected_key(a: int, b: int) -> str:
+        return edge_key(min(a, b), max(a, b))
+    counts: dict[str, int] = {}
+    for src, neighbors in graph.items():
+        for dst in neighbors:
+            key = _undirected_key(src, dst)
+            counts[key] = 0
     total = 0
     for src in nodes:
         for dst in nodes:
@@ -153,10 +167,18 @@ def _edge_betweenness_from_graph(graph: dict[int, dict[int, float]], nodes: list
             for path in k_candidate_paths(graph, src, dst, k_paths):
                 total += 1
                 for start, end in zip(path[:-1], path[1:]):
-                    key = edge_key(start, end)
+                    key = _undirected_key(start, end)
                     counts[key] = counts.get(key, 0) + 1
     denominator = max(1, total)
-    return {key: count / denominator for key, count in counts.items()}
+    raw = {key: count / denominator for key, count in counts.items()}
+    # z-score 标准化（与 sample environment1.py:485 一致）
+    values = list(raw.values())
+    if values:
+        mu = sum(values) / len(values)
+        std = max((sum((v - mu) ** 2 for v in values) / len(values)) ** 0.5, 1e-8)
+    else:
+        mu, std = 0.0, 1.0
+    return {key: (v - mu) / std for key, v in raw.items()}
 
 
 def write_d3qn_state(path: str | Path, topology: Topology, summary: dict | None = None, defaults: D3QNDefaults = DEFAULTS) -> dict:

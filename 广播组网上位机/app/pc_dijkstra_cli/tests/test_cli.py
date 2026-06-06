@@ -11,6 +11,7 @@ from pc_dijkstra_cli.topology import Topology, save_topology
 
 class FakeSerial:
     writes = []
+    in_waiting = 0
 
     def __init__(self, port, baudrate, timeout, **kwargs):
         self.port = port
@@ -18,6 +19,7 @@ class FakeSerial:
         self.timeout = timeout
         self.dtr = True
         self.rts = True
+        self.in_waiting = 0
 
     def read(self, size):
         return b""
@@ -41,7 +43,7 @@ class CliTest(unittest.TestCase):
             topology.update_from_rssi_report(RssiReport(0x12, [RssiNeighbor(0x05, -60)]), now=1.0)
             save_topology(state_path, topology)
 
-            self.assertEqual(main(["path", "--state", str(state_path), "--src", "00", "--dst", "12"]), 0)
+            self.assertEqual(main(["path", "--state", str(state_path), "--src", "00", "--dst", "0x12"]), 0)
 
     def test_export_command_writes_routes(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -74,14 +76,15 @@ class CliTest(unittest.TestCase):
                         "--src",
                         "00",
                         "--dst",
-                        "12",
+                        "0x12",
                         "--payload",
                         "0102",
                     ]
                 )
 
             self.assertEqual(rc, 0)
-            self.assertEqual(FakeSerial.writes, [b"SEND 12 2 00 12 0102\r\n"])
+            # 目标 0x12=18 渲染为十进制，路径字节用十六进制(00 12)
+            self.assertEqual(FakeSerial.writes, [b"SEND 18 2 00 12 0102\r\n"])
 
     def test_bench_command_writes_report(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -104,7 +107,8 @@ class CliTest(unittest.TestCase):
             run_benchmark.assert_called_once()
             self.assertEqual(run_benchmark.call_args.kwargs["nodes"], [1, 2])
             self.assertEqual(run_benchmark.call_args.kwargs["rounds"], 3)
-            self.assertEqual(run_benchmark.call_args.kwargs["rssi_requests"], 5)
+            self.assertEqual(run_benchmark.call_args.kwargs["rssi_requests"], 10)
+            self.assertEqual(run_benchmark.call_args.kwargs["rssi_seconds"], 20.0)
             self.assertEqual(run_benchmark.call_args.kwargs["interval"], 1.0)
             self.assertEqual(run_benchmark.call_args.kwargs["route_mode"], "baseline_dijkstra")
 

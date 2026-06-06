@@ -106,7 +106,9 @@ def enrich_summary_with_metrics(summary: dict, topology: Topology, route_compute
     ]
     route_hop_values = []
     per_hop_delays = []
-    for collection in (summary.get("targets", {}), summary.get("pairs", {})):
+    pairs_collection = summary.get("pairs", {})
+    for collection in (summary.get("targets", {}), pairs_collection):
+        is_pairs = collection is pairs_collection
         for key, item in collection.items():
             route = item.get("last_route", [])
             hops = route_hops(route)
@@ -119,11 +121,14 @@ def enrich_summary_with_metrics(summary: dict, topology: Topology, route_compute
             item["command_downlink_latency_ms"] = latency
             item["end_to_end_avg_latency_ms"] = item.get("total_latency_ms") or latency
             item["avg_single_hop_latency_ms"] = (latency / hops) if latency is not None and hops > 0 else None
+            dst_filter = int(item["destination"], 16)
+            src_filter = int(item["source"], 16) if is_pairs else None
             item["latency_jitter"] = latency_jitter(
                 [
                     float(result.get("latency_ms"))
                     for result in summary.get("rounds", [])
-                    if result.get("target") == int(item["destination"], 16)
+                    if result.get("target") == dst_filter
+                    and (src_filter is None or result.get("source") == src_filter)
                     and result.get("success")
                     and result.get("latency_ms") is not None
                 ]

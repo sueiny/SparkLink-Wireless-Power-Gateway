@@ -189,12 +189,18 @@ def write_topology_svg(path: str | Path, topology: Topology, summary: dict | Non
         '<text x="42" y="76" font-size="13" font-family="Arial, sans-serif" fill="#4b5563">图中不显示箭头；深色线为 D3QN 选中路径，浅灰线为未使用 RSSI 链路。</text>',
     ]
     svg.append('<g id="edges">')
+    # 无向图：去重，小节点在前
+    drawn_edges: set[tuple[int, int]] = set()
     for edge in sorted(topology.edges.values(), key=lambda item: (item.src, item.dst)):
-        if edge.src not in positions or edge.dst not in positions:
+        a, b = sorted((edge.src, edge.dst))
+        if (a, b) in drawn_edges:
             continue
-        x1, y1 = positions[edge.src]
-        x2, y2 = positions[edge.dst]
-        selected = (edge.src, edge.dst) in highlighted
+        if a not in positions or b not in positions:
+            continue
+        drawn_edges.add((a, b))
+        x1, y1 = positions[a]
+        x2, y2 = positions[b]
+        selected = (a, b) in highlighted or (b, a) in highlighted
         svg.append(
             f'<line x1="{x1:.1f}" y1="{y1:.1f}" x2="{x2:.1f}" y2="{y2:.1f}" '
             f'stroke="{("#111827" if selected else "#9ca3af")}" stroke-width="{3.2 if selected else 1.0}" opacity="{0.92 if selected else 0.16}"/>'
@@ -372,6 +378,27 @@ def build_report(summary: dict, hardware_record: dict, log_dir: str | Path) -> s
             f"`{item.get('ack_timeout_loss', 0)}` | `{item.get('d3qn_route_failures', 0)}` | `{_fmt_rate(item['loss_rate'])}` | `{_fmt_ms(latency['avg_ms'])}` | `{_fmt_ms(latency['p95_ms'])}` | "
             f"`{_fmt_ms(inference.get('avg_ms'))}` | `{_fmt_ms(source_to_target.get('avg_ms'))}` | `{_fmt_ms(item.get('total_latency_ms'))}` | `{item.get('recollect_count')}` | `{item.get('path_switch_count')}` | `{item.get('path_rssi', {}).get('min_rssi')}` |"
         )
+    learn_info = total.get("online_learn_latency", {})
+    learn_events = learn_info.get("events", [])
+    if learn_events:
+        lines.extend([
+            "",
+            "## 在线学习触发记录",
+            "",
+            f"共触发 **{learn_info.get('update_count', 0)}** 次，合计耗时 `{_fmt_ms(learn_info.get('total_ms'))}ms`，均摊每轮 `{_fmt_ms(learn_info.get('amortized_per_round_ms'))}ms`",
+            "",
+            "| 轮次 (round_index) | 触发轮 source→target | 更新耗时 |",
+            "|---:|---|---:|",
+        ])
+        for ev in learn_events:
+            lines.append(f"| {ev['round_index']} | `{ev['source']}→{ev['target']}` | `{_fmt_ms(ev['ms'])}ms` |")
+    else:
+        lines.extend([
+            "",
+            "## 在线学习触发记录",
+            "",
+            "本次测试未触发在线学习更新（未开启或未达到触发间隔）。",
+        ])
     lines.extend([
         "",
         "## 指标总结对比",

@@ -1,2 +1,0 @@
-{"error": "[Errno 2] could not open port /dev/ttyUSB0: [Errno 2] No such file or directory: '/dev/ttyUSB0'", "ts": "2026-06-02T19:56:46.116", "type": "bench_error"}
-{"ts": "2026-06-02T19:56:46.116", "type": "bench_end"}

@@ -1,7 +1,0 @@
-{
-  "algorithm": "D3QN_MPNN",
-  "error": "[Errno 2] could not open port /dev/ttyUSB0: [Errno 2] No such file or directory: '/dev/ttyUSB0'",
-  "log_dir": "/home/sueiny/rk3506_linux6.1_v1.2.0/app/广播组网上位机/app/logs/d3qn_hw/第30次测试",
-  "status": "error",
-  "ts": "2026-06-02T19:56:46.116"
-}

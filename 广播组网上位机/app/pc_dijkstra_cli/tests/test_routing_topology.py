@@ -7,8 +7,8 @@ from pc_dijkstra_cli.topology import Topology
 
 class RoutingTopologyTest(unittest.TestCase):
     def test_rssi_to_weight_segments(self):
-        self.assertEqual(rssi_to_weight(-55), 1)
-        self.assertEqual(rssi_to_weight(-56), 3)
+        self.assertEqual(rssi_to_weight(-55), 4)
+        self.assertEqual(rssi_to_weight(-56), 5)
         self.assertEqual(rssi_to_weight(-66), 6)
         self.assertEqual(rssi_to_weight(-76), 12)
         self.assertIsNone(rssi_to_weight(-86))
@@ -19,7 +19,7 @@ class RoutingTopologyTest(unittest.TestCase):
         topology.update_from_rssi_report(RssiReport(src_addr=0x12, neighbors=[RssiNeighbor(0x05, -45)]), now=1.0)
 
         graph = topology.graph(now=2.0)
-        self.assertEqual(graph, {0x05: {0x12: 1}})
+        self.assertEqual(graph, {0x05: {0x12: 4}})
         self.assertNotIn(0x05, graph.get(0x12, {}))
 
     def test_dijkstra_multihop(self):

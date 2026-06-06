@@ -10,7 +10,8 @@ from typing import Dict, List
 from .protocol import RssiReport
 
 
-def rssi_to_weight(rssi: int) -> int | None:
+def rssi_to_weight(rssi: int) -> int:
+    """RSSI → 边权。去掉弱信号过滤：任何能被听到的边都建图，弱信号给高权重（路由会尽量避开，但不会完全丢弃）。"""
     if rssi >= -55:
         return 1
     if rssi >= -65:
@@ -19,7 +20,11 @@ def rssi_to_weight(rssi: int) -> int | None:
         return 6
     if rssi >= -85:
         return 12
-    return None
+    if rssi >= -95:
+        return 24   # 弱信号，高权重
+    if rssi >= -105:
+        return 48   # 很弱，极高权重
+    return 96       # 极弱，仍建边
 
 
 @dataclass
@@ -62,8 +67,6 @@ class Topology:
                 }
             )
             weight = rssi_to_weight(neighbor.rssi)
-            if weight is None:
-                continue
             edge_src, edge_dst = self._edge_endpoints(report.src_addr, neighbor.addr)
             key = self._edge_key(edge_src, edge_dst)
             samples = list(self.edges[key].samples or [self.edges[key].rssi]) if key in self.edges else []
@@ -73,7 +76,7 @@ class Topology:
                 src=edge_src,
                 dst=edge_dst,
                 rssi=median_rssi,
-                weight=rssi_to_weight(median_rssi) or weight,
+                weight=rssi_to_weight(median_rssi),
                 updated_at=timestamp,
                 direction=self.edge_direction,
                 source="real_rssi",
@@ -84,6 +87,7 @@ class Topology:
         return updated
 
     def graph(self, now: float | None = None) -> dict[int, dict[int, float]]:
+        """与 sample 环境一致：无向图，双向等权"""
         timestamp = time.time() if now is None else float(now)
         graph: dict[int, dict[int, float]] = {}
         for edge in self.edges.values():
@@ -94,6 +98,7 @@ class Topology:
             if edge.src in self.relay_excluded or edge.dst in self.relay_excluded:
                 continue
             graph.setdefault(edge.src, {})[edge.dst] = float(edge.weight)
+            graph.setdefault(edge.dst, {})[edge.src] = float(edge.weight)
         return graph
 
     def to_dict(self) -> dict:
