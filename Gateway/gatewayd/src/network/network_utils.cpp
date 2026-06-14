@@ -149,7 +149,8 @@ ProcessResult runProcess(const std::vector<std::string> &args, int timeout_ms)
         return result;
 
     int pipe_fd[2] = {-1, -1};
-    if (::pipe(pipe_fd) != 0)
+    // 使用 O_CLOEXEC 确保 pipe fd 不会被子进程继承
+    if (::pipe2(pipe_fd, O_CLOEXEC) != 0)
         return result;
 
     const pid_t pid = ::fork();
@@ -160,6 +161,16 @@ ProcessResult runProcess(const std::vector<std::string> &args, int timeout_ms)
     }
 
     if (pid == 0) {
+        // 子进程：关闭所有非标准 fd，避免继承到 exec 的进程中
+        // 这样 wpa_supplicant 等子进程不会持有 IPC socket 等 fd
+        int max_fd = sysconf(_SC_OPEN_MAX);
+        if (max_fd < 0) max_fd = 1024;  // 保守上限
+        for (int fd = 3; fd < max_fd; fd++) {
+            if (fd != pipe_fd[1]) {
+                ::close(fd);
+            }
+        }
+
         ::dup2(pipe_fd[1], STDOUT_FILENO);
         ::dup2(pipe_fd[1], STDERR_FILENO);
         ::close(pipe_fd[0]);

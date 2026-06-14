@@ -99,16 +99,11 @@ def cmd_bench(args: argparse.Namespace) -> int:
         interval=args.interval,
         gateway=parse_addr(args.gateway),
         dongle_addr=parse_addr(args.dongle_addr) if args.dongle_addr else None,
-        min_rssi=args.min_rssi,
-        max_hops=args.max_hops,
         route_mode=args.route_mode,
         sources=parse_optional_node_list(args.sources),
-
-        send_mode=args.send_mode,
         hop_penalty=args.hop_penalty,
         enable_congestion=args.enable_congestion,
         no_retry=args.no_retry,
-        bidirectional=args.bidirectional,
         enable_pause=args.enable_pause,
         dynamic_pause=args.dynamic_pause,
     )
@@ -202,6 +197,12 @@ def cmd_launch(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_serial_daemon(args: argparse.Namespace) -> int:
+    from .daemon import run_daemon
+    run_daemon(args.port, baud=args.baud)
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Dijkstra PC CLI for the mesh serial protocol")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -240,18 +241,14 @@ def build_parser() -> argparse.ArgumentParser:
     bench.add_argument("--log-dir", default=str(DEFAULT_LOG_ROOT / "dijkstra_hw"))
     bench.add_argument("--gateway", default="00")
     bench.add_argument("--dongle-addr", default=None, help="dongle address to exclude from routing (decimal: 16 or hex: 0x10)")
-    bench.add_argument("--min-rssi", type=int, default=-100, help="minimum RSSI threshold for routing edges")
-    bench.add_argument("--max-hops", type=int, default=6, help="maximum hop count for routing paths")
     bench.add_argument("--boot-wait", type=float, default=5.0)
     bench.add_argument("--ack-timeout", type=float, default=2.0)
     bench.add_argument("--interval", type=float, default=1.0)
-    bench.add_argument("--route-mode", choices=["baseline_dijkstra", "reliable_dijkstra_v1", "sample_dijkstra"], default="baseline_dijkstra")
+    bench.add_argument("--route-mode", choices=["sample_dijkstra"], default="sample_dijkstra")
     bench.add_argument("--sources", default=None, help="comma-separated source nodes; default uses all --nodes")
-    bench.add_argument("--send-mode", default="single_send", choices=["single_send", "two_send"], help="single_send: gateway->target direct, two_send: gateway->source->target")
     bench.add_argument("--hop-penalty", type=float, default=0.0, help="per-hop penalty added to Dijkstra edge cost (0 to disable)")
     bench.add_argument("--enable-congestion", action="store_true", default=False, help="enable node congestion penalty based on degree")
     bench.add_argument("--no-retry", action="store_true", default=False, help="disable ACK timeout retry (max_retries=0)")
-    bench.add_argument("--bidirectional", action="store_true", default=False, help="only use bidirectional edges for routing (ensures ACK return path)")
     bench.add_argument("--enable-pause", action="store_true", default=False, help="press s to pause test, move nodes, press y to re-collect RSSI and resume")
     bench.add_argument("--dynamic-pause", action="store_true", default=False, help="动态模式：跑完一轮所有路径后自动暂停，按 s 继续第二轮，总轮次自动 ×2")
     bench.set_defaults(func=cmd_bench)
@@ -298,16 +295,22 @@ def build_parser() -> argparse.ArgumentParser:
     ui = subparsers.add_parser("ui", help="start local Web UI")
     ui.add_argument("--host", default="127.0.0.1")
     ui.add_argument("--port", type=int, default=8080)
-    ui.add_argument("--log-root", default="app/广播组网上位机/app/logs")
+    ui.add_argument("--log-root", default=str(DEFAULT_LOG_ROOT))
     ui.set_defaults(func=cmd_ui)
 
     launch = subparsers.add_parser("launch", help="start local Web UI and open browser")
     launch.add_argument("--host", default="127.0.0.1")
     launch.add_argument("--port", type=int, default=8080)
-    launch.add_argument("--log-root", default="app/广播组网上位机/app/logs")
+    launch.add_argument("--log-root", default=str(DEFAULT_LOG_ROOT))
     launch.add_argument("--no-browser", action="store_true")
     launch.add_argument("--port-attempts", type=int, default=20)
     launch.set_defaults(func=cmd_launch)
+
+    serial_daemon = subparsers.add_parser("serial-daemon", help="keep serial port open persistently")
+    serial_daemon.add_argument("--port", required=True, help="串口号，如 /dev/ttyUSB0")
+    serial_daemon.add_argument("--baud", type=int, default=115200)
+    serial_daemon.set_defaults(func=cmd_serial_daemon)
+
     return parser
 
 

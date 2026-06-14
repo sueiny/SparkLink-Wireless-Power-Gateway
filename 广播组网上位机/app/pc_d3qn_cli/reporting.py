@@ -274,7 +274,7 @@ def write_excel_summary(path: str | Path, summary: dict, topology: Topology, con
             latency.get("p95_ms"),
             item.get("inference_latency", {}).get("avg_ms"),
             item.get("source_to_target_latency", {}).get("avg_ms"),
-            item.get("total_latency_ms"),
+            item.get("d3qn_total_latency", {}).get("avg_ms"),
             item.get("recollect_count"),
             item.get("path_switch_count"),
             item.get("path_rssi", {}).get("min_rssi"),
@@ -314,7 +314,7 @@ def write_excel_summary(path: str | Path, summary: dict, topology: Topology, con
             item.get("avg_single_hop_latency_ms"),
             item.get("inference_latency", {}).get("avg_ms"),
             item.get("source_to_target_latency", {}).get("avg_ms"),
-            item.get("total_latency_ms"),
+            item.get("d3qn_total_latency", {}).get("avg_ms"),
             ", ".join(item.get("path_switch_reasons", [])),
             item.get("path_rssi", {}).get("mean_rssi"),
             item.get("path_rssi", {}).get("min_rssi"),
@@ -376,7 +376,7 @@ def build_report(summary: dict, hardware_record: dict, log_dir: str | Path) -> s
         lines.append(
             f"| `{item.get('source', '00')}` | `{item.get('destination', key)}` | `{item.get('route_path')}` | `{item.get('last_action')}` | `{item['success']}/{item['sent']}` | "
             f"`{item.get('ack_timeout_loss', 0)}` | `{item.get('d3qn_route_failures', 0)}` | `{_fmt_rate(item['loss_rate'])}` | `{_fmt_ms(latency['avg_ms'])}` | `{_fmt_ms(latency['p95_ms'])}` | "
-            f"`{_fmt_ms(inference.get('avg_ms'))}` | `{_fmt_ms(source_to_target.get('avg_ms'))}` | `{_fmt_ms(item.get('total_latency_ms'))}` | `{item.get('recollect_count')}` | `{item.get('path_switch_count')}` | `{item.get('path_rssi', {}).get('min_rssi')}` |"
+            f"`{_fmt_ms(inference.get('avg_ms'))}` | `{_fmt_ms(source_to_target.get('avg_ms'))}` | `{_fmt_ms(item.get('d3qn_total_latency', {}).get('avg_ms'))}` | `{item.get('recollect_count')}` | `{item.get('path_switch_count')}` | `{item.get('path_rssi', {}).get('min_rssi')}` |"
         )
     learn_info = total.get("online_learn_latency", {})
     learn_events = learn_info.get("events", [])

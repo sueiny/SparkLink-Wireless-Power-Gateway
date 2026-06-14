@@ -130,10 +130,27 @@ test() {
 
     # 清理 socket
     adb shell "rm -f /var/run/gateway/sle_data.sock; mkdir -p /var/run/gateway"
+    adb shell "rm -f $ADB_ROOT/data/log/gateway.log /tmp/gatewayd.log"
 
     # 启动 gatewayd
     echo "启动 gatewayd..."
     adb shell "nohup $ADB_ROOT/bin/gatewayd --config $ADB_ROOT/config/gateway_config.json > /tmp/gatewayd.log 2>&1 &"
+
+    echo "等待 SLE IPC socket..."
+    socket_ready=0
+    for i in $(seq 1 30); do
+        if adb shell "cat /proc/net/unix | grep -q '@var/run/gateway/sle_data.sock'"; then
+            echo "✅ SLE IPC socket 已监听"
+            socket_ready=1
+            break
+        fi
+        sleep 1
+    done
+    if [ "$socket_ready" -ne 1 ]; then
+        echo "❌ SLE IPC socket 未监听"
+        adb shell "tail -80 /tmp/gatewayd.log 2>/dev/null; tail -80 $ADB_ROOT/data/log/gateway.log 2>/dev/null"
+        return 1
+    fi
 
     # 等待 MQTT 连接
     echo "等待 MQTT 连接..."

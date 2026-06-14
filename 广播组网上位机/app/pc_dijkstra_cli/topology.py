@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Dict, Iterable, List
 
 from .protocol import RssiReport
-from .routing import BASELINE_ROUTE_MODE, RELIABLE_ROUTE_MODE, SAMPLE_ROUTE_MODE, ROUTE_MODES, Route, build_route_table, dijkstra, rssi_to_reliable_weight, rssi_to_weight, sample_capacity_weight
+from .routing import BASELINE_ROUTE_MODE, RELIABLE_ROUTE_MODE, SAMPLE_ROUTE_MODE, ROUTE_MODES, Route, build_route_table, dijkstra, rssi_to_reliable_weight, rssi_to_weight
 
 
 @dataclass
@@ -24,15 +24,13 @@ class Edge:
 
 
 class Topology:
-    def __init__(self, stale_seconds: float | None = 30.0, edge_direction: str = "neighbor_to_src", gateway: int | None = None, relay_excluded: set[int] | None = None, min_rssi: int = -85, max_hops: int = 4):
+    def __init__(self, stale_seconds: float | None = 30.0, edge_direction: str = "neighbor_to_src", gateway: int | None = None, relay_excluded: set[int] | None = None):
         if edge_direction not in {"neighbor_to_src", "src_to_neighbor"}:
             raise ValueError(f"unsupported edge direction: {edge_direction}")
         self.stale_seconds = stale_seconds
         self.edge_direction = edge_direction
         self.gateway = gateway
         self.relay_excluded = relay_excluded or set()
-        self.min_rssi = min_rssi
-        self.max_hops = max_hops
         self.edges: Dict[str, Edge] = {}
         self.nodes: set[int] = set()
 
@@ -64,7 +62,7 @@ class Topology:
             updated.append(edge)
         return updated
 
-    def graph(self, now: float | None = None, route_mode: str = BASELINE_ROUTE_MODE, min_rssi: int = -85, bidirectional: bool = False) -> Dict[int, Dict[int, float]]:
+    def graph(self, now: float | None = None, route_mode: str = BASELINE_ROUTE_MODE) -> Dict[int, Dict[int, float]]:
         if route_mode not in ROUTE_MODES:
             raise ValueError(f"unsupported route mode")
         timestamp = time.time() if now is None else float(now)
@@ -72,56 +70,57 @@ class Topology:
         for edge in self.edges.values():
             if self.stale_seconds is not None and timestamp - edge.updated_at > self.stale_seconds:
                 continue
-            if self.gateway is not None and edge.dst == self.gateway:
-                continue
             if edge.src in self.relay_excluded or edge.dst in self.relay_excluded:
                 continue
-            # Removed min_rssi filter: any detected edge is usable
             if route_mode == RELIABLE_ROUTE_MODE:
                 weight = rssi_to_reliable_weight(edge.rssi)
                 if weight is None:
                     continue
                 weight += 0.5
             elif route_mode == SAMPLE_ROUTE_MODE:
-                # 仿真对齐：weight = 1/remaining_capacity，capacity 由 RSSI 推导
-                # 强信号→大容量→小权重（优先），弱信号→大权重（自动绕中继）
-                weight = sample_capacity_weight(edge.rssi)
+                weight = float(edge.weight)
             else:
                 weight = float(edge.weight)
             graph.setdefault(edge.src, {})[edge.dst] = weight
-        if bidirectional or route_mode == SAMPLE_ROUTE_MODE:
-            # 无向图：两个方向取 cost 更小（信号更好）的那条，对两侧均生效
-            # 消除有向边处理顺序带来的不确定性，与仿真/D3QN 的双向等权逻辑对齐
-            # 网关无中继能力：不添加 gateway→node 的反向边
+        if route_mode == SAMPLE_ROUTE_MODE:
+            # 只保留双向都存在的边：只有 src→dst 和 dst→src 都有 RSSI 上报才算可达
+            # 避免单向链路（如 09 能听到 02 但 02 听不到 09）导致误判
+            # 网关不发 RSSI_REPORT，其边天然单向，有单边即视为可用，对称写入两侧
+            gw = self.gateway if self.gateway is not None else 0
             undirected: Dict[int, Dict[int, float]] = {}
             for src, neighbors in graph.items():
                 for dst, weight in neighbors.items():
-                    existing = undirected.get(src, {}).get(dst)
-                    if existing is None or weight < existing:
-                        undirected.setdefault(src, {})[dst] = weight
-                        if self.gateway is None or src != self.gateway:
+                    reverse_weight = graph.get(dst, {}).get(src)
+                    if reverse_weight is not None:
+                        final_weight = (weight + reverse_weight) / 2.0
+                        undirected.setdefault(src, {})[dst] = final_weight
+                        undirected.setdefault(dst, {})[src] = final_weight
+                    elif src == gw or dst == gw:
+                        # 单向网关边：仅保留信号足够强的（weight≤28，对应RSSI≥-95dBm）
+                        # 更弱的单向边丢弃，强制 Dijkstra 走经中继的双向路径
+                        if weight <= 28:
+                            undirected.setdefault(src, {})[dst] = weight
                             undirected.setdefault(dst, {})[src] = weight
             return undirected
         return graph
 
-    def route(self, src: int, dst: int, route_mode: str = BASELINE_ROUTE_MODE, fallback: bool = True, hop_penalty: float = 0.0, congestion_penalty=None, bidirectional: bool = False) -> Route:
+    def route(self, src: int, dst: int, route_mode: str = BASELINE_ROUTE_MODE, fallback: bool = True, hop_penalty: float = 0.0, congestion_penalty=None) -> Route:
         if route_mode == SAMPLE_ROUTE_MODE:
-            # 原汁原味模式：忽略一切外加约束指数
             hop_penalty = 0.0
             congestion_penalty = None
-        graph = self.graph(route_mode=route_mode, min_rssi=self.min_rssi)
-        route = dijkstra(graph, src, dst, max_hops=self.max_hops, hop_penalty=hop_penalty, congestion_penalty=congestion_penalty)
-        if route.status != "valid" and route_mode != BASELINE_ROUTE_MODE and fallback:
-            graph_baseline = self.graph(route_mode=BASELINE_ROUTE_MODE, min_rssi=self.min_rssi)
-            return dijkstra(graph_baseline, src, dst, max_hops=self.max_hops, hop_penalty=hop_penalty, congestion_penalty=congestion_penalty)
+        graph = self.graph(route_mode=route_mode)
+        route = dijkstra(graph, src, dst, hop_penalty=hop_penalty, congestion_penalty=congestion_penalty)
+        if route.status != "valid" and route_mode != BASELINE_ROUTE_MODE and route_mode != SAMPLE_ROUTE_MODE and fallback:
+            graph_baseline = self.graph(route_mode=BASELINE_ROUTE_MODE)
+            return dijkstra(graph_baseline, src, dst, hop_penalty=hop_penalty, congestion_penalty=congestion_penalty)
         return route
 
-    def routes(self, route_mode: str = BASELINE_ROUTE_MODE, hop_penalty: float = 0.0, congestion_penalty=None, bidirectional: bool = False) -> Dict[str, Route]:
+    def routes(self, route_mode: str = BASELINE_ROUTE_MODE, hop_penalty: float = 0.0, congestion_penalty=None) -> Dict[str, Route]:
         if route_mode == SAMPLE_ROUTE_MODE:
             hop_penalty = 0.0
             congestion_penalty = None
-        graph = self.graph(route_mode=route_mode, min_rssi=self.min_rssi)
-        return build_route_table(graph, self.nodes, max_hops=self.max_hops, gateway=self.gateway, hop_penalty=hop_penalty, congestion_penalty=congestion_penalty)
+        graph = self.graph(route_mode=route_mode)
+        return build_route_table(graph, self.nodes, gateway=self.gateway, hop_penalty=hop_penalty, congestion_penalty=congestion_penalty)
 
     def to_dict(self) -> dict:
         return {
@@ -129,15 +128,13 @@ class Topology:
             "edge_direction": self.edge_direction,
             "gateway": self.gateway,
             "relay_excluded": sorted(self.relay_excluded),
-            "min_rssi": self.min_rssi,
-            "max_hops": self.max_hops,
             "nodes": sorted(self.nodes),
             "edges": [asdict(edge) for edge in sorted(self.edges.values(), key=lambda item: (item.src, item.dst))],
         }
 
     @classmethod
     def from_dict(cls, data: dict) -> "Topology":
-        topology = cls(stale_seconds=data.get("stale_seconds", 30.0), edge_direction=data.get("edge_direction", "neighbor_to_src"), gateway=data.get("gateway"), relay_excluded=set(data.get("relay_excluded", [])), min_rssi=data.get("min_rssi", -85), max_hops=data.get("max_hops", 4))
+        topology = cls(stale_seconds=data.get("stale_seconds", 30.0), edge_direction=data.get("edge_direction", "neighbor_to_src"), gateway=data.get("gateway"), relay_excluded=set(data.get("relay_excluded", [])))
         topology.nodes = {int(node) for node in data.get("nodes", [])}
         for edge_data in data.get("edges", []):
             edge = Edge(

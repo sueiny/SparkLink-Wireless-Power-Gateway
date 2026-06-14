@@ -1,3 +1,7 @@
 build/
 build-cmake/
-
+test/ipc_send
+test/test_payload.bin
+things_model.zip
+things_model/*.pdf
+things_model/*.doc

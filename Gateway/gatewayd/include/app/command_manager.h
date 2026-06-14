@@ -15,6 +15,10 @@
 #include <memory>
 #include <vector>
 
+namespace gateway::datasource {
+class IpcCmdSender;
+} // namespace gateway::datasource
+
 namespace gateway::app {
 
 // 命令线程入口。
@@ -34,7 +38,8 @@ public:
                    std::shared_ptr<state::DeviceStateStore> state_store,
                    common::BlockingQueue<command::RawCommandMessage> &command_queue,
                    common::BlockingQueue<std::vector<model::TelemetryData>> &telemetry_queue,
-                   common::BlockingQueue<PublishMessage> &publish_queue);
+                   common::BlockingQueue<PublishMessage> &publish_queue,
+                   datasource::IpcCmdSender *ipc_cmd_sender = nullptr);
 
     const char *name() const override { return "command"; }
 

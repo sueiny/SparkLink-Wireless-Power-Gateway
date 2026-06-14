@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+import socket as _socket
 import time
 from dataclasses import dataclass
 from datetime import datetime
@@ -79,6 +81,40 @@ class MixedMessageReader:
         return messages
 
 
+def _get_daemon_socket_path(port: str) -> str:
+    return f"/tmp/pc_serial_{os.path.basename(port)}.sock"
+
+
+class _SocketSerial:
+    """Unix socket 包装器，行为与 serial.Serial 一致，供 SerialClient 使用。"""
+    def __init__(self, sock: _socket.socket, timeout: float = 0.1):
+        self._sock = sock
+        self._sock.settimeout(timeout)
+
+    @property
+    def in_waiting(self) -> int:
+        return 0
+
+    def read(self, size: int) -> bytes:
+        try:
+            return self._sock.recv(size)
+        except (_socket.timeout, OSError):
+            return b""
+
+    def write(self, data: bytes) -> int:
+        self._sock.sendall(data)
+        return len(data)
+
+    def flush(self) -> None:
+        pass
+
+    def close(self) -> None:
+        try:
+            self._sock.close()
+        except OSError:
+            pass
+
+
 class SerialClient:
     def __init__(
         self,
@@ -87,23 +123,32 @@ class SerialClient:
         timeout: float = 0.1,
         raw_callback: Callable[[RawSerialEvent], None] | None = None,
     ):
-        try:
-            import serial
-        except ImportError as exc:
-            raise RuntimeError("pyserial is required for serial access: pip install pyserial") from exc
-        self.serial = serial.Serial(
-            port=port,
-            baudrate=baud,
-            timeout=timeout,
-            write_timeout=1,
-            xonxoff=False,
-            rtscts=False,
-            dsrdtr=False,
-        )
-        self.serial.dtr = False
-        self.serial.rts = False
-        time.sleep(2.0)
-        self.serial.read(self.serial.in_waiting or 8192)
+        socket_path = _get_daemon_socket_path(port)
+        if os.path.exists(socket_path):
+            sock = _socket.socket(_socket.AF_UNIX, _socket.SOCK_STREAM)
+            sock.connect(socket_path)
+            self.serial = _SocketSerial(sock, timeout=timeout)
+            print(f"已连接到串口守护进程 ({socket_path})")
+        else:
+            try:
+                import serial
+            except ImportError as exc:
+                raise RuntimeError("pyserial is required: pip install pyserial") from exc
+            print(f"串口 {port} 未开启，正在连接...")
+            self.serial = serial.Serial(
+                port=port,
+                baudrate=baud,
+                timeout=timeout,
+                write_timeout=1,
+                xonxoff=False,
+                rtscts=False,
+                dsrdtr=False,
+            )
+            self.serial.dtr = False
+            self.serial.rts = False
+            time.sleep(2.0)
+            self.serial.read(self.serial.in_waiting or 8192)
+            print(f"串口 {port} 已连接")
         self.reader = MixedMessageReader()
         self.raw_callback = raw_callback
 

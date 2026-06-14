@@ -1,6 +1,7 @@
 #include "sle_multi_client.h"
 #include "server_connections.h"
 #include "notify_printer.h"
+#include "modbus_sim.h"
 
 #include <errno.h>
 #include <pthread.h>
@@ -1309,7 +1310,7 @@ void sle_manager_tick(void)
         }
 
     }
-    
+
     /* 超时释放后触发扫描重启 */
     if (need_scan_restart) {
         request_scan_restart();

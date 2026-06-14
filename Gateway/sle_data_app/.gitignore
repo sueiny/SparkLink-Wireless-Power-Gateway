@@ -1,2 +1,3 @@
 *.o
 sle_data_app
+test/*.log

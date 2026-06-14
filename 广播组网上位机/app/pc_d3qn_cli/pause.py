@@ -41,3 +41,19 @@ def wait_for_key() -> str:
         if key in ("s", "y"):
             _flush_stdin()
             return key
+
+
+def wait_for_dynamic_continue(phase_done: int, total_phases: int) -> None:
+    print(f"\n⏸  [动态模式] 第 {phase_done}/{total_phases} 阶段完成，按 s 继续下一阶段...", flush=True)
+    if not sys.stdin.isatty():
+        print("⚠️  非交互终端，自动继续", flush=True)
+        return
+    _flush_stdin()
+    while True:
+        line = sys.stdin.readline()
+        if not line:
+            print("\n⚠️  stdin 关闭，自动继续", flush=True)
+            break
+        if line.strip().lower() == 's':
+            print("▶  继续...", flush=True)
+            break

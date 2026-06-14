@@ -21,6 +21,9 @@ struct PublishMessage {
     PublishMessageKind kind = PublishMessageKind::Telemetry;
     int retry_count = 0;
     int64_t next_retry_ts_ms = 0;
+    std::string request_id;
+    std::string method;
+    std::string target;
 };
 
 } // namespace gateway::app

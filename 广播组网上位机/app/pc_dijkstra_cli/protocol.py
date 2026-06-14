@@ -149,7 +149,6 @@ def build_send_command(dst: int, path: Iterable[int], payload: str) -> str:
         raise ProtocolError("path must end with dst")
 
     payload_hex = normalize_hex_payload(payload)
-    # 目标地址用十进制格式（1-10），路径用十六进制格式（01-0A）
     fields = ["SEND", str(int(dst)), str(len(path_list))]
     fields.extend(format_addr(addr) for addr in path_list)
     fields.append(payload_hex)

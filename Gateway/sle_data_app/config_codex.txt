@@ -38,3 +38,80 @@ chronicle = false
 [memories]
 generate_memories = false
 use_memories = false
+
+
+
+
+
+/////////////////////
+
+
+
+
+model = "gpt-5.5"
+model_provider = "openai_custom"
+model_reasoning_effort = "xhigh"
+personality = "pragmatic"
+
+[model_providers.openai_custom]
+name = "OpenAI Custom"
+base_url = "https://g.uc0.cn/v1"
+env_key = "OPENAI_API_KEY"
+wire_api = "responses"
+
+[projects."/home/sueiny/rk3506_linux6.1_v1.2.0"]
+trust_level = "trusted"
+
+[projects."/home/sueiny"]
+trust_level = "trusted"
+
+[features]
+memories = false
+chronicle = false
+
+[memories]
+generate_memories = false
+use_memories = false
+
+[tui.model_availability_nux]
+"gpt-5.5" = 1
+
+
+
+
+
+
+//////////////////////
+
+
+
+
+
+model = "gpt-5.2"
+model_provider = "cch"
+model_reasoning_effort = "xhigh"
+personality = "pragmatic"
+
+
+[model_providers.cch]
+name = "cch"
+base_url = "https://cch.957633.xyz/v1"
+env_key = "MY_KEY"
+wire_api = "responses"
+
+[projects."/home/sueiny/rk3506_linux6.1_v1.2.0"]
+trust_level = "trusted"
+
+[projects."/home/sueiny"]
+trust_level = "trusted"
+
+[features]
+memories = false
+chronicle = false
+
+[memories]
+generate_memories = false
+use_memories = false
+
+
+

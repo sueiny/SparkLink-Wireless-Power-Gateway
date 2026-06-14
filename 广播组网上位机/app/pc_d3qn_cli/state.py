@@ -141,12 +141,8 @@ def _planning_edge_records(topology: Topology) -> dict[tuple[int, int], dict]:
 
 
 def _planning_graph_undirected(topology: Topology) -> dict[int, dict[int, float]]:
-    """与 sample 环境一致：无向图，双向等权"""
-    graph: dict[int, dict[int, float]] = {}
-    for edge in topology.edges.values():
-        graph.setdefault(edge.src, {})[edge.dst] = float(edge.weight)
-        graph.setdefault(edge.dst, {})[edge.src] = float(edge.weight)
-    return graph
+    """直接复用 topology.graph()：双向验证 + 网关例外 + relay_excluded 过滤，与 Dijkstra SAMPLE_ROUTE_MODE 对齐。"""
+    return topology.graph()
 
 
 def _edge_betweenness_from_graph(graph: dict[int, dict[int, float]], nodes: list[int], k_paths: int) -> dict[str, float]:

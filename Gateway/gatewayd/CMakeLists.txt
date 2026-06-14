@@ -85,6 +85,7 @@ add_executable(gatewayd
     src/datasource/sle_data_source.cpp
     src/app/sle_ipc_worker.cpp
     src/datasource/ipc_receiver.cpp
+    src/datasource/ipc_cmd_sender.cpp
     src/datasource/route_table.cpp
     src/codec/sle_frame_parser.cpp
     src/codec/modbus_parser.cpp
@@ -106,6 +107,7 @@ target_include_directories(gatewayd PRIVATE
     third_party
     ${MOSQUITTO_INCLUDE_DIR}
     ${SQLITE3_INCLUDE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/../sle_data_app/inc
 )
 
 target_compile_options(gatewayd PRIVATE

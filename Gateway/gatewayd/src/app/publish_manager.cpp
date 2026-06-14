@@ -29,6 +29,21 @@ const char *publishKindText(PublishMessageKind kind)
     }
 }
 
+std::string commandLogFields(const PublishMessage &message)
+{
+    if (message.kind != PublishMessageKind::CommandResponse)
+        return {};
+
+    std::string fields;
+    if (!message.request_id.empty())
+        fields += ", request_id=" + message.request_id;
+    if (!message.method.empty())
+        fields += ", method=" + message.method;
+    if (!message.target.empty())
+        fields += ", target=" + message.target;
+    return fields;
+}
+
 int commandResponseRetryDelayMs(int retry_count)
 {
     if (retry_count <= 1)
@@ -57,7 +72,9 @@ void PublishManager::run()
     std::vector<PublishMessage> delayed_messages;
 
     while (!stop_.load()) {
+        // 发布线程是 MQTT 的唯一写入口：
         // 先处理命令响应重试和其它待发布消息，再消费新的遥测批次。
+        // 这样命令线程只入队，不会和 telemetry/cache 补传同时操作 cloud_client_。
         publishPendingMessages(delayed_messages);
 
         std::vector<model::TelemetryData> telemetry;
@@ -94,6 +111,9 @@ void PublishManager::publishTelemetryBatch(const std::vector<model::TelemetryDat
         PublishMessageKind::Telemetry,
         0,
         0,
+        {},
+        {},
+        {},
     });
 }
 
@@ -106,6 +126,7 @@ void PublishManager::flushTelemetryCache()
     if (!ensureCloudConnected())
         return;
 
+    // 缓存补传保持小批量，避免历史积压恢复时抢占实时 telemetry 和命令 response。
     const auto pending = cache_store_->loadPendingTelemetry(kMaxCacheFlushCount);
     if (pending.empty())
         return;
@@ -169,6 +190,7 @@ void PublishManager::publishGatewayStatusIfDue()
         status.cloud_connected = cloud_client_.isConnected();
     }
 
+    // 网关状态同时走 attributes 和 telemetry，方便平台侧在线状态和趋势图都能消费。
     const std::string payload = codec::ThingsKitCodec::buildGatewayAttributesValuesPayload(status);
     logger_.info("ATTR", payload);
 
@@ -178,6 +200,9 @@ void PublishManager::publishGatewayStatusIfDue()
         PublishMessageKind::GatewayStatus,
         0,
         0,
+        {},
+        {},
+        {},
     });
     publish_queue_.push({
         codec::thingskit::kGatewayTelemetryTopic,
@@ -185,6 +210,9 @@ void PublishManager::publishGatewayStatusIfDue()
         PublishMessageKind::GatewayStatus,
         0,
         0,
+        {},
+        {},
+        {},
     });
 }
 
@@ -260,6 +288,7 @@ bool PublishManager::publishMessage(const PublishMessage &message)
 
     logger_.info("MQTT", std::string("publish success kind=") +
                              publishKindText(message.kind) +
+                             commandLogFields(message) +
                              ", topic=" + message.topic +
                              ", bytes=" + std::to_string(message.payload.size()));
     return true;
@@ -278,6 +307,7 @@ void PublishManager::handlePublishFailure(PublishMessage message,
     if (message.kind == PublishMessageKind::CommandResponse) {
         if (message.retry_count >= kMaxCommandResponseRetries) {
             logger_.warn("CMD", "command response dropped topic=" + message.topic +
+                                    commandLogFields(message) +
                                     ", retries=" + std::to_string(message.retry_count));
             return;
         }
@@ -286,6 +316,7 @@ void PublishManager::handlePublishFailure(PublishMessage message,
         message.next_retry_ts_ms =
             common::nowMs() + commandResponseRetryDelayMs(message.retry_count);
         logger_.warn("CMD", "command response retry topic=" + message.topic +
+                                commandLogFields(message) +
                                 ", retry=" + std::to_string(message.retry_count));
         delayed_messages.push_back(std::move(message));
         return;

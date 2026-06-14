@@ -87,19 +87,37 @@ class Topology:
         return updated
 
     def graph(self, now: float | None = None) -> dict[int, dict[int, float]]:
-        """与 sample 环境一致：无向图，双向等权"""
+        """与 Dijkstra SAMPLE_ROUTE_MODE 对齐：双向验证，网关例外，取平均权重。
+
+        普通边：A→B 和 B→A 都必须存在才保留，权重取两侧平均。
+        网关边：任意一侧单边即视为可用（网关不发 RSSI_REPORT，天然单向），对称写入，权重取该侧值。
+        relay_excluded 节点：整体过滤。
+        """
         timestamp = time.time() if now is None else float(now)
-        graph: dict[int, dict[int, float]] = {}
+        gw = self.gateway if self.gateway is not None else -1
+        # Step 1: 建有向原始图（仅 src→dst）
+        raw: dict[int, dict[int, float]] = {}
         for edge in self.edges.values():
             if self.stale_seconds is not None and timestamp - edge.updated_at > self.stale_seconds:
                 continue
-            if self.gateway is not None and edge.dst == self.gateway:
-                continue
             if edge.src in self.relay_excluded or edge.dst in self.relay_excluded:
                 continue
-            graph.setdefault(edge.src, {})[edge.dst] = float(edge.weight)
-            graph.setdefault(edge.dst, {})[edge.src] = float(edge.weight)
-        return graph
+            raw.setdefault(edge.src, {})[edge.dst] = float(edge.weight)
+        # Step 2: 双向验证 + 网关例外 → 输出无向图
+        undirected: dict[int, dict[int, float]] = {}
+        for src, neighbors in raw.items():
+            for dst, weight in neighbors.items():
+                if dst in undirected.get(src, {}):
+                    continue  # 已由反向处理写入，跳过
+                reverse = raw.get(dst, {}).get(src)
+                if reverse is not None:
+                    w = (weight + reverse) / 2.0
+                    undirected.setdefault(src, {})[dst] = w
+                    undirected.setdefault(dst, {})[src] = w
+                elif src == gw or dst == gw:
+                    undirected.setdefault(src, {})[dst] = weight
+                    undirected.setdefault(dst, {})[src] = weight
+        return undirected
 
     def to_dict(self) -> dict:
         return {

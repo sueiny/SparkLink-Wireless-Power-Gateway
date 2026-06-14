@@ -10,40 +10,6 @@ RELIABLE_ROUTE_MODE = "reliable_dijkstra_v1"
 SAMPLE_ROUTE_MODE = "sample_dijkstra"
 ROUTE_MODES = {BASELINE_ROUTE_MODE, RELIABLE_ROUTE_MODE, SAMPLE_ROUTE_MODE}
 
-# sample/Dijkstra 仿真对齐：边权 = 1 / remaining_capacity
-# 仿真里 capacity 由 RSSI 推导（强信号→大容量→小权重），allocated 初始=0
-# 硬件上同样用 RSSI 推导容量，allocated=0，完全复现仿真行为
-_D3QN_CAPACITY = 200.0
-
-
-def _d3qn_rssi_weight(rssi: int) -> float:
-    """RSSI → 权重分桶，5dBm 步长细化版（Dijkstra 路由专用）。
-    原 10dBm 6档 → 5dBm 11档，同档内质量差异可被区分，减少同桶误判。"""
-    if rssi >= -55:  return 1.0
-    if rssi >= -60:  return 1.5
-    if rssi >= -65:  return 3.0
-    if rssi >= -70:  return 4.5
-    if rssi >= -75:  return 6.0
-    if rssi >= -80:  return 9.0
-    if rssi >= -85:  return 12.0
-    if rssi >= -90:  return 18.0
-    if rssi >= -95:  return 24.0
-    if rssi >= -100: return 36.0
-    if rssi >= -105: return 48.0
-    return 96.0
-
-
-def sample_capacity_weight(rssi: int) -> float:
-    """仿真 Dijkstra 边权：1/remaining_capacity，capacity=200/rssi_weight，allocated=0。
-    强信号 → 大容量 → 小权重（优先），弱信号 → 大权重（绕行走中继）。"""
-    capacity = _D3QN_CAPACITY / _d3qn_rssi_weight(rssi)
-    return 1.0 / max(capacity, 1e-6)
-
-
-def sample_pure_weight() -> float:
-    """保留兼容：恒定权重（纯跳数），不再用于 sample_dijkstra 模式。"""
-    return 1.0 / _D3QN_CAPACITY
-
 
 def rssi_to_weight(rssi: int) -> Optional[int]:
     if rssi >= -55:
@@ -54,7 +20,15 @@ def rssi_to_weight(rssi: int) -> Optional[int]:
         return 6
     if rssi >= -85:
         return 12
-    return 15
+    if rssi >= -90:
+        return 18
+    if rssi >= -95:
+        return 28
+    if rssi >= -100:
+        return 45
+    if rssi >= -105:
+        return 65
+    return 90
 
 
 def rssi_to_reliable_weight(rssi: int) -> Optional[float]:
@@ -131,13 +105,12 @@ def update_congestion_penalty(congestion_penalty: Dict[int, float], high_latency
     return congestion_penalty
 
 
-def dijkstra(graph: Mapping[int, Mapping[int, int]], src: int, dst: int, max_hops: int = 4, hop_penalty: float = 0.0, congestion_penalty: Optional[Dict[int, float]] = None) -> Route:
+def dijkstra(graph: Mapping[int, Mapping[int, int]], src: int, dst: int, hop_penalty: float = 0.0, congestion_penalty: Optional[Dict[int, float]] = None) -> Route:
     if src == dst:
         return Route(src=src, dst=dst, path=[src], cost=0.0, status="valid")
 
     distances: Dict[int, float] = {src: 0.0}
     predecessors: Dict[int, int] = {}
-    hop_counts: Dict[int, int] = {src: 0}
     queue: List[Tuple[float, int]] = [(0.0, src)]
     visited = set()
 
@@ -149,20 +122,12 @@ def dijkstra(graph: Mapping[int, Mapping[int, int]], src: int, dst: int, max_hop
         if current == dst:
             break
 
-        current_hops = hop_counts.get(current, 0)
-        if current_hops >= max_hops:
-            continue
-
         for neighbor, weight in graph.get(current, {}).items():
             node_penalty = congestion_penalty.get(neighbor, 0.0) if congestion_penalty else 0.0
             new_cost = current_cost + float(weight) + hop_penalty + node_penalty
-            new_hops = current_hops + 1
-            if new_hops > max_hops:
-                continue
             if new_cost < distances.get(neighbor, float("inf")):
                 distances[neighbor] = new_cost
                 predecessors[neighbor] = current
-                hop_counts[neighbor] = new_hops
                 heapq.heappush(queue, (new_cost, neighbor))
 
     if dst not in distances:
@@ -175,14 +140,14 @@ def dijkstra(graph: Mapping[int, Mapping[int, int]], src: int, dst: int, max_hop
     return Route(src=src, dst=dst, path=path, cost=distances[dst], status="valid")
 
 
-def build_route_table(graph: Mapping[int, Mapping[int, int]], nodes: Iterable[int], max_hops: int = 4, gateway: int = 0, hop_penalty: float = 0.0, congestion_penalty: Optional[Dict[int, float]] = None) -> Dict[str, Route]:
+def build_route_table(graph: Mapping[int, Mapping[int, int]], nodes: Iterable[int], gateway: int = 0, hop_penalty: float = 0.0, congestion_penalty: Optional[Dict[int, float]] = None) -> Dict[str, Route]:
     node_list = sorted(set(nodes))
     routes: Dict[str, Route] = {}
     for src in node_list:
         for dst in node_list:
             if src == dst:
                 continue
-            route = dijkstra(graph, src, dst, max_hops=max_hops, hop_penalty=hop_penalty, congestion_penalty=congestion_penalty)
+            route = dijkstra(graph, src, dst, hop_penalty=hop_penalty, congestion_penalty=congestion_penalty)
             if route.status == "valid":
                 routes[f"{src:02X}:{dst:02X}"] = route
     return routes

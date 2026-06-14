@@ -1,6 +1,7 @@
 #include "datasource/ipc_receiver.h"
 
 #include <cerrno>
+#include <cstddef>
 #include <cstdio>
 #include <cstring>
 #include <sys/socket.h>
@@ -22,26 +23,59 @@ IpcReceiver::~IpcReceiver()
 bool IpcReceiver::init(const std::string &socket_path)
 {
     socket_path_ = socket_path;
-    mkdir("/var/run", 0755);
-    mkdir("/var/run/gateway", 0755);
-    unlink(socket_path_.c_str());
 
-    listen_fd_ = socket(AF_UNIX, SOCK_STREAM, 0);
-    if (listen_fd_ < 0) {
-        fprintf(stderr, "[IPC] socket create failed: %s\n", strerror(errno));
-        return false;
-    }
+    // 尝试绑定，如果失败则尝试连接以清理旧 socket
+    for (int attempt = 0; attempt < 2; attempt++) {
+        // 使用 SOCK_CLOEXEC 确保子进程不会继承此 fd
+        listen_fd_ = socket(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0);
+        if (listen_fd_ < 0) {
+            fprintf(stderr, "[IPC] socket create failed: %s\n", strerror(errno));
+            return false;
+        }
 
-    struct sockaddr_un addr;
-    memset(&addr, 0, sizeof(addr));
-    addr.sun_family = AF_UNIX;
-    snprintf(addr.sun_path, sizeof(addr.sun_path), "%s", socket_path_.c_str());
+        struct sockaddr_un addr;
+        memset(&addr, 0, sizeof(addr));
+        addr.sun_family = AF_UNIX;
 
-    if (bind(listen_fd_, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
-        fprintf(stderr, "[IPC] bind failed: %s\n", strerror(errno));
+        // 使用抽象命名空间（以 \0 开头），不需要文件系统支持
+        // 去掉路径开头的 '/'，前面加 \0
+        std::string abstract_name = socket_path;
+        if (!abstract_name.empty() && abstract_name[0] == '/')
+            abstract_name = abstract_name.substr(1);
+        addr.sun_path[0] = '\0';
+        snprintf(addr.sun_path + 1, sizeof(addr.sun_path) - 1, "%s", abstract_name.c_str());
+
+        socklen_t addrlen = offsetof(struct sockaddr_un, sun_path) + 1 + abstract_name.size();
+        if (bind(listen_fd_, (struct sockaddr *)&addr, addrlen) == 0) {
+            // 绑定成功
+            break;
+        }
+
+        if (errno != EADDRINUSE || attempt == 1) {
+            fprintf(stderr, "[IPC] bind failed: %s\n", strerror(errno));
+            close(listen_fd_);
+            listen_fd_ = -1;
+            return false;
+        }
+
+        // 第一次绑定失败，尝试连接以清理旧 socket
+        fprintf(stderr, "[IPC] socket in use, attempting cleanup...\n");
         close(listen_fd_);
         listen_fd_ = -1;
-        return false;
+
+        int probe_fd = socket(AF_UNIX, SOCK_STREAM, 0);
+        if (probe_fd >= 0) {
+            if (connect(probe_fd, (struct sockaddr *)&addr, addrlen) == 0) {
+                // 连接成功，说明有活跃的服务器，关闭连接
+                fprintf(stderr, "[IPC] active server detected, waiting...\n");
+                close(probe_fd);
+                sleep(2);
+            } else {
+                // 连接失败，socket 是残留的，可以覆盖
+                close(probe_fd);
+                fprintf(stderr, "[IPC] stale socket detected, retrying bind...\n");
+            }
+        }
     }
 
     if (listen(listen_fd_, 1) < 0) {
@@ -51,7 +85,10 @@ bool IpcReceiver::init(const std::string &socket_path)
         return false;
     }
 
-    fprintf(stderr, "[IPC] receiver listening on %s\n", socket_path_.c_str());
+    std::string abstract_name = socket_path;
+    if (!abstract_name.empty() && abstract_name[0] == '/')
+        abstract_name = abstract_name.substr(1);
+    fprintf(stderr, "[IPC] receiver listening on @%s (abstract)\n", abstract_name.c_str());
     return true;
 }
 
@@ -62,9 +99,7 @@ void IpcReceiver::deinit()
         close(listen_fd_);
         listen_fd_ = -1;
     }
-    if (!socket_path_.empty()) {
-        unlink(socket_path_.c_str());
-    }
+    // 抽象命名空间 socket 不需要 unlink
 }
 
 bool IpcReceiver::acceptClient(int timeout_ms)

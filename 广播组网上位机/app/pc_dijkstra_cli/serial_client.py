@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import glob
+import os
+import socket as _socket
 import time
 from dataclasses import dataclass
 from datetime import datetime
@@ -93,6 +96,44 @@ class MixedMessageReader:
         return messages
 
 
+def _get_daemon_socket_path(port: str) -> str:
+    from .daemon import get_socket_path
+    return get_socket_path(port)
+
+
+class _SocketSerial:
+    """Unix socket 包装器，行为与 serial.Serial 一致，供 SerialClient 使用。"""
+    def __init__(self, sock: _socket.socket, timeout: float = 0.1):
+        self._sock = sock
+        self._sock.settimeout(timeout)
+
+    @property
+    def in_waiting(self) -> int:
+        return 0
+
+    def read(self, size: int) -> bytes:
+        try:
+            return self._sock.recv(size)
+        except (_socket.timeout, OSError):
+            return b""
+
+    def write(self, data: bytes) -> int:
+        try:
+            self._sock.sendall(data)
+        except BrokenPipeError:
+            raise OSError("串口守护进程连接已断开，请重启 serial-daemon 后重新测试")
+        return len(data)
+
+    def flush(self) -> None:
+        pass
+
+    def close(self) -> None:
+        try:
+            self._sock.close()
+        except OSError:
+            pass
+
+
 class SerialClient:
     def __init__(
         self,
@@ -101,31 +142,51 @@ class SerialClient:
         timeout: float = 0.1,
         raw_callback: Callable[[RawSerialEvent], None] | None = None,
     ):
-        try:
-            import serial
-        except ImportError as exc:
-            raise RuntimeError("pyserial is required for serial access: pip install pyserial") from exc
-        self.serial = serial.Serial(
-            port=port,
-            baudrate=baud,
-            timeout=timeout,
-            write_timeout=1,
-            xonxoff=False,
-            rtscts=False,
-            dsrdtr=False,
-        )
-        # DTR/RTS toggle to reset CH340 dongle
-        self.serial.dtr = False
-        self.serial.rts = False
-        # Wait for dongle to settle
-        time.sleep(2.0)
-        # Flush any pending data
-        self.serial.read(self.serial.in_waiting or 8192)
+        socket_path = _get_daemon_socket_path(port)
+        if os.path.exists(socket_path):
+            sock = _socket.socket(_socket.AF_UNIX, _socket.SOCK_STREAM)
+            sock.connect(socket_path)
+            self.serial = _SocketSerial(sock, timeout=timeout)
+            print(f"已连接到串口守护进程 ({socket_path})")
+        else:
+            try:
+                import serial
+            except ImportError as exc:
+                raise RuntimeError("pyserial is required for serial access: pip install pyserial") from exc
+            print(f"串口 {port} 未开启，正在连接...")
+            self.serial = serial.Serial(
+                port=port,
+                baudrate=baud,
+                timeout=timeout,
+                write_timeout=1,
+                xonxoff=False,
+                rtscts=False,
+                dsrdtr=False,
+            )
+            self.serial.dtr = False
+            self.serial.rts = False
+            time.sleep(2.0)
+            self.serial.read(self.serial.in_waiting or 8192)
+            print(f"串口 {port} 已连接")
         self.reader = MixedMessageReader()
         self.raw_callback = raw_callback
 
     def close(self) -> None:
         self.serial.close()
+
+    def ping(self) -> None:
+        """检测连接是否还活着，断开时抛出 OSError。"""
+        s = getattr(self.serial, "_sock", None)
+        if s is not None:
+            s.setblocking(False)
+            try:
+                data = s.recv(1, _socket.MSG_PEEK)
+                if data == b"":
+                    raise OSError("连接已关闭")
+            except BlockingIOError:
+                pass  # 没数据但连接正常
+            finally:
+                s.setblocking(True)
 
     def read_available(self, size: int = 4096) -> list[object]:
         chunk = self.serial.read(size)

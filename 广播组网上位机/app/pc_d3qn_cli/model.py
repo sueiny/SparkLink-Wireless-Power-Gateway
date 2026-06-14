@@ -222,7 +222,10 @@ class D3QNPredictor:
 
         self._torch = torch
         self._device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        data = torch.load(self.checkpoint_path, map_location=self._device)
+        import warnings
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", FutureWarning)
+            data = torch.load(self.checkpoint_path, map_location=self._device)
         hparams = dict(DEFAULT_HPARAMS)
         hparams.update(data.get("hparams", {}))
         hparams["T"] = 1  # 推理时只需1轮消息传递，11节点拓扑足够，减少计算量
@@ -279,6 +282,13 @@ class D3QNPredictor:
         from .state import _planning_graph_undirected, _edge_betweenness_from_graph, _planning_edge_records, rssi_to_capacity
 
         graph = _planning_graph_undirected(topology)
+        # 网关只能作为 gw_table 段的第一个节点，不能作为推理段的中继。
+        # 从推理图中删除网关节点，避免推理路径经过网关形成跨表环路。
+        gw = topology.gateway
+        if gw is not None and gw in graph:
+            del graph[gw]
+            for _nbrs in graph.values():
+                _nbrs.pop(gw, None)
         nodes = sorted(topology.nodes)
         betweenness = _edge_betweenness_from_graph(graph, nodes, DEFAULTS.k_paths)
         edge_records = _planning_edge_records(topology)

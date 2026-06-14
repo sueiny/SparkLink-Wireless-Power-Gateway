@@ -16,7 +16,11 @@ def _rssi_to_weight(rssi):
         return 6
     if rssi >= -85:
         return 12
-    return None
+    if rssi >= -95:
+        return 24
+    if rssi >= -105:
+        return 48
+    return 96
 
 
 def _weighted_k_shortest_paths(graph, src, dst, k):

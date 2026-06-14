@@ -117,6 +117,13 @@ bool GatewayApp::init()
         logger_.warn("CACHE", "telemetry cache disabled by config");
     }
 
+    // 初始化命令 IPC 发送器（仅 SLE 模式）
+    if (cfg.sle.enable) {
+        ipc_cmd_sender_ = std::make_unique<datasource::IpcCmdSender>(logger_);
+        ipc_cmd_sender_->init(cfg.sle.cmd_socket);
+        logger_.info("CMD", "IpcCmdSender initialized, socket=" + cfg.sle.cmd_socket);
+    }
+
     if (cfg.sle.enable) {
         sle_ipc_worker_ = std::make_unique<SleIpcWorker>(
             cfg,
@@ -146,7 +153,8 @@ bool GatewayApp::init()
         state_store_,
         command_queue_,
         telemetry_queue_,
-        publish_queue_);
+        publish_queue_,
+        ipc_cmd_sender_.get());
 
     return true;
 }
@@ -180,9 +188,11 @@ int GatewayApp::run(const std::atomic_bool &quit)
     }
 
     stopWorkers();
-    stopQueues();
     joinWorkers();
+    stopQueues();
 
+    if (ipc_cmd_sender_)
+        ipc_cmd_sender_->deinit();
     if (gateway_cloud_client_)
         gateway_cloud_client_->disconnect();
 

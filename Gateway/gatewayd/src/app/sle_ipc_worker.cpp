@@ -40,13 +40,7 @@ void SleIpcWorker::run()
             }
         }
 
-        // DTU 心跳：每个 publish 窗口为在线 DTU 生成一次心跳
-        auto dtu_hbs = data_source_.generateDtuHeartbeats(common::nowMs());
-        if (!dtu_hbs.empty()) {
-            batch.insert(batch.end(),
-                std::make_move_iterator(dtu_hbs.begin()),
-                std::make_move_iterator(dtu_hbs.end()));
-        }
+        // 不再本地生成 DTU 心跳，所有数据都从 IPC 接收
 
         if (!batch.empty()) {
             logger_.info("SLE-IPC", "batch collected " + std::to_string(batch.size()) + " devices");

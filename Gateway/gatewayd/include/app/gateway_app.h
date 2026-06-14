@@ -12,6 +12,7 @@
 #include "common/logger.h"
 #include "config/config_manager.h"
 #include "codec/thingskit_codec.h"
+#include "datasource/ipc_cmd_sender.h"
 #include "datasource/mock_data_source.h"
 #include "datasource/sle_data_source.h"
 #include "network/net_manager.h"
@@ -56,6 +57,7 @@ private:
     datasource::RouteTable route_table_;
     std::unique_ptr<datasource::MockDataSource> mock_data_source_;
     std::unique_ptr<datasource::SleDataSource> sle_data_source_;
+    std::unique_ptr<datasource::IpcCmdSender> ipc_cmd_sender_;
     std::unique_ptr<cloud::MqttCloudClient> gateway_cloud_client_;
     std::unique_ptr<storage::CacheStore> cache_store_;
 

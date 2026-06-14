@@ -23,10 +23,16 @@ SleDataSource::SleDataSource(std::vector<model::DeviceInfo> devices,
 
 bool SleDataSource::init(const std::string &socket_path)
 {
-    // 构建 dtu_id → dtu_devices_ 索引
+    // 构建 dtu_id → dtu_devices_ 索引 (O(1) 查找)
     for (size_t i = 0; i < dtu_devices_.size(); ++i) {
         if (dtu_devices_[i].node_id > 0)
             dtu_id_to_index_[dtu_devices_[i].node_id] = i;
+    }
+
+    // 构建 dtu_id → devices_ 索引 (O(1) 查找)
+    for (size_t i = 0; i < devices_.size(); ++i) {
+        if (devices_[i].dtu_id > 0)
+            device_dtu_id_to_index_[devices_[i].dtu_id] = i;
     }
 
     if (!receiver_.init(socket_path)) {
@@ -72,6 +78,8 @@ std::vector<model::TelemetryData> SleDataSource::collect()
     switch (header.frame_type) {
     case codec::SLE_FRAME_TYPE_DATA:
         return handleDataFrame(raw, header);
+    case codec::SLE_FRAME_TYPE_HEARTBEAT:
+        return handleHeartbeatFrame(raw, header);
     case codec::SLE_FRAME_TYPE_TOPO_SUMMARY:
         handleTopoFrame(raw, header);
         return result;
@@ -137,6 +145,59 @@ std::vector<model::TelemetryData> SleDataSource::handleDataFrame(
     return result;
 }
 
+std::vector<model::TelemetryData> SleDataSource::handleHeartbeatFrame(
+    const std::vector<uint8_t> &raw, const codec::SleFrameHeader &header)
+{
+    std::vector<model::TelemetryData> result;
+
+    // 心跳帧 payload: role(1)
+    const uint8_t *payload = raw.data() + codec::SLE_FRAME_HEADER_LEN;
+    if (header.payload_len < 1)
+        return result;
+
+    uint8_t role = payload[0];
+    int node_id = static_cast<int>(header.src_node_id);
+
+    // 使用 O(1) 哈希表查找 DTU 配置
+    auto dtu_it = dtu_id_to_index_.find(node_id);
+    if (dtu_it == dtu_id_to_index_.end()) {
+        // 未知 DTU 节点，跳过
+        return result;
+    }
+    const model::DtuDeviceInfo *dtu = &dtu_devices_[dtu_it->second];
+
+    // 计算子节点数量和列表
+    int child_count = 0;
+    std::string child_ids_str;
+    for (const auto &d : dtu_devices_) {
+        if (d.parent_id == node_id) {
+            if (child_count > 0) child_ids_str += ",";
+            child_ids_str += std::to_string(d.node_id);
+            child_count++;
+        }
+    }
+
+    model::TelemetryData data;
+    data.device_id = dtu->device_id;
+    data.type = model::DeviceType::DtuNode;
+    data.ts_ms = common::nowMs();
+
+    // 使用统一的角色映射函数
+    data.integer_values["role"] = model::sleRoleToCloudRole(role);
+    data.string_values["name"] = dtu->device_id;
+    data.bool_values["online"] = true;
+
+    // 拓扑信息
+    data.object_values["topology"] = {
+        {"parent_id", dtu->parent_id},
+        {"child_count", child_count},
+        {"child_ids", child_ids_str},
+    };
+
+    result.push_back(std::move(data));
+    return result;
+}
+
 void SleDataSource::handleTopoFrame(const std::vector<uint8_t> &raw,
                                     const codec::SleFrameHeader &header)
 {
@@ -146,9 +207,9 @@ void SleDataSource::handleTopoFrame(const std::vector<uint8_t> &raw,
 
 const model::DeviceInfo *SleDataSource::findDeviceByDtuId(int dtu_id) const
 {
-    for (const auto &dev : devices_) {
-        if (dev.dtu_id == dtu_id)
-            return &dev;
+    auto it = device_dtu_id_to_index_.find(dtu_id);
+    if (it != device_dtu_id_to_index_.end()) {
+        return &devices_[it->second];
     }
     return nullptr;
 }
@@ -171,12 +232,18 @@ std::vector<model::TelemetryData> SleDataSource::generateDtuHeartbeats(int64_t t
             parent_id = static_cast<uint16_t>(dtu.parent_id);
 
         // 从路由表获取 SLE 角色
+        // 如果配置中 parent_id=0，说明是 root 节点，强制使用 root 角色
         uint8_t sle_role = 0;
-        for (const auto &r : routes) {
-            if (r.node_id == static_cast<uint16_t>(dtu.node_id)) {
-                sle_role = r.role;
-                break;
+        bool is_root = (dtu.parent_id == 0);
+        if (!is_root) {
+            for (const auto &r : routes) {
+                if (r.node_id == static_cast<uint16_t>(dtu.node_id)) {
+                    sle_role = r.role;
+                    break;
+                }
             }
+        } else {
+            sle_role = 1;  // SLE_ROLE_ROOT = 1
         }
 
         // 构建 child_ids 字符串

@@ -10,6 +10,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 namespace gateway::datasource {
@@ -36,14 +37,17 @@ public:
 private:
     std::vector<model::TelemetryData> handleDataFrame(const std::vector<uint8_t> &raw,
                                                        const codec::SleFrameHeader &header);
+    std::vector<model::TelemetryData> handleHeartbeatFrame(const std::vector<uint8_t> &raw,
+                                                            const codec::SleFrameHeader &header);
     void handleTopoFrame(const std::vector<uint8_t> &raw, const codec::SleFrameHeader &header);
 
-    // 按 dtu_id 查找外接设备
+    // 按 dtu_id 查找外接设备 (O(1) 查找)
     const model::DeviceInfo *findDeviceByDtuId(int dtu_id) const;
 
     std::vector<model::DeviceInfo> devices_;        // 外接设备
     std::vector<model::DtuDeviceInfo> dtu_devices_; // DTU 节点
-    std::map<int, size_t> dtu_id_to_index_;         // dtu_id → dtu_devices_ 索引
+    std::unordered_map<int, size_t> dtu_id_to_index_;  // dtu_id → dtu_devices_ 索引 (O(1))
+    std::unordered_map<int, size_t> device_dtu_id_to_index_;  // dtu_id → devices_ 索引 (O(1))
     std::shared_ptr<state::DeviceStateStore> state_store_;
     RouteTable &route_table_;
     IpcReceiver receiver_;
