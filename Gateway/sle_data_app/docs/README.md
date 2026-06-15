@@ -1,72 +1,40 @@
-# sle_data_app
+# sle_data_app docs
 
-`sle_data_app` 是 Gateway 第一阶段接入真实 SLE 数据源的独立测试 APP。它不接入 `gatewayd`，不做 Mesh/Modbus 解析，也不做 ThingsKit 上云；当前目标只做 WS73 Linux 用户态 SLE client 的一对多连接、服务发现和 notify/indication 数据打印。
+这个目录保存 `sle_data_app` 模块自身的工程文档。这里是源码旁边的主文档位置，适合记录真实 SLE 运行、Mock 调试、notify 批处理、数据 IPC、命令 IPC、串口脚本和连接参数。
 
-本 APP 以已验证可连接 WS73 板端环境的 `app_sample/sle/sle_uuid_client` 为基础；`dtu_smaple/sle_one_to_many` 只作为 WS63/LiteOS 的 API 流程参考，不照搬它的连接表实现。
+`app/Gateway/docs` 只保留复盘、学习和索引入口；需要改 `sle_data_app` 工程细节时优先改本目录。
 
-## 参数在哪里改
+## 当前运行定位
 
-优先改板端运行配置：
-
-```text
-/userdata/gateway/config/sle_data_app.json
-```
-
-仓库里的默认配置文件是：
+`sle_data_app` 是 Gateway 的 C 侧 SLE 数据源进程：
 
 ```text
-app/Gateway/sle_data_app/sle_data_app.json
+真实 DTU root / Mock
+  -> SLE notify 队列
+  -> notify_printer 批处理
+  -> ipc_sender 数据 socket
+  -> gatewayd SLE IPC worker
 ```
 
-编译进程序的默认值集中在：
-
-```text
-app/Gateway/sle_data_app/inc/sle_app_config.h
-```
-
-建议调试时先改 JSON；确认稳定后，再把默认值同步到 `sle_app_config.h` 顶部的 `SLE_APP_DEFAULT_*` 常量区。
-
-## 参考来源
-
-- Silicon Labs 多连接文档强调：连接打开后必须保存 connection handle，达到最大连接数后不要继续打开新连接：https://docs.silabs.com/bluetooth/6.0.0/bluetooth-fundamentals-connections/multi-central-topology
-- ESP-IDF GATT client 文档说明多连接 demo 可连接多个 GATT server，并且 MTU、服务发现、读写都以 `conn_id` 为参数：https://docs.espressif.com/projects/esp-idf/en/v3.3.1/api-reference/bluetooth/esp_gattc.html
-- Nordic multilink NUS central 使用 connection index 管理多个 peripheral：https://devzone.nordicsemi.com/nordic/nordic-blog/b/blog/posts/ble-nrf51-multilink-nus-central-connect-to-many-pe
-
-这些资料只提炼“一对多连接管理”的架构思想，不复制第三方代码。
-
-## 目录
-
-```text
-sle_data_app/
-  Makefile
-  sle_data_app.json
-  inc/
-  src/
-  docs/
-    architecture.md
-    connection_flow.md
-    server_connections.md
-    sle_params.md
-    test_plan.md
-```
-
-## 编译
+默认启动模式是 `real`。Mock 需要显式开启：
 
 ```bash
-make -C app/Gateway/sle_data_app \
-  CROSS=/home/sueiny/rk3506_linux6.1_v1.2.0/prebuilts/gcc/linux-x86/arm/gcc-arm-10.3-2021.07-x86_64-arm-none-linux-gnueabihf/bin/arm-none-linux-gnueabihf-
+/userdata/gateway/bin/sle_data_app
+/userdata/gateway/bin/sle_data_app --mode real
+/userdata/gateway/bin/sle_data_app --mode mock
+/userdata/gateway/bin/sle_data_app --mode hybrid
 ```
 
-## 推送与运行
+## 当前文档
 
-```bash
-adb push app/Gateway/sle_data_app/sle_data_app /userdata/gateway/bin/
-adb push app/Gateway/sle_data_app/sle_data_app.json /userdata/gateway/config/
-adb shell 'chmod +x /userdata/gateway/bin/sle_data_app'
-adb shell 'timeout 120 /userdata/gateway/bin/sle_data_app --config /userdata/gateway/config/sle_data_app.json'
-```
+- `使用说明.md`：启动模式、真实链路、Mock 调试、两路 Root 测试和常用 ADB 检查。
+- `命令对接阅读理解.md`：ThingsKit 下行到命令 IPC、`ipc_cmd_receiver`、`sle_cmd_handler` 的阅读路径。
+- `架构分析与改造计划.md`：`sle_data_app` 架构演进和后续改造方向。
+- `Modbus寄存器仿真规格.md`：Mock/脚本侧 Modbus 响应和寄存器规格。
+- `architecture.md`、`connection_flow.md`、`server_connections.md`、`sle_params.md`、`test_plan.md`：早期 SLE client 和连接参数设计记录，保留作为实现背景。
 
-## 当前阶段边界
+## 维护规则
 
-- 做：最多 8 个 SLE server 连接、按 MAC 前缀过滤 DTU、独立 `server_index`、MTU、服务发现、notify/indication 打印。
-- 不做：大流量压测、`sle_set_mcs`、`sle_set_phy_param`、主动 `sle_set_data_len`、真实网关 IPC、Mesh/Modbus 解析、设备状态入库。
+- `main.c` 启动模式、socket、日志路径、真实/Mock 行为变更时，优先更新 `使用说明.md`。
+- 命令 IPC 协议、handler、真实 SLE write 落地时，优先更新 `命令对接阅读理解.md`。
+- SLE 连接参数、断连原因、压测结论变化时，同步更新本目录和 `app/Gateway/docs/10_项目复盘/Gateway上板测试记录.md`。

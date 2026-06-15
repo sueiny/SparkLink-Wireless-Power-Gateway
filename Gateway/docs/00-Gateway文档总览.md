@@ -35,6 +35,20 @@ tags:
 12. [[30_CodeReview/Gateway可维护性整改路线|Gateway可维护性整改路线]]
 13. [[10_项目复盘/Gateway上板测试记录|Gateway上板测试记录]]
 
+## 模块主文档
+
+模块工程细节优先放在源码旁的 docs 中，`Gateway/docs` 只保留复盘、学习和索引入口。
+
+- `gatewayd/docs/README.md`
+- `gatewayd/docs/gatewayd框架理解.md`
+- `gatewayd/docs/SLE数据源替换MockDataSource计划.md`
+- `gatewayd/docs/Modbus寄存器仿真规格.md`
+- `sle_data_app/docs/README.md`
+- `sle_data_app/docs/使用说明.md`
+- `sle_data_app/docs/命令对接阅读理解.md`
+- `sle_data_app/docs/架构分析与改造计划.md`
+- `sle_data_app/docs/Modbus寄存器仿真规格.md`
+
 ## 项目一句话
 
 基于星闪的无线电力透传系统，面向 RS485/Modbus 设备无线化改造，通过 DTU 采集、星闪组网、边缘网关汇聚和平台展示，实现低成本部署、统一上云、边缘自治和后续智能化扩展。
