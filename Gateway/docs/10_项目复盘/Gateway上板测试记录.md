@@ -242,3 +242,55 @@ py -3 .\dtu_root_run_sender.py COM23 COM36 --scenario topology-all --duration 60
 
 - [[20_技术沉淀/sle_data_app使用说明]]
 - [[20_技术沉淀/sle_data_app命令对接阅读理解]]
+
+## 2026-06-15 两路全物模型大批量压测
+
+目标：在当前稳定的两路真实 Root 基线 `COM23+COM36` 上，扩大压测窗口和发送频率，验证 31 个 DTU 节点与 11 个外接设备物模型数据是否能持续上云。
+
+板端准备：
+
+```bash
+bash .claude/skills/run-gateway/driver.sh push
+bash .claude/skills/run-gateway/driver.sh test-real-listen
+```
+
+监听启动结果：
+
+- MQTT 已连接，最终状态持续为 `cloud_connected=1`。
+- 网络接口为 `wlan0`，`network_type=wifi`。
+- `sle_data_app` 以 `mode=real` 启动，Mock 数据关闭。
+- SLE active connection 为两路：`12:a2:a3:a4:a5:a2` 和 `12:a2:a3:a4:a5:a3`。
+
+Windows 串口压测命令：
+
+```powershell
+cd C:\Temp\GatewayTest
+py -3 .\dtu_root_run_sender.py COM23 COM36 --scenario topology-all --duration 180 --interval 2 --line-delay 0.02 --warmup-sec 5 --warmup-interval 0.2 --warmup-text 12123213 --post-warmup-delay 8 --hold-open 10 --json-out .\topology_pressure_2way_com23_com36_180s.json
+```
+
+串口侧结果：
+
+- `COM23`：63 轮、2646 帧，其中 heartbeat 1953 帧、DATA 693 帧，`write_errors=0`、`crc_errors=0`。
+- `COM36`：63 轮、2646 帧，其中 heartbeat 1953 帧、DATA 693 帧，`write_errors=0`、`crc_errors=0`。
+- 两路合计 5292 帧，覆盖 42 个设备 ID 和 31 个 DTU 节点。
+
+板端 gatewayd 结果：
+
+- `telemetry batch devices=` 共 36 批。
+- `publish success kind=telemetry` 共 36 次。
+- telemetry 批次大小分布：`84*1`、`104*8`、`148*7`、`149*1`、`167*1`、`168*18`。
+- 批次大小合计：5292，和串口侧发送总帧数一致。
+- 设备 ID 解析结果：期望 42 个，实际看到 42 个，缺失 `none`，额外 `none`。
+- SQLite `telemetry_cache=0`，说明压测期间 MQTT 直连上云成功，没有形成离线缓存。
+- 错误关键字统计：`CRC error`、`modbus_parse_error`、`invalid frame`、`SLE-FRAME`、`SLE-DATA`、`notify queue dropped`、`publish failed`、`ERROR` 均为 0。
+
+SLE 连接风险：
+
+- 本轮仍观察到 SLE 断连重连记录：`reason=0x7` 8 次，`reason=0x11` 2 次。
+- 断连未导致本轮 telemetry 丢失：串口总帧数、gatewayd 批次合计和 MQTT publish success 数量能闭合。
+- 后续如果要做更长时长或三路以上真实 Root 压测，应继续排查 root 固件连接参数、SLE manager 重连策略和 active connection 上限。
+
+结论：
+
+- 两路真实 Root 大批量全物模型上云通过。
+- 当前 Gateway 上行链路在 5292 条全拓扑记录压力下保持 MQTT 成功发布，未出现解析错误、队列丢弃或离线缓存堆积。
