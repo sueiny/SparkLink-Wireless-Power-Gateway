@@ -120,45 +120,75 @@ bool IpcReceiver::acceptClient(int timeout_ms)
     return true;
 }
 
-bool IpcReceiver::readExact(uint8_t *buf, size_t n)
+IpcReceiver::ReadStatus IpcReceiver::readExact(uint8_t *buf, size_t n)
 {
     size_t received = 0;
     while (received < n) {
-        // 先 poll 等待数据到达，避免阻塞在 read() 导致无法响应 stop()
+        // 先 poll 等待数据到达；超时只表示当前没有完整帧，不能当成断连。
         struct pollfd pfd = {client_fd_, POLLIN, 0};
         int pr = poll(&pfd, 1, 200);  // 200ms 超时
-        if (pr <= 0) return false;     // 超时或错误
+        if (pr == 0 && received == 0)
+            return ReadStatus::Timeout;
+        if (pr == 0)
+            continue;
+        if (pr < 0) {
+            if (errno == EINTR)
+                continue;
+            return ReadStatus::Error;
+        }
+
+        if (pfd.revents & (POLLERR | POLLHUP | POLLNVAL))
+            return ReadStatus::Disconnected;
+        if (!(pfd.revents & POLLIN))
+            continue;
 
         ssize_t r = read(client_fd_, buf + received, n - received);
-        if (r <= 0) return false;
+        if (r == 0)
+            return ReadStatus::Disconnected;
+        if (r < 0) {
+            if (errno == EINTR)
+                continue;
+            return ReadStatus::Error;
+        }
         received += static_cast<size_t>(r);
     }
-    return true;
+    return ReadStatus::Ok;
 }
 
-bool IpcReceiver::receiveRawFrame(std::vector<uint8_t> &out)
+IpcReceiveStatus IpcReceiver::receiveRawFrame(std::vector<uint8_t> &out)
 {
-    if (client_fd_ < 0) return false;
+    if (client_fd_ < 0) return IpcReceiveStatus::Disconnected;
 
     // 读 2 字节 LE 长度前缀
     uint8_t len_buf[2];
-    if (!readExact(len_buf, 2)) {
-        return false;
+    ReadStatus status = readExact(len_buf, 2);
+    if (status != ReadStatus::Ok) {
+        if (status == ReadStatus::Timeout)
+            return IpcReceiveStatus::Timeout;
+        if (status == ReadStatus::Error)
+            return IpcReceiveStatus::Error;
+        return IpcReceiveStatus::Disconnected;
     }
     uint16_t frame_len = static_cast<uint16_t>(len_buf[0] | (len_buf[1] << 8));
 
     if (frame_len == 0 || frame_len > 256) {
         fprintf(stderr, "[IPC] invalid frame length: %u\n", frame_len);
-        return false;
+        return IpcReceiveStatus::Error;
     }
 
     // 读帧体
     out.resize(frame_len);
-    if (!readExact(out.data(), frame_len)) {
-        return false;
+    status = readExact(out.data(), frame_len);
+    if (status != ReadStatus::Ok) {
+        out.clear();
+        if (status == ReadStatus::Timeout)
+            return IpcReceiveStatus::Error;
+        if (status == ReadStatus::Error)
+            return IpcReceiveStatus::Error;
+        return IpcReceiveStatus::Disconnected;
     }
 
-    return true;
+    return IpcReceiveStatus::Frame;
 }
 
 void IpcReceiver::closeClient()

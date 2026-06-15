@@ -4,7 +4,7 @@ Send RUN-mode SLE frames to one or more DTU root UARTs.
 
 Windows lab usage uses the Python launcher and writes ASCII-hex ST frames by default:
 
-    py -3 dtu_root_run_sender.py COM19 COM23 COM36 --duration 60 --interval 5
+    py -3 dtu_root_run_sender.py COM19 COM23 COM36 --scenario topology-all --duration 60 --interval 5
 
 The current DTU root UART path reliably forwards printable ASCII. The default
 serial write is:
@@ -27,7 +27,7 @@ import sys
 import threading
 import time
 from datetime import datetime, timezone
-from typing import Dict, List, Optional
+from typing import Dict, Iterable, List, Optional, Tuple
 
 BAUDRATE = 115200
 DEFAULT_DST_NODE = 0
@@ -42,6 +42,8 @@ DEFAULT_POST_WARMUP_DELAY_SEC = 8.0
 DEFAULT_HOLD_OPEN_SEC = 10.0
 DEFAULT_UART_ENCODING = "text-hex"
 DEFAULT_RAW_TERMINATOR = "crlf"
+DEFAULT_SCENARIO = "meter-001"
+DEFAULT_LINE_DELAY_SEC = 0.02
 DEFAULT_DEVICE_ID = "METER_001"
 DEFAULT_DTU_ID = 1
 DEFAULT_MODBUS_TYPE = 2
@@ -58,6 +60,53 @@ SLE_ROLE_GATEWAY = 0x04
 SLE_FRAME_HEADER_LEN = 13
 SLE_FRAME_MAX_LEN = 256
 
+TOPOLOGY_NODES: Dict[int, Tuple[int, Tuple[int, ...]]] = {
+    1: (0, (2, 3, 8, 9, 10, 11)),
+    2: (1, (4, 5)),
+    3: (1, (6, 7)),
+    4: (2, ()),
+    5: (2, ()),
+    6: (3, ()),
+    7: (3, ()),
+    8: (1, ()),
+    9: (1, ()),
+    10: (1, ()),
+    11: (1, ()),
+    12: (0, (13, 14, 15)),
+    13: (12, (16, 17, 18)),
+    14: (12, (19, 20)),
+    15: (12, (21, 22)),
+    16: (13, ()),
+    17: (13, ()),
+    18: (13, ()),
+    19: (14, ()),
+    20: (14, ()),
+    21: (15, ()),
+    22: (15, ()),
+    23: (0, (24, 25)),
+    24: (23, ()),
+    25: (23, ()),
+    26: (0, (27, 28)),
+    27: (26, ()),
+    28: (26, ()),
+    29: (0, (30, 31)),
+    30: (29, ()),
+    31: (29, ()),
+}
+
+EXTERNAL_DEVICES: List[Dict[str, object]] = [
+    {"device_id": "METER_001", "dtu_id": 1, "kind": "meter", "modbus_type": 2, "modbus_addr": 1},
+    {"device_id": "METER_002", "dtu_id": 2, "kind": "meter", "modbus_type": 2, "modbus_addr": 1},
+    {"device_id": "METER_003", "dtu_id": 3, "kind": "meter", "modbus_type": 2, "modbus_addr": 1},
+    {"device_id": "METER_004", "dtu_id": 4, "kind": "meter", "modbus_type": 2, "modbus_addr": 1},
+    {"device_id": "METER_005", "dtu_id": 5, "kind": "meter", "modbus_type": 2, "modbus_addr": 1},
+    {"device_id": "METER_006", "dtu_id": 6, "kind": "meter", "modbus_type": 2, "modbus_addr": 1},
+    {"device_id": "METER_007", "dtu_id": 7, "kind": "meter", "modbus_type": 2, "modbus_addr": 1},
+    {"device_id": "ENV_001", "dtu_id": 8, "kind": "env", "modbus_type": 3, "modbus_addr": 1},
+    {"device_id": "ENV_002", "dtu_id": 9, "kind": "env", "modbus_type": 3, "modbus_addr": 1},
+    {"device_id": "RELAY_001", "dtu_id": 10, "kind": "relay", "modbus_type": 4, "modbus_addr": 1},
+    {"device_id": "RELAY_002", "dtu_id": 11, "kind": "relay", "modbus_type": 4, "modbus_addr": 1},
+]
 
 def crc16_modbus(data: bytes) -> int:
     crc = 0xFFFF
@@ -83,14 +132,24 @@ def u16le(value: int) -> bytes:
     return struct.pack("<H", value & 0xFFFF)
 
 
-def build_meter_modbus_response(seq: int, slave_addr: int = DEFAULT_MODBUS_ADDR) -> bytes:
-    voltage = 220.0 + (seq % 10) * 0.1
-    current = 5.0 + (seq % 8) * 0.2
+def dtu_role(node_id: int) -> int:
+    parent_id, child_ids = TOPOLOGY_NODES.get(node_id, (0, ()))
+    if parent_id == 0:
+        return SLE_ROLE_ROOT
+    if child_ids:
+        return SLE_ROLE_RELAY
+    return SLE_ROLE_LEAF
+
+
+def build_meter_modbus_response(seq: int, slave_addr: int = DEFAULT_MODBUS_ADDR,
+                                dtu_id: int = DEFAULT_DTU_ID) -> bytes:
+    voltage = 220.0 + ((seq + dtu_id) % 10) * 0.1
+    current = 5.0 + ((seq + dtu_id) % 8) * 0.2
     power = int(voltage * current)
-    power_factor = 960 + (seq % 5)
-    frequency = 5000 + (seq % 3)
-    energy = 100000 + seq * 25
-    relay_status = 0x55
+    power_factor = 960 + ((seq + dtu_id) % 5)
+    frequency = 5000 + ((seq + dtu_id) % 3)
+    energy = 100000 + dtu_id * 1000 + seq * 25
+    relay_status = 0x55 if (seq + dtu_id) % 2 == 0 else 0x00
 
     data = (
         u16be(int(voltage * 10)) +
@@ -107,11 +166,43 @@ def build_meter_modbus_response(seq: int, slave_addr: int = DEFAULT_MODBUS_ADDR)
     return frame + bytes([crc & 0xFF, (crc >> 8) & 0xFF])
 
 
-def build_gateway_payload(seq: int) -> bytes:
-    modbus_rtu = build_meter_modbus_response(seq)
+def build_env_modbus_response(seq: int, slave_addr: int = DEFAULT_MODBUS_ADDR,
+                              dtu_id: int = 8) -> bytes:
+    humidity = 600 + ((seq + dtu_id) % 40)
+    temperature = 280 + ((seq + dtu_id) % 25)
+    data = u16be(humidity) + u16be(temperature)
+    frame = bytes([slave_addr, 0x03, len(data)]) + data
+    crc = crc16_modbus(frame)
+    return frame + bytes([crc & 0xFF, (crc >> 8) & 0xFF])
+
+
+def build_relay_modbus_response(seq: int, slave_addr: int = DEFAULT_MODBUS_ADDR,
+                                dtu_id: int = 10) -> bytes:
+    coil_byte = 0x01 if (seq + dtu_id) % 2 == 0 else 0x00
+    frame = bytes([slave_addr, 0x01, 0x01, coil_byte])
+    crc = crc16_modbus(frame)
+    return frame + bytes([crc & 0xFF, (crc >> 8) & 0xFF])
+
+
+def build_modbus_response(device: Dict[str, object], seq: int) -> bytes:
+    dtu_id = int(device["dtu_id"])
+    slave_addr = int(device.get("modbus_addr", DEFAULT_MODBUS_ADDR))
+    kind = str(device["kind"])
+    if kind == "meter":
+        return build_meter_modbus_response(seq, slave_addr, dtu_id)
+    if kind == "env":
+        return build_env_modbus_response(seq, slave_addr, dtu_id)
+    if kind == "relay":
+        return build_relay_modbus_response(seq, slave_addr, dtu_id)
+    raise ValueError(f"unsupported device kind: {kind}")
+
+
+def build_gateway_payload(seq: int, device: Optional[Dict[str, object]] = None) -> bytes:
+    selected = device or EXTERNAL_DEVICES[0]
+    modbus_rtu = build_modbus_response(selected, seq)
     if len(modbus_rtu) > 241:
         raise ValueError(f"Modbus RTU frame too long: {len(modbus_rtu)}")
-    return bytes([DEFAULT_MODBUS_TYPE, len(modbus_rtu)]) + modbus_rtu
+    return bytes([int(selected["modbus_type"]), len(modbus_rtu)]) + modbus_rtu
 
 
 def build_sle_frame(frame_type: int, src_role: int, src_node: int,
@@ -131,23 +222,31 @@ def build_sle_frame(frame_type: int, src_role: int, src_node: int,
     )
 
 
-def build_heartbeat_frame(seq: int, args: argparse.Namespace) -> bytes:
+def build_heartbeat_frame(seq: int, args: argparse.Namespace,
+                          src_node: Optional[int] = None,
+                          src_role: Optional[int] = None) -> bytes:
+    node_id = args.src_node if src_node is None else src_node
+    role = args.src_role if src_role is None else src_role
     return build_sle_frame(
         SLE_FRAME_TYPE_HEARTBEAT,
-        args.src_role,
-        args.src_node,
+        role,
+        node_id,
         args.dst_node,
         seq,
-        bytes([args.src_role & 0xFF]),
+        bytes([role & 0xFF]),
     )
 
 
-def build_data_frame(seq: int, args: argparse.Namespace) -> bytes:
-    payload = build_gateway_payload(seq)
+def build_data_frame(seq: int, args: argparse.Namespace,
+                     device: Optional[Dict[str, object]] = None,
+                     src_node: Optional[int] = None) -> bytes:
+    selected = device or EXTERNAL_DEVICES[0]
+    node_id = int(selected["dtu_id"]) if src_node is None else src_node
+    payload = build_gateway_payload(seq, selected)
     return build_sle_frame(
         SLE_FRAME_TYPE_DATA,
-        args.src_role,
-        args.src_node,
+        dtu_role(node_id),
+        node_id,
         args.dst_node,
         seq,
         payload,
@@ -172,18 +271,87 @@ def encode_uart_write(raw: bytes, args: argparse.Namespace) -> bytes:
     return raw + raw_terminator_bytes(args)
 
 
-def build_payload_uart_write(seq: int, args: argparse.Namespace) -> bytes:
-    return encode_uart_write(build_gateway_payload(seq), args)
+def build_payload_uart_write(seq: int, args: argparse.Namespace,
+                             device: Optional[Dict[str, object]] = None) -> bytes:
+    return encode_uart_write(build_gateway_payload(seq, device), args)
 
 
-def build_frame_uart_write(seq: int, args: argparse.Namespace, frame_type: str) -> bytes:
+def build_frame_uart_write(seq: int, args: argparse.Namespace, frame_type: str,
+                           device: Optional[Dict[str, object]] = None,
+                           src_node: Optional[int] = None,
+                           src_role: Optional[int] = None) -> bytes:
     if frame_type == "heartbeat":
-        raw = build_heartbeat_frame(seq, args)
+        raw = build_heartbeat_frame(seq, args, src_node=src_node, src_role=src_role)
     elif frame_type == "data":
-        raw = build_data_frame(seq, args)
+        raw = build_data_frame(seq, args, device=device, src_node=src_node)
     else:
         raise ValueError(f"unsupported frame_type: {frame_type}")
     return encode_uart_write(raw, args)
+
+
+def iter_round_items(args: argparse.Namespace, round_index: int,
+                     seq_start: int) -> Iterable[Dict[str, object]]:
+    seq = seq_start
+    if args.scenario == "meter-001":
+        if args.wire_format == "frame" and not args.no_heartbeat:
+            yield {
+                "seq": seq,
+                "kind": "heartbeat",
+                "device_id": "DTU_001",
+                "dtu_id": 1,
+                "raw": build_heartbeat_frame(seq, args, src_node=1, src_role=SLE_ROLE_ROOT),
+            }
+            seq += 1
+        if args.wire_format == "frame":
+            raw = build_data_frame(seq, args, EXTERNAL_DEVICES[0], src_node=1)
+        else:
+            raw = build_gateway_payload(round_index, EXTERNAL_DEVICES[0])
+        yield {
+            "seq": seq,
+            "kind": "data",
+            "device_id": "METER_001",
+            "dtu_id": 1,
+            "raw": raw,
+        }
+        return
+
+    if args.scenario != "topology-all":
+        raise ValueError(f"unsupported scenario: {args.scenario}")
+
+    if args.wire_format != "frame":
+        raise ValueError("topology-all requires --wire-format frame")
+
+    if not args.no_heartbeat:
+        for node_id in sorted(TOPOLOGY_NODES):
+            role = dtu_role(node_id)
+            yield {
+                "seq": seq,
+                "kind": "heartbeat",
+                "device_id": f"DTU_{node_id:03d}",
+                "dtu_id": node_id,
+                "raw": build_heartbeat_frame(seq, args, src_node=node_id, src_role=role),
+            }
+            seq += 1
+
+    for device in EXTERNAL_DEVICES:
+        dtu_id = int(device["dtu_id"])
+        yield {
+            "seq": seq,
+            "kind": "data",
+            "device_id": str(device["device_id"]),
+            "dtu_id": dtu_id,
+            "raw": build_data_frame(seq, args, device, src_node=dtu_id),
+            "modbus_type": int(device["modbus_type"]),
+        }
+        seq += 1
+
+
+def round_item_count(args: argparse.Namespace) -> int:
+    if args.scenario == "meter-001":
+        return (0 if args.no_heartbeat or args.wire_format != "frame" else 1) + 1
+    if args.scenario == "topology-all":
+        return (0 if args.no_heartbeat else len(TOPOLOGY_NODES)) + len(EXTERNAL_DEVICES)
+    raise ValueError(f"unsupported scenario: {args.scenario}")
 
 
 def utc_now() -> str:
@@ -197,11 +365,15 @@ def warmup_line(args: argparse.Namespace) -> bytes:
 
 
 def warmup_serial(ser, args: argparse.Namespace, stats: Dict[str, object]) -> None:
-    if args.warmup_sec <= 0:
+    warmup_for_seconds(ser, args, stats, args.warmup_sec)
+
+
+def warmup_for_seconds(ser, args: argparse.Namespace, stats: Dict[str, object], seconds: float) -> None:
+    if seconds <= 0:
         return
 
     line = warmup_line(args)
-    deadline = time.time() + args.warmup_sec
+    deadline = time.time() + seconds
     while time.time() < deadline:
         try:
             ser.write(line)
@@ -219,6 +391,31 @@ def warmup_serial(ser, args: argparse.Namespace, stats: Dict[str, object]) -> No
         time.sleep(args.warmup_interval)
 
 
+def send_item(ser, args: argparse.Namespace, stats: Dict[str, object],
+              item: Dict[str, object]) -> None:
+    write_data = encode_uart_write(item["raw"], args)
+    try:
+        ser.write(write_data)
+        ser.flush()
+        if stats["sent"] == 0:
+            stats["first_ts"] = utc_now()
+        stats["sent"] = int(stats["sent"]) + 1
+        if item["kind"] == "heartbeat":
+            stats["heartbeat_sent"] = int(stats["heartbeat_sent"]) + 1
+        else:
+            stats["data_sent"] = int(stats["data_sent"]) + 1
+        stats["last_ts"] = utc_now()
+
+        device_id = str(item.get("device_id", ""))
+        dtu_id = str(item.get("dtu_id", ""))
+        if device_id:
+            stats["unique_devices"].add(device_id)
+        if dtu_id:
+            stats["unique_dtu_nodes"].add(dtu_id)
+    except Exception:
+        stats["write_errors"] = int(stats["write_errors"]) + 1
+
+
 def run_port(port: str, args: argparse.Namespace) -> Dict[str, object]:
     try:
         import serial
@@ -228,9 +425,12 @@ def run_port(port: str, args: argparse.Namespace) -> Dict[str, object]:
     stats: Dict[str, object] = {
         "port": port,
         "baudrate": BAUDRATE,
+        "scenario": args.scenario,
         "wire_format": args.wire_format,
         "uart_encoding": args.uart_encoding,
         "raw_terminator": args.raw_terminator,
+        "round_frames": round_item_count(args),
+        "line_delay": args.line_delay,
         "dst_node": args.dst_node,
         "src_node": args.src_node,
         "src_role": args.src_role,
@@ -247,6 +447,7 @@ def run_port(port: str, args: argparse.Namespace) -> Dict[str, object]:
         "warmup_sent": 0,
         "warmup_errors": 0,
         "sent": 0,
+        "rounds_sent": 0,
         "heartbeat_sent": 0,
         "data_sent": 0,
         "write_errors": 0,
@@ -258,11 +459,11 @@ def run_port(port: str, args: argparse.Namespace) -> Dict[str, object]:
         "duration_sec": 0.0,
         "total_duration_sec": 0.0,
         "rate_hz": 0.0,
+        "unique_devices": set(),
+        "unique_dtu_nodes": set(),
     }
 
     total_start = time.time()
-    seq = 1
-
     ser = serial.Serial()
     ser.port = port
     ser.baudrate = BAUDRATE
@@ -280,48 +481,36 @@ def run_port(port: str, args: argparse.Namespace) -> Dict[str, object]:
 
         warmup_serial(ser, args, stats)
         if args.post_warmup_delay > 0:
-            time.sleep(args.post_warmup_delay)
+            warmup_for_seconds(ser, args, stats, args.post_warmup_delay)
 
         start = time.time()
         deadline = start + args.duration
+        round_index = 1
+        frame_seq = 1
         while True:
-            if args.count is not None and seq > args.count:
+            if args.count is not None and round_index > args.count:
                 break
             if args.count is None and time.time() >= deadline:
                 break
 
-            writes = []
-            if args.wire_format == "frame" and not args.no_heartbeat:
-                writes.append(("heartbeat", build_frame_uart_write(seq * 2 - 1, args, "heartbeat")))
-            if args.wire_format == "frame":
-                writes.append(("data", build_frame_uart_write(seq * 2, args, "data")))
-            else:
-                writes.append(("data", build_payload_uart_write(seq, args)))
+            items = list(iter_round_items(args, round_index, frame_seq))
+            for idx, item in enumerate(items):
+                send_item(ser, args, stats, item)
 
-            for kind, write_data in writes:
+                # Some firmware builds echo status over UART; consume it if present.
                 try:
-                    ser.write(write_data)
-                    ser.flush()
-                    if stats["sent"] == 0:
-                        stats["first_ts"] = utc_now()
-                    stats["sent"] = int(stats["sent"]) + 1
-                    if kind == "heartbeat":
-                        stats["heartbeat_sent"] = int(stats["heartbeat_sent"]) + 1
-                    else:
-                        stats["data_sent"] = int(stats["data_sent"]) + 1
-                    stats["last_ts"] = utc_now()
+                    rx = ser.read(ser.in_waiting or 0)
+                    stats["rx_bytes"] = int(stats["rx_bytes"]) + len(rx)
                 except Exception:
-                    stats["write_errors"] = int(stats["write_errors"]) + 1
+                    pass
 
-            # Some firmware builds echo status over UART; consume it if present.
-            try:
-                rx = ser.read(ser.in_waiting or 0)
-                stats["rx_bytes"] = int(stats["rx_bytes"]) + len(rx)
-            except Exception:
-                pass
+                if args.line_delay > 0 and idx + 1 < len(items):
+                    time.sleep(args.line_delay)
 
-            seq += 1
-            if args.count is None or seq <= args.count:
+            stats["rounds_sent"] = int(stats["rounds_sent"]) + 1
+            frame_seq += len(items)
+            round_index += 1
+            if args.count is None or round_index <= args.count:
                 time.sleep(args.interval)
 
         if args.hold_open > 0:
@@ -338,75 +527,75 @@ def run_port(port: str, args: argparse.Namespace) -> Dict[str, object]:
     stats["duration_sec"] = round(elapsed, 3)
     stats["total_duration_sec"] = round(time.time() - total_start, 3)
     stats["rate_hz"] = round(float(stats["sent"]) / elapsed, 3)
+    stats["unique_devices"] = sorted(stats["unique_devices"])
+    stats["unique_devices_count"] = len(stats["unique_devices"])
+    stats["unique_dtu_nodes"] = sorted(stats["unique_dtu_nodes"], key=lambda value: int(value))
+    stats["unique_dtu_nodes_count"] = len(stats["unique_dtu_nodes"])
     return stats
+
+
+def dry_run_record(args: argparse.Namespace, round_index: int,
+                   item: Dict[str, object]) -> Dict[str, object]:
+    raw = item["raw"]
+    write_data = encode_uart_write(raw, args)
+    frame_type = ""
+    payload = b""
+    modbus_rtu = b""
+    modbus_crc_ok = ""
+
+    if args.wire_format == "frame":
+        frame_type = raw[3] if len(raw) >= SLE_FRAME_HEADER_LEN else ""
+        payload_len = raw[11] | (raw[12] << 8) if len(raw) >= SLE_FRAME_HEADER_LEN else 0
+        payload = raw[SLE_FRAME_HEADER_LEN:SLE_FRAME_HEADER_LEN + payload_len]
+        if item["kind"] == "data" and len(payload) >= 4:
+            modbus_rtu = payload[2:]
+            modbus_crc_ok = crc16_modbus(modbus_rtu[:-2]) == (
+                modbus_rtu[-2] | (modbus_rtu[-1] << 8))
+    else:
+        payload = raw
+        if item["kind"] == "data" and len(payload) >= 4:
+            modbus_rtu = payload[2:]
+            modbus_crc_ok = crc16_modbus(modbus_rtu[:-2]) == (
+                modbus_rtu[-2] | (modbus_rtu[-1] << 8))
+
+    return {
+        "round": round_index,
+        "seq": item["seq"],
+        "kind": item["kind"],
+        "device_id": item.get("device_id", ""),
+        "dtu_id": item.get("dtu_id", ""),
+        "modbus_type": item.get("modbus_type", ""),
+        "scenario": args.scenario,
+        "wire_format": args.wire_format,
+        "uart_encoding": args.uart_encoding,
+        "raw_terminator": args.raw_terminator,
+        "uart_line": build_text_hex_line(args.dst_node, raw).decode("ascii").rstrip()
+        if args.uart_encoding == "text-hex" else "",
+        "write_hex": write_data.hex().upper(),
+        "write_len": len(write_data),
+        "dst_node": args.dst_node,
+        "src_node": item.get("dtu_id", args.src_node) if args.wire_format == "frame" else "",
+        "src_role": dtu_role(int(item.get("dtu_id", args.src_node)))
+        if args.wire_format == "frame" else "",
+        "frame_hex": raw.hex().upper() if args.wire_format == "frame" else "",
+        "frame_len": len(raw) if args.wire_format == "frame" else 0,
+        "frame_type": frame_type,
+        "payload_hex": payload.hex().upper(),
+        "modbus_rtu_hex": modbus_rtu.hex().upper(),
+        "modbus_crc_ok": modbus_crc_ok,
+    }
 
 
 def dry_run(args: argparse.Namespace) -> List[Dict[str, object]]:
     records = []
-    for seq in range(1, args.preview_count + 1):
-        if args.wire_format == "frame" and not args.no_heartbeat:
-            heartbeat_frame = build_heartbeat_frame(seq * 2 - 1, args)
-            write_data = encode_uart_write(heartbeat_frame, args)
-            record = {
-                "seq": seq,
-                "kind": "heartbeat",
-                "wire_format": args.wire_format,
-                "uart_encoding": args.uart_encoding,
-                "raw_terminator": args.raw_terminator,
-                "uart_line": build_text_hex_line(args.dst_node, heartbeat_frame).decode("ascii").rstrip()
-                if args.uart_encoding == "text-hex" else "",
-                "write_hex": write_data.hex().upper(),
-                "write_len": len(write_data),
-                "dst_node": args.dst_node,
-                "src_node": args.src_node,
-                "src_role": args.src_role,
-                "frame_hex": heartbeat_frame.hex().upper(),
-                "frame_len": len(heartbeat_frame),
-                "frame_type": SLE_FRAME_TYPE_HEARTBEAT,
-            }
+    frame_seq = 1
+    for round_index in range(1, args.preview_count + 1):
+        items = list(iter_round_items(args, round_index, frame_seq))
+        frame_seq += len(items)
+        for item in items:
+            record = dry_run_record(args, round_index, item)
             records.append(record)
             print(json.dumps(record, ensure_ascii=True))
-
-        payload = build_gateway_payload(seq)
-        modbus_rtu = payload[2:]
-        if args.wire_format == "frame":
-            data_frame = build_data_frame(seq * 2, args)
-            write_data = encode_uart_write(data_frame, args)
-            uart_line = build_text_hex_line(args.dst_node, data_frame).decode("ascii").rstrip() \
-                if args.uart_encoding == "text-hex" else ""
-            frame_hex = data_frame.hex().upper()
-            frame_len = len(data_frame)
-            frame_type = SLE_FRAME_TYPE_DATA
-        else:
-            write_data = build_payload_uart_write(seq, args)
-            uart_line = build_text_hex_line(args.dst_node, payload).decode("ascii").rstrip() \
-                if args.uart_encoding == "text-hex" else ""
-            frame_hex = ""
-            frame_len = 0
-            frame_type = ""
-
-        record = {
-            "seq": seq,
-            "kind": "data",
-            "wire_format": args.wire_format,
-            "uart_encoding": args.uart_encoding,
-            "raw_terminator": args.raw_terminator,
-            "uart_line": uart_line,
-            "write_hex": write_data.hex().upper(),
-            "write_len": len(write_data),
-            "dst_node": args.dst_node,
-            "src_node": args.src_node if args.wire_format == "frame" else "",
-            "src_role": args.src_role if args.wire_format == "frame" else "",
-            "frame_hex": frame_hex,
-            "frame_len": frame_len,
-            "frame_type": frame_type,
-            "payload_hex": payload.hex().upper(),
-            "modbus_rtu_hex": modbus_rtu.hex().upper(),
-            "modbus_crc_ok": crc16_modbus(modbus_rtu[:-2]) ==
-            (modbus_rtu[-2] | (modbus_rtu[-1] << 8)),
-        }
-        records.append(record)
-        print(json.dumps(record, ensure_ascii=True))
     return records
 
 
@@ -432,8 +621,10 @@ def write_csv(path: Optional[str], records: List[Dict[str, object]]) -> None:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Send METER_001 RUN-mode SLE frames to DTU root UARTs at 115200 8N1.")
+        description="Send RUN-mode SLE frames to DTU root UARTs at 115200 8N1.")
     parser.add_argument("ports", nargs="*", help="Serial ports, for example COM19 COM23 COM36")
+    parser.add_argument("--scenario", choices=("meter-001", "topology-all"), default=DEFAULT_SCENARIO,
+                        help="meter-001 sends one DTU and one meter; topology-all sends 31 DTU heartbeats and 11 external device data frames per round")
     parser.add_argument("--wire-format", choices=("frame", "payload"), default="frame",
                         help="frame sends a full ST frame; payload sends the legacy modbus payload only")
     parser.add_argument("--uart-encoding", choices=("raw", "text-hex"), default=DEFAULT_UART_ENCODING,
@@ -443,7 +634,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--duration", type=float, default=DEFAULT_DURATION_SEC,
                         help="Send duration in seconds when --count is not set")
     parser.add_argument("--interval", type=float, default=DEFAULT_INTERVAL_SEC,
-                        help="Interval between UART lines in seconds")
+                        help="Interval between scenario rounds in seconds")
+    parser.add_argument("--line-delay", type=float, default=DEFAULT_LINE_DELAY_SEC,
+                        help="Delay between UART lines inside one scenario round")
     parser.add_argument("--warmup-sec", type=float, default=DEFAULT_WARMUP_SEC,
                         help="Seconds to keep writing harmless UART content after opening the port")
     parser.add_argument("--warmup-interval", type=float, default=DEFAULT_WARMUP_INTERVAL_SEC,
@@ -451,7 +644,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--warmup-text", default="",
                         help="Warmup text before CRLF; defaults to WARMUP")
     parser.add_argument("--post-warmup-delay", type=float, default=DEFAULT_POST_WARMUP_DELAY_SEC,
-                        help="Seconds to wait after warmup writes before sending real frames")
+                        help="Extra seconds to keep sending warmup text before real frames")
     parser.add_argument("--hold-open", type=float, default=DEFAULT_HOLD_OPEN_SEC,
                         help="Seconds to keep the port open after sending real frames")
     parser.add_argument("--dtr", action="store_true",
@@ -459,7 +652,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--rts", action="store_true",
                         help="Assert RTS after opening the port; default keeps RTS deasserted")
     parser.add_argument("--count", type=int, default=None,
-                        help="Send an exact number of lines per port")
+                        help="Send an exact number of scenario rounds per port")
     parser.add_argument("--dst-node", type=int, default=DEFAULT_DST_NODE,
                         help="SLE tree destination node id; 0 means gateway")
     parser.add_argument("--src-node", type=int, default=DEFAULT_SRC_NODE,
@@ -471,7 +664,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--dry-run", action="store_true",
                         help="Print generated UART lines without opening serial ports")
     parser.add_argument("--preview-count", type=int, default=3,
-                        help="Number of dry-run lines to print")
+                        help="Number of dry-run scenario rounds to print")
     parser.add_argument("--json-out", default=None, help="Write result records to JSON")
     parser.add_argument("--csv-out", default=None, help="Write result records to CSV")
     return parser.parse_args()
@@ -481,6 +674,9 @@ def main() -> int:
     args = parse_args()
     if args.interval <= 0:
         print("--interval must be positive", file=sys.stderr)
+        return 2
+    if args.line_delay < 0:
+        print("--line-delay must be non-negative", file=sys.stderr)
         return 2
     if args.warmup_sec < 0:
         print("--warmup-sec must be non-negative", file=sys.stderr)
@@ -499,6 +695,12 @@ def main() -> int:
         return 2
     if args.count is not None and args.count <= 0:
         print("--count must be positive", file=sys.stderr)
+        return 2
+    if args.preview_count <= 0:
+        print("--preview-count must be positive", file=sys.stderr)
+        return 2
+    if args.scenario == "topology-all" and args.wire_format != "frame":
+        print("--scenario topology-all requires --wire-format frame", file=sys.stderr)
         return 2
 
     if args.dry_run:

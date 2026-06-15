@@ -133,3 +133,54 @@ bash .claude/skills/run-gateway/driver.sh test
 - 手动启动的 `sle_data_app` 已停止，避免继续生成 mock 数据。
 - `gatewayd` 仍保持运行，和 `driver.sh test` 默认行为一致。
 - 后续复核时 `telemetry_cache` 已继续下降到 11168 行，说明历史缓存补传仍在进行。
+
+## 2026-06-15 真实 DTU Root 全拓扑压测
+
+目标：按 `docs/00_项目说明/设备拓扑图.md` 覆盖 31 个 DTU 节点和 11 个外接设备，验证真实 DTU root 经 SLE 到 gatewayd 再到 ThingsKit MQTT 的上云链路。
+
+本轮改动：
+
+- `dtu_root_run_sender.py` 新增 `--scenario topology-all`，一轮发送 31 个 DTU heartbeat 和 11 个外接设备 DATA。
+- 外接设备 DATA 覆盖 `METER_001~007`、`ENV_001~002`、`RELAY_001~002`，Modbus CRC 由脚本生成。
+- `gatewayd` 新增 telemetry 批次日志：`telemetry batch devices=..., ids=...`，用于 MQTT 直连时确认设备 ID 覆盖。
+- 修复 gatewayd IPC receiver：200ms 无数据不再误判为 client 断开，避免 `notify_printer` 未满 64 帧等待 1s flush 时后半批被关闭连接丢弃。
+
+执行命令：
+
+```bash
+bash .claude/skills/run-gateway/driver.sh build-sle
+bash .claude/skills/run-gateway/driver.sh build-gw
+bash .claude/skills/run-gateway/driver.sh push
+bash .claude/skills/run-gateway/driver.sh test-real-listen
+```
+
+Windows 串口压测：
+
+```powershell
+cd C:\Temp\GatewayTest
+py -3 .\dtu_root_run_sender.py COM19 COM23 COM36 --scenario topology-all --duration 60 --interval 5 --line-delay 0.02 --warmup-sec 5 --warmup-interval 0.2 --warmup-text 12123213 --post-warmup-delay 8 --hold-open 10 --json-out .\topology_pressure_60s.json
+```
+
+结果：
+
+- 三个 COM 口均完成发送：每口 11 轮、462 帧，总计 1386 帧。
+- 串口脚本统计：`write_errors=0`，`crc_errors=0`，每口均覆盖 42 个设备 ID 和 31 个 DTU 节点。
+- 板端本次实际 SLE active connection 为 2，因此 gatewayd 每完整轮收到 84 条 telemetry（42 个设备 ID 各 2 路）。
+- 压力窗口内 gatewayd 出现 13 个 telemetry 发布批次，13 次 `publish success kind=telemetry`。
+- 批次大小：`84,84,84,84,64,20,84,84,84,84,84,64,20`；`64+20` 为 IPC/发布窗口拆批，合计仍覆盖完整 84 条。
+- 日志解析唯一设备 ID：42 个，缺失 ID：`none`，额外 ID：`none`。
+- 错误关键字统计：`CRC error`、`modbus_parse_error`、`invalid frame`、`SLE-FRAME`、`SLE-DATA`、`notify queue dropped` 均为 0。
+- SQLite `telemetry_cache` 为 0，说明 MQTT 已经通过 WiFi 直连上云，没有进入离线缓存。
+
+代表性日志：
+
+```text
+[INFO][MQTT] telemetry batch devices=84, ids=DTU_001,...,DTU_031,METER_001,...,METER_007,ENV_001,ENV_002,RELAY_001,RELAY_002
+[INFO][MQTT] publish success kind=telemetry, topic=v1/gateway/telemetry, bytes=6614
+```
+
+结论：
+
+- 当前脚本模拟的全拓扑真实 SLE 上行链路已通过：42 个拓扑设备均进入 gatewayd telemetry，并成功发布到 `v1/gateway/telemetry`。
+- 本轮发现并修复的 IPC timeout 误断连属于真实低流量和未满批场景的关键问题，修复后后半批 `METER_002~RELAY_002` 能稳定发布。
+- 当前限制：板端本次只建立到 2 个真实 SLE root 的连接；COM 侧虽然三个端口都发送成功，但 gatewayd 侧按实际 SLE 连接收到两路副本。后续如需验证 3 路或 5 个 root 并发，需要先让对应 root 进入 SLE active connection。

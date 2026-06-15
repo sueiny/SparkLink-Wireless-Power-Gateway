@@ -1,6 +1,6 @@
 @echo off
 REM DTU root RUN-mode sender for Windows.
-REM Defaults: COM19 COM23 COM36, 115200 8N1, 5s active warmup.
+REM Defaults: COM19 COM23 COM36, 115200 8N1, full topology pressure mode.
 
 setlocal
 
@@ -28,7 +28,7 @@ goto custom_args
 
 :default_ports
 echo Using default DTU root ports: COM19 COM23 COM36
-py -3 dtu_root_run_sender.py COM19 COM23 COM36 --duration 60 --interval 5 --warmup-sec 5 --warmup-interval 0.2 --warmup-text 12123213 --post-warmup-delay 8 --hold-open 10
+py -3 dtu_root_run_sender.py COM19 COM23 COM36 --scenario topology-all --duration 60 --interval 5 --line-delay 0.02 --warmup-sec 5 --warmup-interval 0.2 --warmup-text 12123213 --post-warmup-delay 8 --hold-open 10
 goto done
 
 :custom_args

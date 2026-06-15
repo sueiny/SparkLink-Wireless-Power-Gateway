@@ -5,6 +5,7 @@
 #include "network/network_utils.h"
 
 #include <chrono>
+#include <sstream>
 #include <thread>
 
 namespace gateway::app {
@@ -51,6 +52,17 @@ int commandResponseRetryDelayMs(int retry_count)
     if (retry_count == 2)
         return 3000;
     return 5000;
+}
+
+std::string telemetryDeviceIds(const std::vector<model::TelemetryData> &telemetry)
+{
+    std::ostringstream oss;
+    for (size_t i = 0; i < telemetry.size(); ++i) {
+        if (i > 0)
+            oss << ',';
+        oss << telemetry[i].device_id;
+    }
+    return oss.str();
 }
 
 } // namespace
@@ -102,6 +114,9 @@ void PublishManager::publishTelemetryBatch(const std::vector<model::TelemetryDat
 {
     if (telemetry.empty())
         return;
+
+    logger_.info("MQTT", "telemetry batch devices=" + std::to_string(telemetry.size()) +
+                         ", ids=" + telemetryDeviceIds(telemetry));
 
     const std::string payload =
         codec::ThingsKitCodec::buildGatewaySubDeviceTelemetryPayload(telemetry);

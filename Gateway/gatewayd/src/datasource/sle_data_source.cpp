@@ -64,7 +64,11 @@ std::vector<model::TelemetryData> SleDataSource::collect()
     }
 
     std::vector<uint8_t> raw;
-    if (!receiver_.receiveRawFrame(raw)) {
+    const auto receive_status = receiver_.receiveRawFrame(raw);
+    if (receive_status == IpcReceiveStatus::Timeout) {
+        return result;
+    }
+    if (receive_status != IpcReceiveStatus::Frame) {
         receiver_.closeClient();
         return result;
     }

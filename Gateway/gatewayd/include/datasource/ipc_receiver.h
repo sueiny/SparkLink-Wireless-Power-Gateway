@@ -8,6 +8,13 @@
 // 协议：每帧以 2 字节 LE 长度前缀 + 原始帧数据 传输。
 namespace gateway::datasource {
 
+enum class IpcReceiveStatus {
+    Frame,
+    Timeout,
+    Disconnected,
+    Error,
+};
+
 class IpcReceiver {
 public:
     IpcReceiver();
@@ -20,15 +27,22 @@ public:
     bool acceptClient(int timeout_ms);
 
     // 读取一帧原始 SLE 数据（2 字节长度前缀 + 帧体）。
-    // 成功返回 true，out 填充帧数据；对端断开或错误返回 false。
-    bool receiveRawFrame(std::vector<uint8_t> &out);
+    // Timeout 仅表示当前无数据，不代表 IPC client 断开。
+    IpcReceiveStatus receiveRawFrame(std::vector<uint8_t> &out);
 
     void closeClient();
     bool isConnected() const { return client_fd_ >= 0; }
 
 private:
-    // 读取精确 n 字节，返回 true 表示读满。
-    bool readExact(uint8_t *buf, size_t n);
+    enum class ReadStatus {
+        Ok,
+        Timeout,
+        Disconnected,
+        Error,
+    };
+
+    // 读取精确 n 字节；Timeout 表示当前帧尚未到达，不关闭 client。
+    ReadStatus readExact(uint8_t *buf, size_t n);
 
     int listen_fd_;
     int client_fd_;
