@@ -222,3 +222,23 @@ py -3 .\dtu_root_run_sender.py COM23 COM36 --scenario topology-all --duration 60
 - 当前可作为两路真实 Root 上云基线的组合是 `COM23+COM36`。
 - gatewayd 的 SLE IPC、Modbus 解析、设备映射、MQTT 发布在两路并发全拓扑压力下通过。
 - 剩余风险在 SLE 连接稳定性：启动和测试窗口仍有少量 `reason=0x7/0x11` 断连，需要后续从 root 固件广播/连接参数、SLE manager 重连策略继续排查。
+
+## 2026-06-15 sle_data_app 默认真实链路与命令边界记录
+
+本轮将 `sle_data_app` 默认启动模式改为真实 SLE 链路：
+
+- 不带参数或 `--mode real`：启动 `sle_manager_init()`，不启动 `mock_data_generator`。
+- `--mode mock`：只启动本地 Mock 数据，用于无真实 Root 时验证 IPC/MQTT。
+- `--mode hybrid`：真实 SLE 与 Mock 同时启动，仅用于排查，不作为验收模式。
+
+当前命令链路状态：
+
+- `gatewayd` 到 `sle_data_app` 的命令 IPC socket 已存在，路径为 `@/var/run/gateway/sle_cmd.sock`。
+- `set_relay`、`set_mode`、`set_collect_cycle`、`trigger_collect`、`reboot` 可进入 `sle_cmd_handler` 并返回 IPC response。
+- `sle_cmd_handler.c` 仍是 `[CMD][MOCK]` 成功响应，尚未通过真实 SLE write 下发到 root/DTU/Modbus 设备。
+- 因此当前命令测试只能证明 ThingsKit -> gatewayd -> IPC -> `sle_data_app` -> MQTT response 闭环，不证明设备真实动作。
+
+新增阅读资料：
+
+- [[20_技术沉淀/sle_data_app使用说明]]
+- [[20_技术沉淀/sle_data_app命令对接阅读理解]]

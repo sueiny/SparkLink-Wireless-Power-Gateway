@@ -46,14 +46,14 @@ Gateway 由两个主要进程组成：
 
 | 模块 | 职责 | 输入输出 | 关键文件 | 运行时关系 | 维护注意点 |
 | --- | --- | --- | --- | --- | --- |
-| 主流程 | 初始化信号、日志重定向、IPC、mock、命令接收器。 | 输入启动参数和默认配置；输出进程生命周期。 | `main.c`。 | 启动 `ipc_sender`、`ipc_cmd_receiver`、`notify_printer`、`mock_data_generator`。 | 启停顺序要保持成对；信号处理不要让 worker 随机退出。 |
-| SLE client | SLE SDK 扫描、连接和 notify 回调。 | 输入 SDK 事件；输出 notify 数据。 | `sle_multi_client.c`、`sle_multi_client.h`。 | 当前主流程可跳过真实 SLE，仅使用 mock 数据。 | 文件较长，建议后续按扫描、连接、回调、状态拆分内部函数。 |
+| 主流程 | 初始化信号、日志重定向、IPC、真实 SLE/Mock 模式和命令接收器。 | 输入启动参数和默认配置；输出进程生命周期。 | `main.c`。 | 默认 `real`，启动 `ipc_sender`、`ipc_cmd_receiver`、`notify_printer` 和 `sle_manager`；`--mode mock` 才启动 `mock_data_generator`。 | 启停顺序要保持成对；信号处理不要让 worker 随机退出；文档和脚本必须保持“默认真实链路、Mock 显式开启”的一致性。 |
+| SLE client | SLE SDK 扫描、连接和 notify 回调。 | 输入 SDK 事件；输出 notify 数据。 | `sle_multi_client.c`、`sle_multi_client.h`。 | 默认 `real` 模式启动真实 SLE manager；`--mode mock` 才跳过真实 SLE。 | 文件较长，建议后续按扫描、连接、回调、状态拆分内部函数；真实压测还需继续观察 `reason=0x7/0x11` 断连。 |
 | server connections | 连接表和 server index 管理。 | 输入连接事件；输出连接状态查询。 | `server_connections.c`、`server_connections.h`。 | 供 SLE client 和 notify 处理使用。 | 保持连接表边界清楚，避免业务字段继续堆进连接管理。 |
-| mock generator | 生成 DTU/设备模拟帧。 | 输入默认模拟参数；输出 notify 队列数据。 | `mock_data_generator.c`。 | 用于板端无真实 SLE 设备时验证 gatewayd 链路。 | Mock 数据结构要和 Modbus/SLE parser 同步，建议保留固定测试样例。 |
+| mock generator | 生成 DTU/设备模拟帧。 | 输入默认模拟参数；输出 notify 队列数据。 | `mock_data_generator.c`。 | 仅在 `--mode mock` 或 `--mode hybrid` 启动，用于板端无真实 SLE 设备时验证 gatewayd 链路。 | Mock 数据结构要和 Modbus/SLE parser 同步，建议保留固定测试样例；不要把 Mock 通过等同于真实 Root 稳定。 |
 | notify printer | notify 队列、批处理和转发。 | 输入 SLE/mock 帧；输出 IPC batch。 | `notify_printer.c`。 | 消费有界队列，满批后调用 `ipc_sender_send_batch()`。 | 需要时间窗口 flush，避免低流量场景未满 64 帧时长期不发送。 |
 | IPC sender | 连接 gatewayd 数据 socket 并发送 batch。 | 输入 frame batch；输出 Unix Socket 字节流。 | `ipc_sender.c`。 | 与 gatewayd `IpcReceiver` 使用抽象 socket。 | socket 语义要和测试工具一致；断线重连日志应可过滤。 |
 | 命令 receiver | 监听命令 socket，读取命令帧并回包。 | 输入 gatewayd 命令帧；输出命令响应帧。 | `ipc_cmd_receiver.c`、`ipc_cmd_protocol.h`。 | gatewayd `IpcCmdSender` 连接该 socket。 | 已有长度校验；协议结构变化必须同步 gatewayd include path。 |
-| 命令 handler | 执行 set_relay/set_mode/采集/重启等命令。 | 输入 IPC command request；输出 result code 和 JSON data。 | `sle_cmd_handler.c`。 | 当前为 mock 成功，后续接真实 SLE 写请求。 | 真实执行前要定义超时、失败码和设备不可达语义。 |
+| 命令 handler | 接收 set_relay/set_mode/采集/重启等 IPC 命令并返回结果。 | 输入 IPC command request；输出 result code 和 JSON data。 | `sle_cmd_handler.c`。 | 当前仍为 mock 成功响应，不会真正通过 SLE 写 root/DTU/Modbus 设备。 | 真实执行前要定义超时、失败码和设备不可达语义；下发测试要区分“IPC 回包成功”和“设备真实动作成功”。 |
 | Modbus 仿真 | 构造或解析模拟 Modbus 数据。 | 输入站号/寄存器；输出协议帧。 | `modbus_sim.c`、`modbus_sim.h`。 | 被 mock generator 使用。 | 寄存器规格要与 `Modbus寄存器仿真规格.md` 同步。 |
 
 ## 其他模块
@@ -75,6 +75,8 @@ Gateway 由两个主要进程组成：
 - `gateway` 和 `dtu_node` 物模型有 `reboot`，但本轮随机测试未重点覆盖。
 
 重复下发现象已观察到：同一目标和参数短时间出现多个 `rpc/request/<id>`。gatewayd 均正常处理并回包，是否需要去重应先确认云端/页面侧触发逻辑。
+
+注意：上述“执行和回包”当前代表命令 IPC 闭环成功。`sle_cmd_handler.c` 仍是 `[CMD][MOCK]` 响应，真实 SLE 写命令尚未落地，因此不能用当前成功回包直接证明继电器或 DTU 已真实动作。
 
 ## 设备 Service 对照表
 

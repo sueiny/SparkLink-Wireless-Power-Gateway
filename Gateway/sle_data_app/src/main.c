@@ -45,8 +45,8 @@ static const char *mode_name(sle_app_mode_t mode)
 static void print_usage(const char *program)
 {
     fprintf(stderr, "usage: %s [--mode mock|real|hybrid]\n", program);
-    fprintf(stderr, "  mock   : use mock data only (default)\n");
-    fprintf(stderr, "  real   : use real SLE manager only\n");
+    fprintf(stderr, "  real   : use real SLE manager only (default)\n");
+    fprintf(stderr, "  mock   : use mock data only\n");
     fprintf(stderr, "  hybrid : use mock data and real SLE manager\n");
 }
 
@@ -75,7 +75,7 @@ static bool parse_args(int argc, char **argv, sle_app_mode_t *mode)
     if (mode == NULL) {
         return false;
     }
-    *mode = SLE_APP_MODE_MOCK;
+    *mode = SLE_APP_MODE_REAL;
     for (int i = 1; i < argc; ++i) {
         const char *arg = argv[i];
         const char *mode_value = NULL;
@@ -142,9 +142,9 @@ int main(int argc, char **argv)
     bool sle_manager_started = false;
     bool mock_generator_started = false;
     bool cmd_receiver_started = false;
-    sle_app_mode_t mode = SLE_APP_MODE_MOCK;
-    bool use_mock = true;
-    bool use_real_sle = false;
+    sle_app_mode_t mode = SLE_APP_MODE_REAL;
+    bool use_mock = false;
+    bool use_real_sle = true;
 
     if (!parse_args(argc, argv, &mode)) {
         return 2;

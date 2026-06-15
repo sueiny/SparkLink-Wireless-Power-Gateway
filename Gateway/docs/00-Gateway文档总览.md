@@ -27,11 +27,13 @@ tags:
 4. [[10_项目复盘/gatewayd项目复盘|gatewayd项目复盘]]
 5. [[20_技术沉淀/gatewayd框架理解|gatewayd框架理解]]
 6. [[20_技术沉淀/Gateway模块说明书|Gateway模块说明书]]
-7. [[20_技术沉淀/Modbus寄存器仿真规格|Modbus寄存器仿真规格]]
-8. [[30_CodeReview/Gateway全量模块性能CodeReview|Gateway全量模块性能CodeReview]]
-9. [[30_CodeReview/Gateway全量模块可维护性CodeReview|Gateway全量模块可维护性CodeReview]]
-10. [[30_CodeReview/Gateway可维护性整改路线|Gateway可维护性整改路线]]
-11. [[10_项目复盘/Gateway上板测试记录|Gateway上板测试记录]]
+7. [[20_技术沉淀/sle_data_app使用说明|sle_data_app使用说明]]
+8. [[20_技术沉淀/sle_data_app命令对接阅读理解|sle_data_app命令对接阅读理解]]
+9. [[20_技术沉淀/Modbus寄存器仿真规格|Modbus寄存器仿真规格]]
+10. [[30_CodeReview/Gateway全量模块性能CodeReview|Gateway全量模块性能CodeReview]]
+11. [[30_CodeReview/Gateway全量模块可维护性CodeReview|Gateway全量模块可维护性CodeReview]]
+12. [[30_CodeReview/Gateway可维护性整改路线|Gateway可维护性整改路线]]
+13. [[10_项目复盘/Gateway上板测试记录|Gateway上板测试记录]]
 
 ## 项目一句话
 
