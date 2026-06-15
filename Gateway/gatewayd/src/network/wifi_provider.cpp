@@ -72,6 +72,7 @@ bool WifiProvider::bringUp()
     if (!writeWpaConfig(config_.ifname, config_.ssid, config_.password, config_.country))
         return false;
 
+    runProcess({"ip", "addr", "flush", "dev", config_.ifname}, 2000);
     runProcess({"killall", "wpa_supplicant"}, 2000);
     runProcess({"killall", "udhcpc"}, 2000);
     runProcess({"rm", "-f", "/var/run/wpa_supplicant/" + config_.ifname}, 2000);
@@ -88,6 +89,8 @@ bool WifiProvider::bringUp()
 
     if (!waitForWifiConnected(config_.ifname, 15000))
         return false;
+    runProcess({"ip", "route", "del", "default", "dev", "eth0"}, 2000);
+    runProcess({"ip", "route", "del", "default", "dev", "eth2"}, 2000);
     return requestDhcp(config_.ifname, 15000);
 }
 

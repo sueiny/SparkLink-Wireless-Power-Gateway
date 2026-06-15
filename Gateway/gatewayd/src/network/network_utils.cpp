@@ -49,6 +49,11 @@ bool interfaceHasIpv4(const std::string &ifname)  //
         if (!it->ifa_addr || ifname != it->ifa_name)
             continue;
         if (it->ifa_addr->sa_family == AF_INET) {
+            const auto *addr = reinterpret_cast<const sockaddr_in *>(it->ifa_addr);
+            const uint32_t ip = ntohl(addr->sin_addr.s_addr);
+            // 169.254/16 is link-local fallback, not a usable cloud route.
+            if ((ip & 0xFFFF0000U) == 0xA9FE0000U)
+                continue;
             found = true;
             break;
         }
@@ -267,18 +272,19 @@ bool requestDhcp(const std::string &ifname, int timeout_ms)
     if (interfaceHasIpv4(ifname))
         return true;
 
-    const auto dhcpcd_pid = runProcess({"pidof", "dhcpcd"}, 1000);
-    if (!dhcpcd_pid.timeout && dhcpcd_pid.exit_code == 0) {
-        const auto metric = runProcess({"dhcpcd", "-m", "100", ifname}, timeout_ms);
-        if (metric.timeout || metric.exit_code != 0)
+    const auto result = runProcess({"udhcpc", "-i", ifname, "-n", "-q"}, timeout_ms);
+    if (result.timeout || result.exit_code != 0) {
+        const auto dhcpcd_pid = runProcess({"pidof", "dhcpcd"}, 1000);
+        if (!dhcpcd_pid.timeout && dhcpcd_pid.exit_code == 0) {
+            const auto metric = runProcess({"dhcpcd", "-m", "100", ifname}, timeout_ms);
+            if (metric.timeout || metric.exit_code != 0)
+                return false;
+            const auto renew = runProcess({"dhcpcd", "-n", ifname}, timeout_ms);
+            if (renew.timeout || renew.exit_code != 0)
+                return false;
+        } else {
             return false;
-        const auto renew = runProcess({"dhcpcd", "-n", ifname}, timeout_ms);
-        if (renew.timeout || renew.exit_code != 0)
-            return false;
-    } else {
-        const auto result = runProcess({"udhcpc", "-i", ifname, "-n", "-q"}, timeout_ms);
-        if (result.timeout || result.exit_code != 0)
-            return false;
+        }
     }
 
     const int step_ms = 500;

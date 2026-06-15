@@ -2,15 +2,19 @@
 #include "ipc_sender.h"
 
 #include <ctype.h>
+#include <errno.h>
 #include <pthread.h>
 #include <stdatomic.h>
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 
 #define NOTIFY_ASCII_LIMIT  96
 #define SLE_APP_LOG_PATH    "/tmp/sle_app.log"
 #define NOTIFY_QUEUE_CAPACITY 1024
 #define NOTIFY_PAYLOAD_MAX  1500
+#define NOTIFY_BATCH_MAX    64
+#define NOTIFY_BATCH_FLUSH_MS 1000
 
 /*
  * notify_printer 是 SLE/mock 回调和 gatewayd 数据 IPC 之间的缓冲层。
@@ -48,6 +52,24 @@ typedef struct {
 
 static notify_printer_ctx_t g_ctx;
 
+static int64_t now_ms(void)
+{
+    struct timespec ts;
+    clock_gettime(CLOCK_REALTIME, &ts);
+    return (int64_t)ts.tv_sec * 1000LL + (int64_t)ts.tv_nsec / 1000000LL;
+}
+
+static void make_abs_timeout(struct timespec *ts, int timeout_ms)
+{
+    clock_gettime(CLOCK_REALTIME, ts);
+    ts->tv_sec += timeout_ms / 1000;
+    ts->tv_nsec += (long)(timeout_ms % 1000) * 1000000L;
+    if (ts->tv_nsec >= 1000000000L) {
+        ts->tv_sec += 1;
+        ts->tv_nsec -= 1000000000L;
+    }
+}
+
 /* ==========================================================================
  * 队列操作（内部）
  * ========================================================================== */
@@ -84,11 +106,21 @@ static bool queue_push(int server_index, const sle_server_connection_t *conn,
     return true;
 }
 
-static bool queue_pop(notify_packet_t *out, uint32_t *out_dropped)
+static bool queue_pop_wait(notify_packet_t *out, uint32_t *out_dropped, int timeout_ms)
 {
     pthread_mutex_lock(&g_ctx.mutex);
     while (atomic_load(&g_ctx.running) && g_ctx.count == 0) {
-        pthread_cond_wait(&g_ctx.cond, &g_ctx.mutex);
+        if (timeout_ms < 0) {
+            pthread_cond_wait(&g_ctx.cond, &g_ctx.mutex);
+        } else {
+            struct timespec timeout_at;
+            make_abs_timeout(&timeout_at, timeout_ms);
+            int rc = pthread_cond_timedwait(&g_ctx.cond, &g_ctx.mutex, &timeout_at);
+            if (rc == ETIMEDOUT && g_ctx.count == 0) {
+                pthread_mutex_unlock(&g_ctx.mutex);
+                return false;
+            }
+        }
     }
 
     if (!atomic_load(&g_ctx.running) && g_ctx.count == 0) {
@@ -103,6 +135,11 @@ static bool queue_pop(notify_packet_t *out, uint32_t *out_dropped)
     g_ctx.dropped = 0;
     pthread_mutex_unlock(&g_ctx.mutex);
     return true;
+}
+
+static bool queue_pop(notify_packet_t *out, uint32_t *out_dropped)
+{
+    return queue_pop_wait(out, out_dropped, -1);
 }
 
 /* ==========================================================================
@@ -168,25 +205,48 @@ static void *log_worker(void *arg)
 
     /*
      * 批量发送缓冲区。
-     * 当前策略是满 64 帧 flush，符合 mock 高吞吐测试；低流量真实设备场景
-     * 后续应增加时间窗口 flush，避免未满批时长时间不发送。
+     * 满批优先保证高吞吐；首帧入批后最多等待 1 秒，避免真实低流量
+     * DTU 场景因为凑不满批次而长期不上送 gatewayd。
      */
-    ipc_frame_t batch_frames[64];
-    notify_packet_t batch_packets[64];
+    ipc_frame_t batch_frames[NOTIFY_BATCH_MAX];
+    notify_packet_t batch_packets[NOTIFY_BATCH_MAX];
     int batch_count = 0;
+    int64_t batch_start_ms = 0;
 
     for (;;) {
         notify_packet_t pkt;
         uint32_t dropped = 0;
+        int wait_ms = -1;
 
-        /* 非阻塞收集：先尝试从队列取数据 */
-        if (batch_count < 64) {
-            if (!queue_pop(&pkt, &dropped)) {
-                break;
+        if (batch_count > 0) {
+            int64_t elapsed_ms = now_ms() - batch_start_ms;
+            if (elapsed_ms >= NOTIFY_BATCH_FLUSH_MS) {
+                goto flush_batch;
+            }
+            wait_ms = (int)(NOTIFY_BATCH_FLUSH_MS - elapsed_ms);
+        }
+
+        if (batch_count < NOTIFY_BATCH_MAX) {
+            if (!queue_pop_wait(&pkt, &dropped, wait_ms)) {
+                if (batch_count > 0) {
+                    goto flush_batch;
+                }
+                if (!atomic_load(&g_ctx.running)) {
+                    break;
+                }
+                continue;
             }
         } else {
-            /* 批次已满，直接发送 */
-            goto flush_batch;
+flush_batch:
+            if (batch_count > 0) {
+                ipc_sender_send_batch(batch_frames, batch_count);
+                batch_count = 0;
+                batch_start_ms = 0;
+            }
+            if (!atomic_load(&g_ctx.running)) {
+                break;
+            }
+            continue;
         }
 
         if (dropped > 0) {
@@ -201,14 +261,15 @@ static void *log_worker(void *arg)
         batch_frames[batch_count].data = batch_packets[batch_count].data;
         batch_frames[batch_count].len = pkt.len;
         batch_count++;
+        if (batch_count == 1) {
+            batch_start_ms = now_ms();
+        }
 
-        /* 检查是否应该发送批次 */
-        if (batch_count >= 64) {
-flush_batch:
+        if (batch_count >= NOTIFY_BATCH_MAX) {
             if (batch_count > 0) {
-                /* 使用批量发送 */
                 ipc_sender_send_batch(batch_frames, batch_count);
                 batch_count = 0;
+                batch_start_ms = 0;
             }
         }
     }

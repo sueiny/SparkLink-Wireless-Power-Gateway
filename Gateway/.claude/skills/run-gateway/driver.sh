@@ -1,6 +1,6 @@
 #!/bin/bash
 # Gateway 构建、部署、测试驱动脚本
-# 用法: driver.sh [build-sle|build-gw|push|test|full]
+# 用法: driver.sh [build-sle|build-gw|push|test|test-real-listen|watch-real|full]
 
 set -e
 
@@ -126,7 +126,7 @@ test() {
     echo "=== 板端测试 ==="
 
     # 停止旧进程
-    adb shell "killall gatewayd 2>/dev/null; killall sle_data_app 2>/dev/null; sleep 1"
+    adb shell "killall -9 gatewayd 2>/dev/null; killall -9 sle_data_app 2>/dev/null; sleep 1"
 
     # 清理 socket
     adb shell "rm -f /var/run/gateway/sle_data.sock; mkdir -p /var/run/gateway"
@@ -155,7 +155,7 @@ test() {
     # 等待 MQTT 连接
     echo "等待 MQTT 连接..."
     for i in $(seq 1 30); do
-        if adb shell "grep -q 'cloud_connected.*1' $ADB_ROOT/data/log/gateway.log 2>/dev/null"; then
+        if adb shell "grep -q '\"cloud_connected\":1' $ADB_ROOT/data/log/gateway.log 2>/dev/null"; then
             echo "✅ MQTT 已连接"
             break
         fi
@@ -189,6 +189,73 @@ except:
 " 2>/dev/null
 }
 
+# ── 真实 SLE 监听准备 ──
+test_real_listen() {
+    echo "=== 真实 SLE 监听准备 ==="
+
+    adb shell "killall -9 gatewayd 2>/dev/null; killall -9 sle_data_app 2>/dev/null; sleep 1"
+    adb shell "rm -f /var/run/gateway/sle_data.sock; mkdir -p /var/run/gateway"
+    adb shell "rm -f $ADB_ROOT/data/log/gateway.log /tmp/gatewayd.log /tmp/sle_data_app.out /tmp/sle_app.log /tmp/sle_stack_raw.log"
+
+    echo "启动 gatewayd(SLE 模式)..."
+    adb shell "nohup $ADB_ROOT/bin/gatewayd --config $ADB_ROOT/config/gateway_config.json > /tmp/gatewayd.log 2>&1 &"
+
+    echo "等待 SLE IPC socket..."
+    socket_ready=0
+    for i in $(seq 1 30); do
+        if adb shell "cat /proc/net/unix | grep -q '@var/run/gateway/sle_data.sock'"; then
+            echo "✅ SLE IPC socket 已监听"
+            socket_ready=1
+            break
+        fi
+        sleep 1
+    done
+    if [ "$socket_ready" -ne 1 ]; then
+        echo "❌ SLE IPC socket 未监听"
+        adb shell "tail -80 /tmp/gatewayd.log 2>/dev/null; tail -80 $ADB_ROOT/data/log/gateway.log 2>/dev/null"
+        return 1
+    fi
+
+    echo "等待 MQTT 连接..."
+    mqtt_ready=0
+    for i in $(seq 1 30); do
+        if adb shell "grep -q '\"cloud_connected\":1' $ADB_ROOT/data/log/gateway.log 2>/dev/null"; then
+            echo "✅ MQTT 已连接"
+            mqtt_ready=1
+            break
+        fi
+        sleep 2
+    done
+    if [ "$mqtt_ready" -ne 1 ]; then
+        echo "⚠️ MQTT 未在等待窗口内确认连接，仍启动真实 SLE 监听"
+    fi
+
+    echo "启动 sle_data_app(real)..."
+    adb shell "nohup $ADB_ROOT/bin/sle_data_app --mode real > /tmp/sle_data_app.out 2>&1 &"
+    sleep 2
+
+    echo ""
+    echo "=== 进程状态 ==="
+    adb shell "ps | grep -E 'gatewayd|sle_data_app' | grep -v grep"
+
+    echo ""
+    echo "=== sle_data_app 启动日志 ==="
+    adb shell "tail -40 /tmp/sle_data_app.out 2>/dev/null"
+
+    echo ""
+    echo "真实监听已启动。PC/WSL 侧发送示例（默认发送完整 ST 帧，包含心跳和 METER_001 数据）："
+    echo "python3 $GATEWAY_DIR/sle_data_app/test/dtu_root_run_sender.py /dev/ttyUSB0 --duration 60 --interval 5"
+    echo ""
+    echo "持续监听可运行："
+    echo "bash $GATEWAY_DIR/.claude/skills/run-gateway/driver.sh watch-real"
+}
+
+# ── 真实 SLE 日志监听 ──
+watch_real() {
+    echo "=== 监听真实 SLE/Gateway 日志，Ctrl+C 结束 ==="
+    adb shell "tail -f /tmp/sle_data_app.out /tmp/sle_app.log $ADB_ROOT/data/log/gateway.log"
+}
+
 # ── 全流程 ──
 full() {
     build_sle
@@ -206,9 +273,11 @@ case "${1:-help}" in
     gen-test)   gen_test ;;
     push)       push ;;
     test)       test ;;
+    test-real-listen) test_real_listen ;;
+    watch-real) watch_real ;;
     full)       full ;;
     *)
-        echo "用法: $0 [build-sle|build-gw|build-ipc|gen-test|push|test|full]"
+        echo "用法: $0 [build-sle|build-gw|build-ipc|gen-test|push|test|test-real-listen|watch-real|full]"
         echo ""
         echo "  build-sle   编译 sle_data_app"
         echo "  build-gw    编译 gatewayd"
@@ -216,6 +285,8 @@ case "${1:-help}" in
         echo "  gen-test    生成测试数据"
         echo "  push        推送到板端"
         echo "  test        板端测试"
+        echo "  test-real-listen  启动 gatewayd + sle_data_app --mode real，等待串口侧真实数据"
+        echo "  watch-real  持续监听真实 SLE/Gateway 日志"
         echo "  full        全流程"
         ;;
 esac

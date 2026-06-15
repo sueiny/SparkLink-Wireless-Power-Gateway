@@ -18,8 +18,8 @@
     "mode": "wifi",
     "cloud_test_host": "thingskit.aiotcomm.com.cn",
     "cloud_test_port": 11883,
-    "priority": ["ethernet", "wifi", "cellular"],
-    "ethernet": {"enable": true, "ifname": "eth0"},
+    "priority": ["wifi", "ethernet", "cellular"],
+    "ethernet": {"enable": false, "ifname": "eth0"},
     "wifi": {"enable": true, "ifname": "wlan0", "ssid": "Bdi1003", "password": "sztubdi1003", "country": "CN"},
     "cellular": {"enable": true, "ifname": "ppp0", "module": "L610", "serial_device": "/dev/ttyS1", "baudrate": 115200, "apn": "cmnet"}
   },
