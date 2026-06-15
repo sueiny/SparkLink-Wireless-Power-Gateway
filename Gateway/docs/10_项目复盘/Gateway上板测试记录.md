@@ -184,3 +184,41 @@ py -3 .\dtu_root_run_sender.py COM19 COM23 COM36 --scenario topology-all --durat
 - 当前脚本模拟的全拓扑真实 SLE 上行链路已通过：42 个拓扑设备均进入 gatewayd telemetry，并成功发布到 `v1/gateway/telemetry`。
 - 本轮发现并修复的 IPC timeout 误断连属于真实低流量和未满批场景的关键问题，修复后后半批 `METER_002~RELAY_002` 能稳定发布。
 - 当前限制：板端本次只建立到 2 个真实 SLE root 的连接；COM 侧虽然三个端口都发送成功，但 gatewayd 侧按实际 SLE 连接收到两路副本。后续如需验证 3 路或 5 个 root 并发，需要先让对应 root 进入 SLE active connection。
+
+## 2026-06-15 两路真实 Root 复测
+
+目标：在当前板端实际只稳定接入两路 SLE root 的条件下，收敛到可用的两路串口组合，验证两路并发全拓扑上云。
+
+执行前观察：
+
+- `test-real-listen` 启动后，SLE active MAC 为 `12:a2:a3:a4:a5:a2` 和 `12:a2:a3:a4:a5:a3`。
+- `COM19+COM23` 两路压测可上云，但后续单口复测显示 `COM19` 只确认串口写入，未形成新的 SLE/MQTT 上云批次，不作为当前两路基线。
+- `COM23` 和 `COM36` 单口均能触发 42 设备完整上云，因此选为当前两路组合。
+
+正式两路压测命令：
+
+```powershell
+cd C:\Temp\GatewayTest
+py -3 .\dtu_root_run_sender.py COM23 COM36 --scenario topology-all --duration 60 --interval 5 --line-delay 0.02 --warmup-sec 5 --warmup-interval 0.2 --warmup-text 12123213 --post-warmup-delay 8 --hold-open 10 --json-out .\topology_pressure_2way_com23_com36_60s.json
+```
+
+串口侧结果：
+
+- `COM23`：11 轮、462 帧、`write_errors=0`、`crc_errors=0`，覆盖 42 个设备 ID 和 31 个 DTU 节点。
+- `COM36`：11 轮、462 帧、`write_errors=0`、`crc_errors=0`，覆盖 42 个设备 ID 和 31 个 DTU 节点。
+- 合计发送 924 帧，其中 heartbeat 682 帧，外接设备 DATA 242 帧。
+
+板端结果：
+
+- SLE RX 最终计数接近均衡：`12:a2:a3:a4:a5:a2=686`，`12:a2:a3:a4:a5:a3=690`。
+- 本轮 `sle_data_app` 启动和压测窗口内出现 4 次 `DISCONNECTED`，原因包含 `0x7` 和 `0x11`，但均能恢复连接。
+- gatewayd 压力窗口内出现 13 个 telemetry 发布批次，13 次 `publish success kind=telemetry`。
+- 批次大小包括 `84`、`64`、`20`，其中 `64+20` 是发布窗口拆批，合计仍为两路完整拓扑。
+- SQLite `telemetry_cache=0`，说明 MQTT 经 WiFi 直连上云成功。
+- 错误关键字检查未发现 `CRC error`、`modbus_parse_error`、`invalid frame`、`SLE-FRAME`、`SLE-DATA`、`notify queue dropped`、`publish failed`。
+
+结论：
+
+- 当前可作为两路真实 Root 上云基线的组合是 `COM23+COM36`。
+- gatewayd 的 SLE IPC、Modbus 解析、设备映射、MQTT 发布在两路并发全拓扑压力下通过。
+- 剩余风险在 SLE 连接稳定性：启动和测试窗口仍有少量 `reason=0x7/0x11` 断连，需要后续从 root 固件广播/连接参数、SLE manager 重连策略继续排查。
