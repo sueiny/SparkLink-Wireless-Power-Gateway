@@ -243,8 +243,9 @@ test_real_listen() {
     adb shell "tail -40 /tmp/sle_data_app.out 2>/dev/null"
 
     echo ""
-    echo "真实监听已启动。PC/WSL 侧发送示例（默认发送完整 ST 帧，包含心跳和 METER_001 数据）："
-    echo "python3 $GATEWAY_DIR/sle_data_app/test/dtu_root_run_sender.py /dev/ttyUSB0 --duration 60 --interval 5"
+    echo "真实监听已启动。Windows 串口侧发送示例（默认发送完整 ST 帧，包含心跳和 METER_001 数据）："
+    echo "cd C:\\Temp\\GatewayTest && py -3 .\\dtu_root_run_sender.py COM19 COM23 COM36 --duration 60 --interval 5 --warmup-sec 5 --warmup-interval 0.2 --warmup-text 12123213 --post-warmup-delay 8 --hold-open 10"
+    echo "或在仓库 test 目录双击/运行 run_dtu_root_real.bat。"
     echo ""
     echo "持续监听可运行："
     echo "bash $GATEWAY_DIR/.claude/skills/run-gateway/driver.sh watch-real"

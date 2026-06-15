@@ -15,6 +15,8 @@
 #define NOTIFY_PAYLOAD_MAX  1500
 #define NOTIFY_BATCH_MAX    64
 #define NOTIFY_BATCH_FLUSH_MS 1000
+#define NOTIFY_REASSEMBLY_SLOTS 8
+#define NOTIFY_HEX_LINE_MAX 1024
 
 /*
  * notify_printer 是 SLE/mock 回调和 gatewayd 数据 IPC 之间的缓冲层。
@@ -34,6 +36,14 @@ typedef struct {
     uint32_t rx_count;
     uint8_t data[NOTIFY_PAYLOAD_MAX];
 } notify_packet_t;
+
+typedef struct {
+    bool active;
+    int server_index;
+    uint16_t conn_id;
+    uint8_t hex[NOTIFY_HEX_LINE_MAX];
+    uint16_t hex_len;
+} ascii_hex_reassembly_t;
 
 typedef struct {
     pthread_mutex_t mutex;
@@ -195,6 +205,277 @@ static void print_packet(FILE *stream, const notify_packet_t *pkt)
         pkt->server_index, pkt->conn_id, addr, pkt->len, pkt->rx_count, hex_buf, ascii_buf);
 }
 
+static int hex_value(uint8_t ch)
+{
+    if (ch >= '0' && ch <= '9') {
+        return ch - '0';
+    }
+    if (ch >= 'a' && ch <= 'f') {
+        return ch - 'a' + 10;
+    }
+    if (ch >= 'A' && ch <= 'F') {
+        return ch - 'A' + 10;
+    }
+    return -1;
+}
+
+static bool is_space_byte(uint8_t ch)
+{
+    return ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n';
+}
+
+static bool is_printable_ascii_packet(const notify_packet_t *pkt)
+{
+    if (pkt == NULL || pkt->len == 0) {
+        return false;
+    }
+    for (uint16_t i = 0; i < pkt->len; ++i) {
+        uint8_t ch = pkt->data[i];
+        if (!(isprint(ch) || is_space_byte(ch))) {
+            return false;
+        }
+    }
+    return true;
+}
+
+static bool normalize_ascii_hex_fragment(const uint8_t *data, uint16_t len,
+    bool allow_dst_prefix, uint8_t *hex_out, uint16_t *hex_len, bool *starts_with_st)
+{
+    if (data == NULL || hex_out == NULL || hex_len == NULL || starts_with_st == NULL) {
+        return false;
+    }
+
+    *hex_len = 0;
+    *starts_with_st = false;
+    size_t start = 0;
+    size_t end = len;
+    while (start < end && is_space_byte(data[start])) {
+        start++;
+    }
+    while (end > start && is_space_byte(data[end - 1])) {
+        end--;
+    }
+    if (end <= start) {
+        return false;
+    }
+
+    if (allow_dst_prefix) {
+        size_t p = start;
+        while (p < end && data[p] >= '0' && data[p] <= '9') {
+            p++;
+        }
+        if (p > start && p < end && is_space_byte(data[p])) {
+            while (p < end && is_space_byte(data[p])) {
+                p++;
+            }
+            if (p < end) {
+                start = p;
+            }
+        }
+    }
+
+    for (size_t i = start; i < end; ++i) {
+        if (is_space_byte(data[i])) {
+            continue;
+        }
+        if (hex_value(data[i]) < 0) {
+            return false;
+        }
+        if (*hex_len >= NOTIFY_HEX_LINE_MAX) {
+            return false;
+        }
+        hex_out[(*hex_len)++] = data[i];
+    }
+
+    if (*hex_len == 0) {
+        return false;
+    }
+    if (*hex_len >= 4 &&
+        hex_value(hex_out[0]) == 5 && hex_value(hex_out[1]) == 3 &&
+        hex_value(hex_out[2]) == 5 && hex_value(hex_out[3]) == 4) {
+        *starts_with_st = true;
+    }
+    return true;
+}
+
+static bool decode_hex_digits(const uint8_t *hex, uint16_t hex_len,
+    uint8_t *out, uint16_t *out_len)
+{
+    if (hex == NULL || out == NULL || out_len == NULL || (hex_len % 2) != 0) {
+        return false;
+    }
+
+    uint16_t decoded_len = 0;
+    int high = -1;
+    for (uint16_t i = 0; i < hex_len; ++i) {
+        int v = hex_value(hex[i]);
+        if (v < 0) {
+            return false;
+        }
+        if (high < 0) {
+            high = v;
+            continue;
+        }
+        if (decoded_len >= NOTIFY_PAYLOAD_MAX) {
+            return false;
+        }
+        out[decoded_len++] = (uint8_t)((high << 4) | v);
+        high = -1;
+    }
+    *out_len = decoded_len;
+    return true;
+}
+
+static bool decoded_st_frame_complete(const uint8_t *decoded, uint16_t decoded_len,
+    uint16_t *frame_len)
+{
+    if (decoded == NULL || frame_len == NULL || decoded_len < 13) {
+        return false;
+    }
+    if (decoded[0] != 'S' || decoded[1] != 'T') {
+        return false;
+    }
+    uint16_t payload_len = (uint16_t)(decoded[11] | (decoded[12] << 8));
+    uint16_t total_len = (uint16_t)(13 + payload_len);
+    if (payload_len > 243 || total_len > NOTIFY_PAYLOAD_MAX) {
+        return false;
+    }
+    if (decoded_len < total_len) {
+        *frame_len = total_len;
+        return false;
+    }
+    *frame_len = total_len;
+    return true;
+}
+
+static bool decode_ascii_hex_st_frame(const uint8_t *hex, uint16_t hex_len,
+    uint8_t *out, uint16_t *out_len)
+{
+    uint16_t decoded_len = 0;
+    if (!decode_hex_digits(hex, hex_len, out, &decoded_len)) {
+        return false;
+    }
+
+    uint16_t frame_len = 0;
+    if (!decoded_st_frame_complete(out, decoded_len, &frame_len)) {
+        return false;
+    }
+
+    *out_len = frame_len;
+    return true;
+}
+
+static ascii_hex_reassembly_t *get_reassembly_slot(ascii_hex_reassembly_t *slots, const notify_packet_t *pkt)
+{
+    if (slots == NULL || pkt == NULL) {
+        return NULL;
+    }
+    int idx = pkt->server_index;
+    if (idx < 0 || idx >= NOTIFY_REASSEMBLY_SLOTS) {
+        idx = 0;
+    }
+    ascii_hex_reassembly_t *slot = &slots[idx];
+    if (slot->active &&
+        (slot->server_index != pkt->server_index || slot->conn_id != pkt->conn_id)) {
+        slot->active = false;
+        slot->hex_len = 0;
+    }
+    slot->server_index = pkt->server_index;
+    slot->conn_id = pkt->conn_id;
+    return slot;
+}
+
+typedef enum {
+    IPC_PREP_SKIP = 0,
+    IPC_PREP_READY,
+    IPC_PREP_DECODED
+} ipc_prep_result_t;
+
+static ipc_prep_result_t prepare_ipc_packet(const notify_packet_t *raw, notify_packet_t *ipc_pkt,
+    ascii_hex_reassembly_t *slots)
+{
+    if (raw == NULL || ipc_pkt == NULL) {
+        return IPC_PREP_SKIP;
+    }
+    *ipc_pkt = *raw;
+
+    if (raw->len >= 2 && raw->data[0] == 'S' && raw->data[1] == 'T') {
+        return IPC_PREP_READY;
+    }
+
+    ascii_hex_reassembly_t *slot = get_reassembly_slot(slots, raw);
+    uint8_t fragment[NOTIFY_HEX_LINE_MAX];
+    uint16_t fragment_len = 0;
+    bool starts_with_st = false;
+    bool is_hex = normalize_ascii_hex_fragment(raw->data, raw->len, !slot->active,
+        fragment, &fragment_len, &starts_with_st);
+
+    if (is_hex && (slot->active || starts_with_st)) {
+        if (starts_with_st) {
+            slot->active = true;
+            slot->hex_len = 0;
+        }
+        if (slot->hex_len + fragment_len > NOTIFY_HEX_LINE_MAX) {
+            slot->active = false;
+            slot->hex_len = 0;
+            return IPC_PREP_SKIP;
+        }
+        memcpy(slot->hex + slot->hex_len, fragment, fragment_len);
+        slot->hex_len = (uint16_t)(slot->hex_len + fragment_len);
+
+        uint8_t decoded[NOTIFY_PAYLOAD_MAX];
+        uint16_t decoded_len = 0;
+        if (!decode_ascii_hex_st_frame(slot->hex, slot->hex_len, decoded, &decoded_len)) {
+            return IPC_PREP_SKIP;
+        }
+
+        memcpy(ipc_pkt->data, decoded, decoded_len);
+        ipc_pkt->len = decoded_len;
+        slot->active = false;
+        slot->hex_len = 0;
+        return IPC_PREP_DECODED;
+    }
+
+    if (is_printable_ascii_packet(raw)) {
+        return IPC_PREP_SKIP;
+    }
+
+    return IPC_PREP_READY;
+}
+
+static bool prepare_ipc_packet_legacy(const notify_packet_t *raw, notify_packet_t *ipc_pkt)
+{
+    if (raw == NULL || ipc_pkt == NULL) {
+        return false;
+    }
+    *ipc_pkt = *raw;
+
+    uint8_t decoded[NOTIFY_PAYLOAD_MAX];
+    uint16_t decoded_len = 0;
+    uint8_t fragment[NOTIFY_HEX_LINE_MAX];
+    uint16_t fragment_len = 0;
+    bool starts_with_st = false;
+    if (!normalize_ascii_hex_fragment(raw->data, raw->len, true,
+        fragment, &fragment_len, &starts_with_st) || !starts_with_st ||
+        !decode_ascii_hex_st_frame(fragment, fragment_len, decoded, &decoded_len)) {
+        return false;
+    }
+
+    memcpy(ipc_pkt->data, decoded, decoded_len);
+    ipc_pkt->len = decoded_len;
+    return true;
+}
+
+static void print_decode_notice(FILE *stream, const notify_packet_t *raw, const notify_packet_t *decoded)
+{
+    if (stream == NULL || raw == NULL || decoded == NULL) {
+        return;
+    }
+    fprintf(stream, "[SLE][DECODED] server_index=%d conn_id=%u rx_count=%u ascii_hex_len=%u st_len=%u magic=%02x %02x\n",
+        raw->server_index, raw->conn_id, raw->rx_count, raw->len, decoded->len,
+        decoded->data[0], decoded->data[1]);
+}
+
 /* ==========================================================================
  * 消费线程
  * ========================================================================== */
@@ -210,8 +491,11 @@ static void *log_worker(void *arg)
      */
     ipc_frame_t batch_frames[NOTIFY_BATCH_MAX];
     notify_packet_t batch_packets[NOTIFY_BATCH_MAX];
+    ascii_hex_reassembly_t reassembly[NOTIFY_REASSEMBLY_SLOTS];
     int batch_count = 0;
     int64_t batch_start_ms = 0;
+
+    memset(reassembly, 0, sizeof(reassembly));
 
     for (;;) {
         notify_packet_t pkt;
@@ -256,10 +540,20 @@ flush_batch:
         print_packet(stderr, &pkt);
         print_packet(g_ctx.log_fp, &pkt);
 
+        notify_packet_t ipc_pkt;
+        ipc_prep_result_t prep = prepare_ipc_packet(&pkt, &ipc_pkt, reassembly);
+        if (prep == IPC_PREP_SKIP) {
+            continue;
+        }
+        if (prep == IPC_PREP_DECODED) {
+            print_decode_notice(stderr, &pkt, &ipc_pkt);
+            print_decode_notice(g_ctx.log_fp, &pkt, &ipc_pkt);
+        }
+
         /* 添加到批量缓冲区 */
-        batch_packets[batch_count] = pkt;
+        batch_packets[batch_count] = ipc_pkt;
         batch_frames[batch_count].data = batch_packets[batch_count].data;
-        batch_frames[batch_count].len = pkt.len;
+        batch_frames[batch_count].len = ipc_pkt.len;
         batch_count++;
         if (batch_count == 1) {
             batch_start_ms = now_ms();
@@ -299,7 +593,16 @@ flush_batch:
         print_packet(stderr, &pkt);
         print_packet(g_ctx.log_fp, &pkt);
 
-        ipc_sender_send_raw(pkt.data, pkt.len);
+        notify_packet_t ipc_pkt;
+        bool decoded = prepare_ipc_packet_legacy(&pkt, &ipc_pkt);
+        if (decoded) {
+            print_decode_notice(stderr, &pkt, &ipc_pkt);
+            print_decode_notice(g_ctx.log_fp, &pkt, &ipc_pkt);
+        } else {
+            ipc_pkt = pkt;
+        }
+
+        ipc_sender_send_raw(ipc_pkt.data, ipc_pkt.len);
     }
     return NULL;
 }

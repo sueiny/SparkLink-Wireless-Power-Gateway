@@ -25,7 +25,7 @@
 
 2. **安装pyserial**
    ```cmd
-   pip install pyserial
+   py -3 -m pip install pyserial
    ```
 
 3. **安装ADB驱动**（用于从网关获取日志）
@@ -53,10 +53,10 @@ sleep 5
 **方法2: 命令行运行**
 ```cmd
 # 测试单个串口
-python send_test.py COM22
+py -3 send_test.py COM22
 
 # 测试多个串口
-python send_test.py COM22 COM26 COM28
+py -3 send_test.py COM22 COM26 COM28
 
 # 或使用批处理
 run_test.bat COM22 COM26 COM28
@@ -79,8 +79,27 @@ analyze.bat sle_app.log
 adb pull /tmp/sle_app.log .
 
 # 分析日志
-python analyze_log.py sle_app.log
+py -3 analyze_log.py sle_app.log
 ```
+
+### 当前 DTU Root 真实上云测试
+
+当前现场 Windows COM 口为 `COM19`、`COM23`、`COM36`。真实 root RUN 模式使用 `dtu_root_run_sender.py`，固定 `115200 8N1`，默认发送 ASCII-hex 形式的完整 `ST` 帧，包含心跳和 `METER_001` 数据帧。`sle_data_app` 收到后会把 ASCII-hex 解码回二进制 ST 帧再送给 gatewayd。
+
+打开串口会让部分 DTU root 重置，因此脚本默认会先进行 5 秒主动 warmup：这 5 秒内持续发送 `12123213\r\n`，不是直接 sleep。warmup 后默认再等待 8 秒，让 root 重新进入 SLE READY，再发送正式 ST 帧。发送后默认保持串口打开 10 秒，避免 close 立刻再次复位 root。
+
+```cmd
+# 单口定位哪个 COM 对应当前 root
+py -3 dtu_root_run_sender.py COM19 --count 3 --interval 1 --warmup-sec 5 --warmup-interval 0.2 --warmup-text 12123213 --post-warmup-delay 8 --hold-open 10
+
+# 三口并发发送
+py -3 dtu_root_run_sender.py COM19 COM23 COM36 --duration 60 --interval 5 --warmup-sec 5 --warmup-interval 0.2 --warmup-text 12123213 --post-warmup-delay 8 --hold-open 10
+
+# 或使用默认现场批处理
+run_dtu_root_real.bat
+```
+
+板端由 `driver.sh test-real-listen` 启动 `gatewayd + sle_data_app --mode real`，然后用 `watch-real` 监听 `/tmp/sle_app.log` 与 `gateway.log`。通过标准是 `/tmp/sle_app.log` 出现 `[SLE][DECODED] ... magic=53 54`，随后 `gateway.log` 出现 `SLE-IPC batch collected`、`METER_001` 解析和 MQTT telemetry publish。
 
 ## Linux使用方法
 
@@ -209,7 +228,7 @@ SLE网关性能测试 - 日志分析
 
 **解决**:
 ```cmd
-pip install pyserial
+py -3 -m pip install pyserial
 ```
 
 ### 3. 日志分析无结果

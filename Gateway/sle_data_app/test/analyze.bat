@@ -7,10 +7,10 @@ echo SLE网关日志分析工具
 echo ========================================
 echo.
 
-REM 检查Python是否安装
-python --version >nul 2>&1
+REM 检查 Windows Python Launcher 是否安装
+py -3 --version >nul 2>&1
 if errorlevel 1 (
-    echo 错误: 未找到Python，请安装Python 3.6+
+    echo 错误: 未找到 py -3，请安装Python 3.6+并启用 Python Launcher
     pause
     exit /b 1
 )
@@ -37,7 +37,7 @@ if not exist "%~1" (
 )
 
 REM 运行分析脚本
-python analyze_log.py "%~1"
+py -3 analyze_log.py "%~1"
 
 echo.
 pause

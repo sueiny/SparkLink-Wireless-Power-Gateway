@@ -4,8 +4,8 @@ SLE网关测试 - 主机端发送脚本 (Windows版)
 往串口发送测试数据，用于网关端接收测试
 
 用法:
-    python send_test.py COM22
-    python send_test.py COM22 COM26 COM28  # 同时测试多个串口
+    py -3 send_test.py COM22
+    py -3 send_test.py COM22 COM26 COM28  # 同时测试多个串口
 """
 
 import serial
@@ -124,7 +124,7 @@ def main():
         import serial
     except ImportError:
         print("\n错误: 未安装pyserial库")
-        print("请运行: pip install pyserial")
+        print("请运行: py -3 -m pip install pyserial")
         sys.exit(1)
     
     # 启动发送线程
@@ -166,7 +166,7 @@ def main():
     
     print("\n提示: 现在可以在网关端运行 analyze_log.py 分析日志")
     print("      adb pull /tmp/sle_app.log .")
-    print("      python analyze_log.py sle_app.log")
+    print("      py -3 analyze_log.py sle_app.log")
 
 
 if __name__ == '__main__':

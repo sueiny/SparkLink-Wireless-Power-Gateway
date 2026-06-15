@@ -4,7 +4,7 @@ SLE网关测试 - 日志分析脚本
 解析sle_data_app的日志，计算丢包率和吞吐量
 
 用法:
-    python3 analyze_log.py /tmp/sle_app.log
+    py -3 analyze_log.py sle_app.log
     adb shell "cat /tmp/sle_app.log" | python3 analyze_log.py -
 """
 
@@ -146,7 +146,7 @@ def print_device_result(result):
 def main():
     # 解析参数
     if len(sys.argv) < 2:
-        print("用法: python3 analyze_log.py <日志文件路径>")
+        print("用法: py -3 analyze_log.py <日志文件路径>")
         print("      adb shell 'cat /tmp/sle_app.log' | python3 analyze_log.py -")
         sys.exit(1)
     

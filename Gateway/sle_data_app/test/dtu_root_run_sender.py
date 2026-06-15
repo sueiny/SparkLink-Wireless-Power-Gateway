@@ -1,18 +1,22 @@
 #!/usr/bin/env python3
 """
-Send RUN-mode SLE frames to one DTU root UART.
+Send RUN-mode SLE frames to one or more DTU root UARTs.
 
-The DTU root sample accepts text commands in this format:
+Windows lab usage uses the Python launcher and writes ASCII-hex ST frames by default:
 
-    <dst_node_id> <HEX_BYTES>\r\n
+    py -3 dtu_root_run_sender.py COM19 COM23 COM36 --duration 60 --interval 5
 
-For the current real SLE uplink test, dst_node_id is 0 (Gateway) and the
-default HEX_BYTES is a complete Gateway SLE frame:
+The current DTU root UART path reliably forwards printable ASCII. The default
+serial write is:
 
-    ST frame header(13) + payload(N)
+    <dst_node_id> <ST_FRAME_HEX>\r\n
 
-The DTU root only needs to send these bytes through SLE. gatewayd should
-receive exactly the frame generated here.
+sle_data_app decodes this ASCII-hex line back to ST bytes before IPC to
+gatewayd. For root firmware that can forward NUL-containing binary safely, use:
+
+    --uart-encoding raw
+
+which writes ST frame bytes directly.
 """
 
 import argparse
@@ -34,6 +38,10 @@ DEFAULT_INTERVAL_SEC = 5.0
 DEFAULT_WARMUP_SEC = 5.0
 DEFAULT_WARMUP_INTERVAL_SEC = 0.2
 DEFAULT_WARMUP_TEXT = "WARMUP"
+DEFAULT_POST_WARMUP_DELAY_SEC = 8.0
+DEFAULT_HOLD_OPEN_SEC = 10.0
+DEFAULT_UART_ENCODING = "text-hex"
+DEFAULT_RAW_TERMINATOR = "crlf"
 DEFAULT_DEVICE_ID = "METER_001"
 DEFAULT_DTU_ID = 1
 DEFAULT_MODBUS_TYPE = 2
@@ -146,22 +154,36 @@ def build_data_frame(seq: int, args: argparse.Namespace) -> bytes:
     )
 
 
-def build_uart_line_from_bytes(dst_node: int, raw: bytes) -> bytes:
+def build_text_hex_line(dst_node: int, raw: bytes) -> bytes:
     return f"{dst_node} {raw.hex().upper()}\r\n".encode("ascii")
 
 
-def build_payload_uart_line(seq: int, dst_node: int = DEFAULT_DST_NODE) -> bytes:
-    return build_uart_line_from_bytes(dst_node, build_gateway_payload(seq))
+def raw_terminator_bytes(args: argparse.Namespace) -> bytes:
+    if args.raw_terminator == "crlf":
+        return b"\r\n"
+    if args.raw_terminator == "lf":
+        return b"\n"
+    return b""
 
 
-def build_frame_uart_line(seq: int, args: argparse.Namespace, frame_type: str) -> bytes:
+def encode_uart_write(raw: bytes, args: argparse.Namespace) -> bytes:
+    if args.uart_encoding == "text-hex":
+        return build_text_hex_line(args.dst_node, raw)
+    return raw + raw_terminator_bytes(args)
+
+
+def build_payload_uart_write(seq: int, args: argparse.Namespace) -> bytes:
+    return encode_uart_write(build_gateway_payload(seq), args)
+
+
+def build_frame_uart_write(seq: int, args: argparse.Namespace, frame_type: str) -> bytes:
     if frame_type == "heartbeat":
         raw = build_heartbeat_frame(seq, args)
     elif frame_type == "data":
         raw = build_data_frame(seq, args)
     else:
         raise ValueError(f"unsupported frame_type: {frame_type}")
-    return build_uart_line_from_bytes(args.dst_node, raw)
+    return encode_uart_write(raw, args)
 
 
 def utc_now() -> str:
@@ -201,12 +223,14 @@ def run_port(port: str, args: argparse.Namespace) -> Dict[str, object]:
     try:
         import serial
     except ImportError as exc:
-        raise RuntimeError("pyserial is required: pip install pyserial") from exc
+        raise RuntimeError("pyserial is required: py -3 -m pip install pyserial") from exc
 
     stats: Dict[str, object] = {
         "port": port,
         "baudrate": BAUDRATE,
         "wire_format": args.wire_format,
+        "uart_encoding": args.uart_encoding,
+        "raw_terminator": args.raw_terminator,
         "dst_node": args.dst_node,
         "src_node": args.src_node,
         "src_role": args.src_role,
@@ -216,6 +240,10 @@ def run_port(port: str, args: argparse.Namespace) -> Dict[str, object]:
         "modbus_addr": DEFAULT_MODBUS_ADDR,
         "warmup_sec": args.warmup_sec,
         "warmup_interval": args.warmup_interval,
+        "post_warmup_delay": args.post_warmup_delay,
+        "hold_open": args.hold_open,
+        "dtr": args.dtr,
+        "rts": args.rts,
         "warmup_sent": 0,
         "warmup_errors": 0,
         "sent": 0,
@@ -235,8 +263,24 @@ def run_port(port: str, args: argparse.Namespace) -> Dict[str, object]:
     total_start = time.time()
     seq = 1
 
-    with serial.Serial(port, BAUDRATE, timeout=0.1, write_timeout=1.0) as ser:
+    ser = serial.Serial()
+    ser.port = port
+    ser.baudrate = BAUDRATE
+    ser.timeout = 0.1
+    ser.write_timeout = 1.0
+    ser.rtscts = False
+    ser.dsrdtr = False
+
+    with ser:
+        try:
+            ser.setDTR(args.dtr)
+            ser.setRTS(args.rts)
+        except Exception:
+            pass
+
         warmup_serial(ser, args, stats)
+        if args.post_warmup_delay > 0:
+            time.sleep(args.post_warmup_delay)
 
         start = time.time()
         deadline = start + args.duration
@@ -246,17 +290,17 @@ def run_port(port: str, args: argparse.Namespace) -> Dict[str, object]:
             if args.count is None and time.time() >= deadline:
                 break
 
-            lines = []
+            writes = []
             if args.wire_format == "frame" and not args.no_heartbeat:
-                lines.append(("heartbeat", build_frame_uart_line(seq * 2 - 1, args, "heartbeat")))
+                writes.append(("heartbeat", build_frame_uart_write(seq * 2 - 1, args, "heartbeat")))
             if args.wire_format == "frame":
-                lines.append(("data", build_frame_uart_line(seq * 2, args, "data")))
+                writes.append(("data", build_frame_uart_write(seq * 2, args, "data")))
             else:
-                lines.append(("data", build_payload_uart_line(seq, args.dst_node)))
+                writes.append(("data", build_payload_uart_write(seq, args)))
 
-            for kind, line in lines:
+            for kind, write_data in writes:
                 try:
-                    ser.write(line)
+                    ser.write(write_data)
                     ser.flush()
                     if stats["sent"] == 0:
                         stats["first_ts"] = utc_now()
@@ -280,6 +324,16 @@ def run_port(port: str, args: argparse.Namespace) -> Dict[str, object]:
             if args.count is None or seq <= args.count:
                 time.sleep(args.interval)
 
+        if args.hold_open > 0:
+            deadline = time.time() + args.hold_open
+            while time.time() < deadline:
+                try:
+                    rx = ser.read(ser.in_waiting or 0)
+                    stats["rx_bytes"] = int(stats["rx_bytes"]) + len(rx)
+                except Exception:
+                    pass
+                time.sleep(0.1)
+
     elapsed = max(time.time() - start, 0.001)
     stats["duration_sec"] = round(elapsed, 3)
     stats["total_duration_sec"] = round(time.time() - total_start, 3)
@@ -292,11 +346,17 @@ def dry_run(args: argparse.Namespace) -> List[Dict[str, object]]:
     for seq in range(1, args.preview_count + 1):
         if args.wire_format == "frame" and not args.no_heartbeat:
             heartbeat_frame = build_heartbeat_frame(seq * 2 - 1, args)
+            write_data = encode_uart_write(heartbeat_frame, args)
             record = {
                 "seq": seq,
                 "kind": "heartbeat",
                 "wire_format": args.wire_format,
-                "uart_line": build_uart_line_from_bytes(args.dst_node, heartbeat_frame).decode("ascii").rstrip(),
+                "uart_encoding": args.uart_encoding,
+                "raw_terminator": args.raw_terminator,
+                "uart_line": build_text_hex_line(args.dst_node, heartbeat_frame).decode("ascii").rstrip()
+                if args.uart_encoding == "text-hex" else "",
+                "write_hex": write_data.hex().upper(),
+                "write_len": len(write_data),
                 "dst_node": args.dst_node,
                 "src_node": args.src_node,
                 "src_role": args.src_role,
@@ -311,12 +371,16 @@ def dry_run(args: argparse.Namespace) -> List[Dict[str, object]]:
         modbus_rtu = payload[2:]
         if args.wire_format == "frame":
             data_frame = build_data_frame(seq * 2, args)
-            uart_line = build_uart_line_from_bytes(args.dst_node, data_frame).decode("ascii").rstrip()
+            write_data = encode_uart_write(data_frame, args)
+            uart_line = build_text_hex_line(args.dst_node, data_frame).decode("ascii").rstrip() \
+                if args.uart_encoding == "text-hex" else ""
             frame_hex = data_frame.hex().upper()
             frame_len = len(data_frame)
             frame_type = SLE_FRAME_TYPE_DATA
         else:
-            uart_line = build_payload_uart_line(seq, args.dst_node).decode("ascii").rstrip()
+            write_data = build_payload_uart_write(seq, args)
+            uart_line = build_text_hex_line(args.dst_node, payload).decode("ascii").rstrip() \
+                if args.uart_encoding == "text-hex" else ""
             frame_hex = ""
             frame_len = 0
             frame_type = ""
@@ -325,7 +389,11 @@ def dry_run(args: argparse.Namespace) -> List[Dict[str, object]]:
             "seq": seq,
             "kind": "data",
             "wire_format": args.wire_format,
+            "uart_encoding": args.uart_encoding,
+            "raw_terminator": args.raw_terminator,
             "uart_line": uart_line,
+            "write_hex": write_data.hex().upper(),
+            "write_len": len(write_data),
             "dst_node": args.dst_node,
             "src_node": args.src_node if args.wire_format == "frame" else "",
             "src_role": args.src_role if args.wire_format == "frame" else "",
@@ -364,10 +432,14 @@ def write_csv(path: Optional[str], records: List[Dict[str, object]]) -> None:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Send METER_001 RUN-mode SLE frames to a DTU root UART at 115200 8N1.")
-    parser.add_argument("ports", nargs="*", help="Serial ports, for example /dev/ttyUSB0 or COM22")
+        description="Send METER_001 RUN-mode SLE frames to DTU root UARTs at 115200 8N1.")
+    parser.add_argument("ports", nargs="*", help="Serial ports, for example COM19 COM23 COM36")
     parser.add_argument("--wire-format", choices=("frame", "payload"), default="frame",
                         help="frame sends a full ST frame; payload sends the legacy modbus payload only")
+    parser.add_argument("--uart-encoding", choices=("raw", "text-hex"), default=DEFAULT_UART_ENCODING,
+                        help="raw writes ST bytes directly; text-hex writes '<dst> <HEX>' for old firmware")
+    parser.add_argument("--raw-terminator", choices=("crlf", "lf", "none"), default=DEFAULT_RAW_TERMINATOR,
+                        help="Terminator appended only in --uart-encoding raw mode")
     parser.add_argument("--duration", type=float, default=DEFAULT_DURATION_SEC,
                         help="Send duration in seconds when --count is not set")
     parser.add_argument("--interval", type=float, default=DEFAULT_INTERVAL_SEC,
@@ -378,6 +450,14 @@ def parse_args() -> argparse.Namespace:
                         help="Interval between warmup UART writes in seconds")
     parser.add_argument("--warmup-text", default="",
                         help="Warmup text before CRLF; defaults to WARMUP")
+    parser.add_argument("--post-warmup-delay", type=float, default=DEFAULT_POST_WARMUP_DELAY_SEC,
+                        help="Seconds to wait after warmup writes before sending real frames")
+    parser.add_argument("--hold-open", type=float, default=DEFAULT_HOLD_OPEN_SEC,
+                        help="Seconds to keep the port open after sending real frames")
+    parser.add_argument("--dtr", action="store_true",
+                        help="Assert DTR after opening the port; default keeps DTR deasserted")
+    parser.add_argument("--rts", action="store_true",
+                        help="Assert RTS after opening the port; default keeps RTS deasserted")
     parser.add_argument("--count", type=int, default=None,
                         help="Send an exact number of lines per port")
     parser.add_argument("--dst-node", type=int, default=DEFAULT_DST_NODE,
@@ -408,6 +488,12 @@ def main() -> int:
     if args.warmup_interval <= 0:
         print("--warmup-interval must be positive", file=sys.stderr)
         return 2
+    if args.post_warmup_delay < 0:
+        print("--post-warmup-delay must be non-negative", file=sys.stderr)
+        return 2
+    if args.hold_open < 0:
+        print("--hold-open must be non-negative", file=sys.stderr)
+        return 2
     if args.duration <= 0 and args.count is None:
         print("--duration must be positive when --count is not set", file=sys.stderr)
         return 2
@@ -422,7 +508,8 @@ def main() -> int:
         return 0
 
     if not args.ports:
-        print("at least one serial port is required unless --dry-run is used", file=sys.stderr)
+        print("at least one serial port is required unless --dry-run is used; "
+              "on Windows use: py -3 dtu_root_run_sender.py COM19", file=sys.stderr)
         return 2
 
     records: List[Dict[str, object]] = []
