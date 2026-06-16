@@ -27,7 +27,7 @@ public:
     MqttCloudClient(const MqttCloudClient &) = delete;
     MqttCloudClient &operator=(const MqttCloudClient &) = delete;
 
-    // 设置绑定网络接口（可选）。在 connect() 前调用。
+    // 记录期望使用的网络接口。当前 MQTT socket 仍依赖系统默认路由。
     void setBindInterface(const std::string &ifname) { bind_interface_ = ifname; }
 
     // 建立 MQTT 连接并启动 libmosquitto 后台 loop。
@@ -53,6 +53,8 @@ public:
     // 该函数仍然只负责 MQTT 发送，不理解 payload 含义；用于同一个网关连接
     // 同时发布网关自身属性和网关子设备遥测，避免创建多个相同 client_id 的连接。
     bool publishRaw(const std::string &topic, const std::string &payload);
+
+    const std::string &eventsTopic() const { return events_topic_; }
 
     // 订阅原始 topic filter。命令 topic 的具体常量在 thingskit_topics.h 中集中维护。
     bool subscribeRaw(const std::string &topic_filter);

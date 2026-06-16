@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """
 V2 测试帧生成器。
-使用数字 ID（36, 39, 42, ...）替代旧的 0x0010+ 编码。
+从当前 gateway_config.json 读取外接设备，避免测试 payload 和拓扑配置漂移。
 """
 
 import json
 import struct
 import os
+import sys
 
 # ── SLE 帧常量 ──
 SLE_MAGIC = bytes([0x53, 0x54])
@@ -14,20 +15,9 @@ SLE_VERSION = 0x01
 SLE_FRAME_DATA = 2
 SLE_ROLE_ROOT = 1
 
-# ── 第一阶段设备拓扑（1 Root，11 DTU + 11 外接设备）──
-DEVICES = [
-    ("METER_001", 38, 2, 1),
-    ("METER_002", 39, 2, 1),
-    ("METER_003", 42, 2, 1),
-    ("METER_004", 43, 2, 1),
-    ("METER_005", 58, 2, 1),
-    ("METER_006", 48, 2, 1),
-    ("METER_007", 63, 2, 1),
-    ("ENV_001",   32, 3, 1),
-    ("ENV_002",   47, 3, 1),
-    ("RELAY_001", 54, 4, 1),
-    ("RELAY_002", 57, 4, 1),
-]
+CONFIG_PATH = os.path.normpath(
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "config", "gateway_config.json")
+)
 
 
 def crc16_modbus(data: bytes) -> int:
@@ -122,30 +112,79 @@ def build_sle_ipc_frame(raw_data: bytes) -> dict:
     }
 
 
+def load_config_devices():
+    with open(CONFIG_PATH, "r", encoding="utf-8") as f:
+        config = json.load(f)
+
+    devices = []
+    for item in config.get("devices", []):
+        if item.get("type") == "dtu_node":
+            continue
+        device_id = item.get("device_id", "")
+        dtu_id = int(item.get("dtu_id", 0))
+        modbus_type = int(item.get("modbus_type", 0))
+        modbus_addr = int(item.get("modbus_addr", 1))
+        if not device_id or dtu_id <= 0 or modbus_type <= 0:
+            raise ValueError(f"invalid test device config: {item}")
+        devices.append((device_id, dtu_id, modbus_type, modbus_addr))
+
+    if not devices:
+        raise ValueError(f"no non-DTU devices found in {CONFIG_PATH}")
+    return devices
+
+
 def main():
     frames = []
     seq = 1
+    profile = "normal"
+    if len(sys.argv) > 1:
+        if sys.argv[1] in ("-h", "--help"):
+            print("Usage: gen_test_frames.py [--profile normal|alarm]")
+            return
+        if sys.argv[1] == "--profile" and len(sys.argv) > 2:
+            profile = sys.argv[2]
+        else:
+            raise SystemExit("unsupported arguments")
 
-    for device_id, dtu_id, modbus_type, modbus_addr in DEVICES:
+    for device_id, dtu_id, modbus_type, modbus_addr in load_config_devices():
         if modbus_type == 2:
             idx = int(device_id.split("_")[1])
-            modbus_rtu = build_meter_response(
-                modbus_addr,
-                voltage=218.0 + idx * 0.5,
-                current=2.4 + idx * 0.8,
-                power=500 + idx * 100,
-                pf=940 + idx * 5,
-                freq=50.00 + idx * 0.01,
-                energy=300000 + idx * 12160)
+            if profile == "alarm":
+                modbus_rtu = build_meter_response(
+                    modbus_addr,
+                    voltage=250.0 + idx,
+                    current=90.0 + idx,
+                    power=5000 + idx * 100,
+                    pf=880 + idx,
+                    freq=48.80,
+                    energy=500000 + idx * 12160)
+            else:
+                modbus_rtu = build_meter_response(
+                    modbus_addr,
+                    voltage=218.0 + idx * 0.5,
+                    current=2.4 + idx * 0.8,
+                    power=500 + idx * 100,
+                    pf=940 + idx * 5,
+                    freq=50.00 + idx * 0.01,
+                    energy=300000 + idx * 12160)
         elif modbus_type == 3:
             idx = int(device_id.split("_")[1])
-            modbus_rtu = build_env_response(
-                modbus_addr,
-                humidity=60.0 + idx * 2.5,
-                temperature=28.0 + idx * 0.8)
+            if profile == "alarm":
+                modbus_rtu = build_env_response(
+                    modbus_addr,
+                    humidity=95.0,
+                    temperature=72.0)
+            else:
+                modbus_rtu = build_env_response(
+                    modbus_addr,
+                    humidity=60.0 + idx * 2.5,
+                    temperature=28.0 + idx * 0.8)
         elif modbus_type == 4:
             idx = int(device_id.split("_")[1])
-            modbus_rtu = build_relay_response(modbus_addr, relay_state=idx % 2)
+            if profile == "alarm":
+                modbus_rtu = build_relay_response(modbus_addr, relay_state=1)
+            else:
+                modbus_rtu = build_relay_response(modbus_addr, relay_state=idx % 2)
         else:
             continue
 
@@ -173,7 +212,7 @@ def main():
     with open(bin_path, "wb") as f:
         f.write(out_bin)
 
-    print(f"Generated {len(frames)} test frames -> {out_path}")
+    print(f"Generated {len(frames)} test frames ({profile}) -> {out_path}")
     print(f"Binary payload: {len(out_bin)} bytes -> {bin_path}")
     for fr in frames:
         src = fr["raw_data"][5] | (fr["raw_data"][6] << 8)

@@ -68,13 +68,16 @@ std::string ThingsKitCodec::buildGatewayAttributesValuesPayload(
 std::string ThingsKitCodec::buildEventPayload(const std::string &device_id,
                                               const std::string &event,
                                               const std::string &severity,
-                                              const std::string &message)
+                                              const std::string &message,
+                                              const nlohmann::json &details)
 {
     nlohmann::json payload;
     payload["deviceId"] = device_id;
     payload["event"] = event;
     payload["severity"] = severity;
     payload["message"] = message;
+    if (!details.empty())
+        payload["details"] = details;
     return payload.dump();
 }
 

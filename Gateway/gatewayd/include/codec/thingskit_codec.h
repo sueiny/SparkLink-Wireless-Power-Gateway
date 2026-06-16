@@ -28,7 +28,8 @@ public:
     static std::string buildEventPayload(const std::string &device_id,
                                          const std::string &event,
                                          const std::string &severity,
-                                         const std::string &message);
+                                         const std::string &message,
+                                         const nlohmann::json &details = nlohmann::json::object());
 };
 
 } // namespace gateway::codec

@@ -130,10 +130,15 @@ void CacheStore::backupIfNeededLocked() const
 
 bool CacheStore::appendTelemetry(const std::string &topic, const std::string &payload)
 {
+    return appendMessage(topic, payload);
+}
+
+bool CacheStore::appendMessage(const std::string &topic, const std::string &payload)
+{
     std::lock_guard<std::mutex> lock(mutex_);
 
     if (topic.empty() || payload.empty()) {
-        logger_.warn("CACHE", "skip empty telemetry cache record");
+        logger_.warn("CACHE", "skip empty message cache record");
         return false;
     }
 
@@ -144,7 +149,7 @@ bool CacheStore::appendTelemetry(const std::string &topic, const std::string &pa
     }
 
     backupIfNeededLocked();
-    logger_.info("CACHE", "telemetry cached topic=" + topic +
+    logger_.info("CACHE", "message cached topic=" + topic +
                               ", bytes=" + std::to_string(payload.size()));
     return true;
 }

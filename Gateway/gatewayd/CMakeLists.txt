@@ -92,6 +92,7 @@ add_executable(gatewayd
     src/state/device_state_store.cpp
     src/state/state_patch_codec.cpp
     src/storage/cache_store.cpp
+    src/rules/offline_rule_engine.cpp
     ${GATEWAYD_SQLITE_SOURCES}
     src/network/cellular_provider.cpp
     src/network/ethernet_provider.cpp

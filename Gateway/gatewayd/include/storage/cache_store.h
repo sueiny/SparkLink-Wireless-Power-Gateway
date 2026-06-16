@@ -32,6 +32,9 @@ public:
     // 追加一条 telemetry 缓存。采用追加写，避免发布失败高频发生时反复重写全文件。
     bool appendTelemetry(const std::string &topic, const std::string &payload);
 
+    // 追加一条待补传 MQTT 消息。当前仍复用 telemetry_cache 表，topic/payload 保持原样。
+    bool appendMessage(const std::string &topic, const std::string &payload);
+
     // 读取前 max_count 条待补传记录，同时记住本批记录 id，供 rewrite 精确删除。
     std::vector<CachedTelemetry> loadPendingTelemetry(size_t max_count) const;
 

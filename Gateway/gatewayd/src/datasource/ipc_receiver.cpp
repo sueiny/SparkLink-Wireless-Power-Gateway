@@ -137,20 +137,21 @@ IpcReceiver::ReadStatus IpcReceiver::readExact(uint8_t *buf, size_t n)
             return ReadStatus::Error;
         }
 
+        if (pfd.revents & POLLIN) {
+            ssize_t r = read(client_fd_, buf + received, n - received);
+            if (r == 0)
+                return ReadStatus::Disconnected;
+            if (r < 0) {
+                if (errno == EINTR)
+                    continue;
+                return ReadStatus::Error;
+            }
+            received += static_cast<size_t>(r);
+            continue;
+        }
+
         if (pfd.revents & (POLLERR | POLLHUP | POLLNVAL))
             return ReadStatus::Disconnected;
-        if (!(pfd.revents & POLLIN))
-            continue;
-
-        ssize_t r = read(client_fd_, buf + received, n - received);
-        if (r == 0)
-            return ReadStatus::Disconnected;
-        if (r < 0) {
-            if (errno == EINTR)
-                continue;
-            return ReadStatus::Error;
-        }
-        received += static_cast<size_t>(r);
     }
     return ReadStatus::Ok;
 }

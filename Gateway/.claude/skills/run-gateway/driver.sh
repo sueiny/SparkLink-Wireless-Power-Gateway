@@ -85,9 +85,6 @@ push() {
     # 权限
     adb shell "chmod +x $ADB_ROOT/bin/sle_data_app $ADB_ROOT/bin/gatewayd $ADB_ROOT/test/ipc_send"
 
-    # 确保 SLE 启用
-    adb shell "sed -i 's/\"enable\": false/\"enable\": true/' $ADB_ROOT/config/gateway_config.json"
-
     echo "✅ 推送完成"
 }
 

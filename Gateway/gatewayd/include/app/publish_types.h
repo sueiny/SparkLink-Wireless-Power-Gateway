@@ -9,6 +9,7 @@ namespace gateway::app {
 // 不同类型的失败处理不同：遥测可落盘补传，命令响应只做内存重试。
 enum class PublishMessageKind {
     Telemetry,
+    RuleEvent,
     CommandResponse,
     GatewayStatus,
 };

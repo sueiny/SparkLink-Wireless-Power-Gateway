@@ -9,6 +9,7 @@
 #include "common/blocking_queue.h"
 #include "common/logger.h"
 #include "config/config_manager.h"
+#include "rules/offline_rule_engine.h"
 #include "storage/cache_store.h"
 
 #include <vector>
@@ -48,6 +49,9 @@ private:
     // 把内部 TelemetryData 批次转成 ThingsKit 网关子设备遥测消息。
     void publishTelemetryBatch(const std::vector<model::TelemetryData> &telemetry);
 
+    bool offlineAnalysisActive(int64_t now_ms);
+    void enqueueRuleEvents(const std::vector<rules::RuleEvent> &events);
+
     // 网络可用且云端可达时，按批次补传 SQLite 中的遥测缓存。
     void flushTelemetryCache();
 
@@ -73,7 +77,11 @@ private:
     storage::CacheStore *cache_store_ = nullptr;
     common::BlockingQueue<std::vector<model::TelemetryData>> &telemetry_queue_;
     common::BlockingQueue<PublishMessage> &publish_queue_;
+    rules::OfflineRuleEngine rule_engine_;
     int64_t last_status_ms_ = 0;
+    int64_t offline_raw_since_ms_ = 0;
+    bool offline_raw_state_ = false;
+    bool offline_analysis_active_ = false;
     bool command_topics_subscribed_ = false;
 };
 

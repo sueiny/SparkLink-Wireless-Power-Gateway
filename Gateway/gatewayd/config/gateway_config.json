@@ -29,6 +29,45 @@
     "cache_ttl_ms": 604800000,
     "enable_cache": true
   },
+  "offline_analysis": {
+    "enable": true,
+    "offline_only": true,
+    "enter_hold_ms": 10000,
+    "exit_hold_ms": 30000,
+    "rule_engine": {
+      "enable": true,
+      "cooldown_ms": 60000,
+      "defaults": {
+        "single_phase_meter": {
+          "nominal_voltage_v": 220.0,
+          "over_voltage_v": 235.4,
+          "under_voltage_v": 198.0,
+          "frequency_low_hz": 49.8,
+          "frequency_high_hz": 50.2,
+          "rated_current_a": 60.0,
+          "over_current_ratio": 1.1,
+          "hold_ms": 10000
+        },
+        "env_sensor": {
+          "high_temperature_c": 55.0,
+          "high_humidity_rh": 90.0,
+          "hold_ms": 30000
+        },
+        "dtu_node": {
+          "offline_timeout_ms": 60000
+        }
+      },
+      "device_overrides": {
+        "METER_001": {
+          "rated_current_a": 80.0,
+          "over_current_ratio": 1.2
+        }
+      }
+    },
+    "ai": {
+      "enable": false
+    }
+  },
   "log": {"dir": "/userdata/gateway/data/log", "level": "info"},
   "mock": {"voltage_base": 220.0, "frequency_base": 50.0, "temperature_base": 28.0, "humidity_base": 60.0},
   "sle": {
@@ -60,7 +99,7 @@
     {"device_id": "DTU_009", "type": "dtu_node", "node_id": 9, "parent_id": 1, "child_ids": ""},
     {"device_id": "DTU_010", "type": "dtu_node", "node_id": 10, "parent_id": 1, "child_ids": ""},
     {"device_id": "DTU_011", "type": "dtu_node", "node_id": 11, "parent_id": 1, "child_ids": ""},
-    {"device_id": "DTU_012", "type": "dtu_node", "node_id": 12, "parent_id": 0, "child_ids": "13,14,15"},
+    {"device_id": "DTU_012", "type": "dtu_node", "node_id": 12, "parent_id": 0, "child_ids": "13,14,15,23,26,29"},
     {"device_id": "DTU_013", "type": "dtu_node", "node_id": 13, "parent_id": 12, "child_ids": "16,17,18"},
     {"device_id": "DTU_014", "type": "dtu_node", "node_id": 14, "parent_id": 12, "child_ids": "19,20"},
     {"device_id": "DTU_015", "type": "dtu_node", "node_id": 15, "parent_id": 12, "child_ids": "21,22"},
@@ -71,13 +110,13 @@
     {"device_id": "DTU_020", "type": "dtu_node", "node_id": 20, "parent_id": 14, "child_ids": ""},
     {"device_id": "DTU_021", "type": "dtu_node", "node_id": 21, "parent_id": 15, "child_ids": ""},
     {"device_id": "DTU_022", "type": "dtu_node", "node_id": 22, "parent_id": 15, "child_ids": ""},
-    {"device_id": "DTU_023", "type": "dtu_node", "node_id": 23, "parent_id": 0, "child_ids": "24,25"},
+    {"device_id": "DTU_023", "type": "dtu_node", "node_id": 23, "parent_id": 12, "child_ids": "24,25"},
     {"device_id": "DTU_024", "type": "dtu_node", "node_id": 24, "parent_id": 23, "child_ids": ""},
     {"device_id": "DTU_025", "type": "dtu_node", "node_id": 25, "parent_id": 23, "child_ids": ""},
-    {"device_id": "DTU_026", "type": "dtu_node", "node_id": 26, "parent_id": 0, "child_ids": "27,28"},
+    {"device_id": "DTU_026", "type": "dtu_node", "node_id": 26, "parent_id": 12, "child_ids": "27,28"},
     {"device_id": "DTU_027", "type": "dtu_node", "node_id": 27, "parent_id": 26, "child_ids": ""},
     {"device_id": "DTU_028", "type": "dtu_node", "node_id": 28, "parent_id": 26, "child_ids": ""},
-    {"device_id": "DTU_029", "type": "dtu_node", "node_id": 29, "parent_id": 0, "child_ids": "30,31"},
+    {"device_id": "DTU_029", "type": "dtu_node", "node_id": 29, "parent_id": 12, "child_ids": "30,31"},
     {"device_id": "DTU_030", "type": "dtu_node", "node_id": 30, "parent_id": 29, "child_ids": ""},
     {"device_id": "DTU_031", "type": "dtu_node", "node_id": 31, "parent_id": 29, "child_ids": ""}
   ]

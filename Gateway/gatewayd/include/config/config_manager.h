@@ -4,6 +4,7 @@
 #include "common/constants.h"
 
 #include <cstdint>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -99,6 +100,63 @@ struct NetworkConfig {
     CellularConfig cellular;
 };
 
+struct MeterRuleConfig {
+    double nominal_voltage_v = 220.0;
+    double over_voltage_v = 235.4;
+    double under_voltage_v = 198.0;
+    double frequency_low_hz = 49.8;
+    double frequency_high_hz = 50.2;
+    double rated_current_a = 60.0;
+    double over_current_ratio = 1.1;
+    int hold_ms = 10000;
+};
+
+struct EnvRuleConfig {
+    double high_temperature_c = 55.0;
+    double high_humidity_rh = 90.0;
+    int hold_ms = 30000;
+};
+
+struct DtuRuleConfig {
+    int offline_timeout_ms = 60000;
+};
+
+// 设备级覆盖项使用 0 作为“未覆盖”哨兵值。
+struct RuleDeviceOverride {
+    double over_voltage_v = 0.0;
+    double under_voltage_v = 0.0;
+    double frequency_low_hz = 0.0;
+    double frequency_high_hz = 0.0;
+    double rated_current_a = 0.0;
+    double over_current_ratio = 0.0;
+    double high_temperature_c = 0.0;
+    double high_humidity_rh = 0.0;
+    int hold_ms = 0;
+    int offline_timeout_ms = 0;
+};
+
+struct RuleEngineConfig {
+    bool enable = true;
+    int cooldown_ms = 60000;
+    MeterRuleConfig meter;
+    EnvRuleConfig env;
+    DtuRuleConfig dtu;
+    std::map<std::string, RuleDeviceOverride> device_overrides;
+};
+
+struct AiConfig {
+    bool enable = false;
+};
+
+struct OfflineAnalysisConfig {
+    bool enable = true;
+    bool offline_only = true;
+    int enter_hold_ms = 10000;
+    int exit_hold_ms = 30000;
+    RuleEngineConfig rule_engine;
+    AiConfig ai;
+};
+
 // 运行期总配置对象。GatewayApp 初始化后把它按引用传给各个 worker/manager。
 struct AppConfig {
     GatewayConfig gateway;
@@ -108,6 +166,7 @@ struct AppConfig {
     LogConfig log;
     MockConfig mock;
     SleConfig sle;
+    OfflineAnalysisConfig offline_analysis;
     std::vector<model::DeviceInfo> devices;         // 外接设备（电表/继电器/温湿度）
     std::vector<model::DtuDeviceInfo> dtu_devices;  // DTU 节点
 };

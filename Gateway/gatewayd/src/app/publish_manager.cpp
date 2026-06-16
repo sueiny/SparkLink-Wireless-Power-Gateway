@@ -21,6 +21,8 @@ const char *publishKindText(PublishMessageKind kind)
     switch (kind) {
     case PublishMessageKind::Telemetry:
         return "telemetry";
+    case PublishMessageKind::RuleEvent:
+        return "rule_event";
     case PublishMessageKind::CommandResponse:
         return "command_response";
     case PublishMessageKind::GatewayStatus:
@@ -74,7 +76,8 @@ PublishManager::PublishManager(PublishManagerDeps deps)
       cloud_client_(deps.cloud_client),
       cache_store_(deps.cache_store),
       telemetry_queue_(deps.telemetry_queue),
-      publish_queue_(deps.publish_queue)
+      publish_queue_(deps.publish_queue),
+      rule_engine_(deps.config)
 {
 }
 
@@ -115,6 +118,14 @@ void PublishManager::publishTelemetryBatch(const std::vector<model::TelemetryDat
     if (telemetry.empty())
         return;
 
+    const int64_t now = common::nowMs();
+    const bool offline_active = offlineAnalysisActive(now);
+    if (offline_active) {
+        enqueueRuleEvents(rule_engine_.evaluate(telemetry, true, now));
+    } else {
+        rule_engine_.evaluate(telemetry, false, now);
+    }
+
     logger_.info("MQTT", "telemetry batch devices=" + std::to_string(telemetry.size()) +
                          ", ids=" + telemetryDeviceIds(telemetry));
 
@@ -130,6 +141,67 @@ void PublishManager::publishTelemetryBatch(const std::vector<model::TelemetryDat
         {},
         {},
     });
+}
+
+bool PublishManager::offlineAnalysisActive(int64_t now_ms)
+{
+    if (!config_.offline_analysis.enable || !config_.offline_analysis.rule_engine.enable) {
+        offline_raw_state_ = false;
+        offline_raw_since_ms_ = 0;
+        offline_analysis_active_ = false;
+        return false;
+    }
+
+    const auto network_state = network_worker_.state();
+    const bool raw_offline =
+        !network_state.available || !network_state.cloud_reachable || !cloud_client_.isConnected();
+
+    if (raw_offline != offline_raw_state_) {
+        offline_raw_state_ = raw_offline;
+        offline_raw_since_ms_ = now_ms;
+        logger_.info("RULE", std::string("offline gate changed raw_offline=") +
+                                 (raw_offline ? "1" : "0"));
+    }
+
+    if (raw_offline) {
+        if (!offline_analysis_active_ &&
+            now_ms - offline_raw_since_ms_ >= config_.offline_analysis.enter_hold_ms) {
+            offline_analysis_active_ = true;
+            logger_.warn("RULE", "offline analysis enabled");
+        }
+    } else {
+        if (offline_analysis_active_ &&
+            now_ms - offline_raw_since_ms_ >= config_.offline_analysis.exit_hold_ms) {
+            offline_analysis_active_ = false;
+            logger_.info("RULE", "offline analysis disabled");
+        }
+    }
+
+    return offline_analysis_active_;
+}
+
+void PublishManager::enqueueRuleEvents(const std::vector<rules::RuleEvent> &events)
+{
+    if (events.empty())
+        return;
+
+    for (const auto &event : events) {
+        const std::string payload = codec::ThingsKitCodec::buildEventPayload(
+            event.device_id, event.event, event.severity, event.message, event.details);
+        publish_queue_.push({
+            cloud_client_.eventsTopic(),
+            payload,
+            PublishMessageKind::RuleEvent,
+            0,
+            0,
+            {},
+            event.event,
+            event.device_id,
+        });
+        logger_.warn("RULE", "rule event enqueued device=" + event.device_id +
+                                 ", event=" + event.event +
+                                 ", severity=" + event.severity);
+    }
 }
 
 void PublishManager::flushTelemetryCache()
@@ -312,10 +384,11 @@ bool PublishManager::publishMessage(const PublishMessage &message)
 void PublishManager::handlePublishFailure(PublishMessage message,
                                           std::vector<PublishMessage> &delayed_messages)
 {
-    if (message.kind == PublishMessageKind::Telemetry) {
-        // 只有上行遥测进入 SQLite 缓存；命令响应不能混入遥测补传表。
+    if (message.kind == PublishMessageKind::Telemetry ||
+        message.kind == PublishMessageKind::RuleEvent) {
+        // 遥测和离线规则事件可落盘补传；命令响应不能混入补传表。
         if (cache_store_)
-            cache_store_->appendTelemetry(message.topic, message.payload);
+            cache_store_->appendMessage(message.topic, message.payload);
         return;
     }
 

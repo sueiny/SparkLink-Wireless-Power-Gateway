@@ -36,6 +36,102 @@ model::DtuDeviceInfo parseDtuDevice(const nlohmann::json &item)
     return dtu;
 }
 
+MeterRuleConfig parseMeterRuleConfig(const nlohmann::json &item)
+{
+    MeterRuleConfig config;
+    config.nominal_voltage_v = item.value("nominal_voltage_v", config.nominal_voltage_v);
+    config.over_voltage_v = item.value("over_voltage_v", config.over_voltage_v);
+    config.under_voltage_v = item.value("under_voltage_v", config.under_voltage_v);
+    config.frequency_low_hz = item.value("frequency_low_hz", config.frequency_low_hz);
+    config.frequency_high_hz = item.value("frequency_high_hz", config.frequency_high_hz);
+    config.rated_current_a = item.value("rated_current_a", config.rated_current_a);
+    config.over_current_ratio = item.value("over_current_ratio", config.over_current_ratio);
+    config.hold_ms = item.value("hold_ms", config.hold_ms);
+    return config;
+}
+
+EnvRuleConfig parseEnvRuleConfig(const nlohmann::json &item)
+{
+    EnvRuleConfig config;
+    config.high_temperature_c = item.value("high_temperature_c", config.high_temperature_c);
+    config.high_humidity_rh = item.value("high_humidity_rh", config.high_humidity_rh);
+    config.hold_ms = item.value("hold_ms", config.hold_ms);
+    return config;
+}
+
+DtuRuleConfig parseDtuRuleConfig(const nlohmann::json &item)
+{
+    DtuRuleConfig config;
+    config.offline_timeout_ms = item.value("offline_timeout_ms", config.offline_timeout_ms);
+    return config;
+}
+
+RuleDeviceOverride parseRuleDeviceOverride(const nlohmann::json &item)
+{
+    auto readDoubleOverride = [&](const char *key) {
+        if (!item.contains(key))
+            return 0.0;
+        const double value = item.value(key, -1.0);
+        return value > 0.0 ? value : -1.0;
+    };
+    auto readIntOverride = [&](const char *key) {
+        if (!item.contains(key))
+            return 0;
+        const int value = item.value(key, -1);
+        return value > 0 ? value : -1;
+    };
+
+    RuleDeviceOverride config;
+    config.over_voltage_v = readDoubleOverride("over_voltage_v");
+    config.under_voltage_v = readDoubleOverride("under_voltage_v");
+    config.frequency_low_hz = readDoubleOverride("frequency_low_hz");
+    config.frequency_high_hz = readDoubleOverride("frequency_high_hz");
+    config.rated_current_a = readDoubleOverride("rated_current_a");
+    config.over_current_ratio = readDoubleOverride("over_current_ratio");
+    config.high_temperature_c = readDoubleOverride("high_temperature_c");
+    config.high_humidity_rh = readDoubleOverride("high_humidity_rh");
+    config.hold_ms = readIntOverride("hold_ms");
+    config.offline_timeout_ms = readIntOverride("offline_timeout_ms");
+    return config;
+}
+
+MeterRuleConfig applyMeterOverride(MeterRuleConfig config, const RuleDeviceOverride &override)
+{
+    if (override.over_voltage_v != 0.0)
+        config.over_voltage_v = override.over_voltage_v;
+    if (override.under_voltage_v != 0.0)
+        config.under_voltage_v = override.under_voltage_v;
+    if (override.frequency_low_hz != 0.0)
+        config.frequency_low_hz = override.frequency_low_hz;
+    if (override.frequency_high_hz != 0.0)
+        config.frequency_high_hz = override.frequency_high_hz;
+    if (override.rated_current_a != 0.0)
+        config.rated_current_a = override.rated_current_a;
+    if (override.over_current_ratio != 0.0)
+        config.over_current_ratio = override.over_current_ratio;
+    if (override.hold_ms != 0)
+        config.hold_ms = override.hold_ms;
+    return config;
+}
+
+EnvRuleConfig applyEnvOverride(EnvRuleConfig config, const RuleDeviceOverride &override)
+{
+    if (override.high_temperature_c != 0.0)
+        config.high_temperature_c = override.high_temperature_c;
+    if (override.high_humidity_rh != 0.0)
+        config.high_humidity_rh = override.high_humidity_rh;
+    if (override.hold_ms != 0)
+        config.hold_ms = override.hold_ms;
+    return config;
+}
+
+DtuRuleConfig applyDtuOverride(DtuRuleConfig config, const RuleDeviceOverride &override)
+{
+    if (override.offline_timeout_ms != 0)
+        config.offline_timeout_ms = override.offline_timeout_ms;
+    return config;
+}
+
 } // namespace
 
 bool ConfigManager::load(const std::string &path, std::string *error)
@@ -143,6 +239,34 @@ bool ConfigManager::load(const std::string &path, std::string *error)
         cfg.sle.roots.push_back(rc);
     }
 
+    const auto offline = root.value("offline_analysis", nlohmann::json::object());
+    cfg.offline_analysis.enable = offline.value("enable", true);
+    cfg.offline_analysis.offline_only = offline.value("offline_only", true);
+    cfg.offline_analysis.enter_hold_ms =
+        offline.value("enter_hold_ms", cfg.offline_analysis.enter_hold_ms);
+    cfg.offline_analysis.exit_hold_ms =
+        offline.value("exit_hold_ms", cfg.offline_analysis.exit_hold_ms);
+
+    const auto rule_engine = offline.value("rule_engine", nlohmann::json::object());
+    cfg.offline_analysis.rule_engine.enable = rule_engine.value("enable", true);
+    cfg.offline_analysis.rule_engine.cooldown_ms =
+        rule_engine.value("cooldown_ms", cfg.offline_analysis.rule_engine.cooldown_ms);
+    const auto defaults = rule_engine.value("defaults", nlohmann::json::object());
+    cfg.offline_analysis.rule_engine.meter = parseMeterRuleConfig(
+        defaults.value("single_phase_meter", nlohmann::json::object()));
+    cfg.offline_analysis.rule_engine.env = parseEnvRuleConfig(
+        defaults.value("env_sensor", nlohmann::json::object()));
+    cfg.offline_analysis.rule_engine.dtu = parseDtuRuleConfig(
+        defaults.value("dtu_node", nlohmann::json::object()));
+    cfg.offline_analysis.rule_engine.device_overrides.clear();
+    const auto device_overrides = rule_engine.value("device_overrides", nlohmann::json::object());
+    for (const auto &item : device_overrides.items())
+        cfg.offline_analysis.rule_engine.device_overrides[item.key()] =
+            parseRuleDeviceOverride(item.value());
+
+    const auto ai = offline.value("ai", nlohmann::json::object());
+    cfg.offline_analysis.ai.enable = ai.value("enable", false);
+
     cfg.devices.clear();
     cfg.dtu_devices.clear();
     for (const auto &item : root.value("devices", nlohmann::json::array())) {
@@ -193,6 +317,44 @@ bool ConfigManager::validate(const AppConfig &config, std::string *error) const
     if (config.publish.cache_ttl_ms <= 0)
         return fail("publish.cache_ttl_ms must be positive");
 
+    const auto &offline = config.offline_analysis;
+    if (offline.enable) {
+        if (!offline.offline_only)
+            return fail("offline_analysis.offline_only must be true");
+        if (offline.enter_hold_ms <= 0)
+            return fail("offline_analysis.enter_hold_ms must be positive");
+        if (offline.exit_hold_ms <= 0)
+            return fail("offline_analysis.exit_hold_ms must be positive");
+        if (offline.ai.enable)
+            return fail("offline_analysis.ai.enable is reserved and must be false");
+
+        const auto &rules = offline.rule_engine;
+        if (rules.enable) {
+            if (rules.cooldown_ms <= 0)
+                return fail("offline_analysis.rule_engine.cooldown_ms must be positive");
+            if (rules.meter.nominal_voltage_v <= 0.0 ||
+                rules.meter.over_voltage_v <= 0.0 ||
+                rules.meter.under_voltage_v <= 0.0 ||
+                rules.meter.frequency_low_hz <= 0.0 ||
+                rules.meter.frequency_high_hz <= 0.0 ||
+                rules.meter.rated_current_a <= 0.0 ||
+                rules.meter.over_current_ratio <= 0.0)
+                return fail("offline_analysis.rule_engine meter thresholds must be positive");
+            if (rules.meter.under_voltage_v >= rules.meter.over_voltage_v)
+                return fail("offline_analysis.rule_engine meter voltage low must be below high");
+            if (rules.meter.frequency_low_hz >= rules.meter.frequency_high_hz)
+                return fail("offline_analysis.rule_engine meter frequency low must be below high");
+            if (rules.meter.hold_ms <= 0)
+                return fail("offline_analysis.rule_engine meter hold_ms must be positive");
+            if (rules.env.high_temperature_c <= 0.0 || rules.env.high_humidity_rh <= 0.0)
+                return fail("offline_analysis.rule_engine env thresholds must be positive");
+            if (rules.env.hold_ms <= 0)
+                return fail("offline_analysis.rule_engine env hold_ms must be positive");
+            if (rules.dtu.offline_timeout_ms <= 0)
+                return fail("offline_analysis.rule_engine dtu offline_timeout_ms must be positive");
+        }
+    }
+
     const std::set<std::string> allowed_modes = {"auto", "ethernet", "wifi", "cellular"};
     if (!allowed_modes.count(config.network.mode))
         return fail("network.mode must be auto/ethernet/wifi/cellular");
@@ -214,6 +376,50 @@ bool ConfigManager::validate(const AppConfig &config, std::string *error) const
             return fail("devices contains empty device_id");
         if (!device_ids.insert(device.device_id).second)
             return fail("devices contains duplicate device_id: " + device.device_id);
+    }
+
+    std::map<std::string, model::DeviceType> device_types;
+    for (const auto &device : config.devices)
+        device_types[device.device_id] = device.type;
+    for (const auto &device : config.dtu_devices)
+        device_types[device.device_id] = model::DeviceType::DtuNode;
+
+    for (const auto &item : config.offline_analysis.rule_engine.device_overrides) {
+        const auto type_it = device_types.find(item.first);
+        if (type_it == device_types.end())
+            return fail("offline_analysis.rule_engine.device_overrides unknown device: " +
+                        item.first);
+
+        const auto &override = item.second;
+        if (override.over_voltage_v < 0.0 || override.under_voltage_v < 0.0 ||
+            override.frequency_low_hz < 0.0 || override.frequency_high_hz < 0.0 ||
+            override.rated_current_a < 0.0 || override.over_current_ratio < 0.0 ||
+            override.high_temperature_c < 0.0 || override.high_humidity_rh < 0.0 ||
+            override.hold_ms < 0 || override.offline_timeout_ms < 0)
+            return fail("offline_analysis.rule_engine.device_overrides values must be positive: " +
+                        item.first);
+
+        if (type_it->second == model::DeviceType::SinglePhaseMeter) {
+            const auto meter = applyMeterOverride(
+                config.offline_analysis.rule_engine.meter, override);
+            if (meter.under_voltage_v >= meter.over_voltage_v)
+                return fail("offline_analysis.rule_engine.device_overrides voltage low must be below high: " +
+                            item.first);
+            if (meter.frequency_low_hz >= meter.frequency_high_hz)
+                return fail("offline_analysis.rule_engine.device_overrides frequency low must be below high: " +
+                            item.first);
+        } else if (type_it->second == model::DeviceType::EnvSensor) {
+            const auto env = applyEnvOverride(config.offline_analysis.rule_engine.env, override);
+            if (env.high_temperature_c <= 0.0 || env.high_humidity_rh <= 0.0 ||
+                env.hold_ms <= 0)
+                return fail("offline_analysis.rule_engine.device_overrides env values must be positive: " +
+                            item.first);
+        } else if (type_it->second == model::DeviceType::DtuNode) {
+            const auto dtu = applyDtuOverride(config.offline_analysis.rule_engine.dtu, override);
+            if (dtu.offline_timeout_ms <= 0)
+                return fail("offline_analysis.rule_engine.device_overrides dtu offline_timeout_ms must be positive: " +
+                            item.first);
+        }
     }
 
     return true;
