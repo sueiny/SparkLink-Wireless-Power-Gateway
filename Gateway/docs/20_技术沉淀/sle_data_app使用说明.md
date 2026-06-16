@@ -20,7 +20,7 @@ app/Gateway/sle_data_app/docs/使用说明.md
 
 - `sle_data_app` 现在默认使用真实链路：不带参数等价于 `--mode real`。
 - `--mode mock` 仅用于无真实 Root 时验证 IPC、解析、MQTT 链路。
-- `--mode hybrid` 只用于排查，不作为正式验收模式。
+- 当前只支持 `real` 和 `mock` 两种模式，避免真实链路与 Mock 同时产生重复数据。
 - 板端真实监听入口：`bash .claude/skills/run-gateway/driver.sh test-real-listen`。
 - 当前两路真实 Root 基线：Windows `COM23 + COM36`，脚本使用 `py -3 dtu_root_run_sender.py ... --scenario topology-all`。
 - 空闲 5 分钟测试显示：启动阶段有接入抖动，两路 READY 后未继续新增断连。

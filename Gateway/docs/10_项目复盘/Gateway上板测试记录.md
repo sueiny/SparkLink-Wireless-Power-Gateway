@@ -229,7 +229,7 @@ py -3 .\dtu_root_run_sender.py COM23 COM36 --scenario topology-all --duration 60
 
 - 不带参数或 `--mode real`：启动 `sle_manager_init()`，不启动 `mock_data_generator`。
 - `--mode mock`：只启动本地 Mock 数据，用于无真实 Root 时验证 IPC/MQTT。
-- `--mode hybrid`：真实 SLE 与 Mock 同时启动，仅用于排查，不作为验收模式。
+- 当前只支持 `real` 和 `mock` 两种模式，避免真实链路和 Mock 同时产生重复数据。
 
 当前命令链路状态：
 

@@ -25,7 +25,6 @@ static sigset_t g_wait_signals;
 typedef enum {
     SLE_APP_MODE_MOCK,
     SLE_APP_MODE_REAL,
-    SLE_APP_MODE_HYBRID,
 } sle_app_mode_t;
 
 static const char *mode_name(sle_app_mode_t mode)
@@ -35,8 +34,6 @@ static const char *mode_name(sle_app_mode_t mode)
         return "mock";
     case SLE_APP_MODE_REAL:
         return "real";
-    case SLE_APP_MODE_HYBRID:
-        return "hybrid";
     default:
         return "unknown";
     }
@@ -44,10 +41,9 @@ static const char *mode_name(sle_app_mode_t mode)
 
 static void print_usage(const char *program)
 {
-    fprintf(stderr, "usage: %s [--mode mock|real|hybrid]\n", program);
+    fprintf(stderr, "usage: %s [--mode mock|real]\n", program);
     fprintf(stderr, "  real   : use real SLE manager only (default)\n");
     fprintf(stderr, "  mock   : use mock data only\n");
-    fprintf(stderr, "  hybrid : use mock data and real SLE manager\n");
 }
 
 static bool parse_mode_value(const char *value, sle_app_mode_t *mode)
@@ -61,10 +57,6 @@ static bool parse_mode_value(const char *value, sle_app_mode_t *mode)
     }
     if (strcmp(value, "real") == 0) {
         *mode = SLE_APP_MODE_REAL;
-        return true;
-    }
-    if (strcmp(value, "hybrid") == 0) {
-        *mode = SLE_APP_MODE_HYBRID;
         return true;
     }
     return false;
@@ -82,7 +74,7 @@ static bool parse_args(int argc, char **argv, sle_app_mode_t *mode)
 
         if (strcmp(arg, "--mode") == 0) {
             if (i + 1 >= argc) {
-                fprintf(stderr, "[SLE][ERROR] --mode requires mock|real|hybrid\n");
+                fprintf(stderr, "[SLE][ERROR] --mode requires mock|real\n");
                 return false;
             }
             mode_value = argv[++i];
@@ -149,8 +141,8 @@ int main(int argc, char **argv)
     if (!parse_args(argc, argv, &mode)) {
         return 2;
     }
-    use_mock = (mode == SLE_APP_MODE_MOCK || mode == SLE_APP_MODE_HYBRID);
-    use_real_sle = (mode == SLE_APP_MODE_REAL || mode == SLE_APP_MODE_HYBRID);
+    use_mock = (mode == SLE_APP_MODE_MOCK);
+    use_real_sle = (mode == SLE_APP_MODE_REAL);
 
     /* 忽略 SIGPIPE，避免 IPC 对端断开时进程崩溃 */
     signal(SIGPIPE, SIG_IGN);
@@ -172,7 +164,7 @@ int main(int argc, char **argv)
      * 启动顺序：
      * 1. IPC sender 初始化（非阻塞，首次发送时才真正连接）。
      * 2. notify printer 启动，保证后续 notify 入队后有 worker 消费。
-     * 3. 根据 --mode 启动模拟数据生成器和/或真实 SLE manager。
+     * 3. 根据 --mode 启动模拟数据生成器或真实 SLE manager。
      */
     ipc_sender_init();
 

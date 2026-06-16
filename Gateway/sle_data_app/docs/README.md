@@ -22,7 +22,6 @@
 /userdata/gateway/bin/sle_data_app
 /userdata/gateway/bin/sle_data_app --mode real
 /userdata/gateway/bin/sle_data_app --mode mock
-/userdata/gateway/bin/sle_data_app --mode hybrid
 ```
 
 ## 当前文档

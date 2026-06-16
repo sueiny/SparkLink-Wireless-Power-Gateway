@@ -49,7 +49,7 @@ Gateway 由两个主要进程组成：
 | 主流程 | 初始化信号、日志重定向、IPC、真实 SLE/Mock 模式和命令接收器。 | 输入启动参数和默认配置；输出进程生命周期。 | `main.c`。 | 默认 `real`，启动 `ipc_sender`、`ipc_cmd_receiver`、`notify_printer` 和 `sle_manager`；`--mode mock` 才启动 `mock_data_generator`。 | 启停顺序要保持成对；信号处理不要让 worker 随机退出；文档和脚本必须保持“默认真实链路、Mock 显式开启”的一致性。 |
 | SLE client | SLE SDK 扫描、连接和 notify 回调。 | 输入 SDK 事件；输出 notify 数据。 | `sle_multi_client.c`、`sle_multi_client.h`。 | 默认 `real` 模式启动真实 SLE manager；`--mode mock` 才跳过真实 SLE。 | 文件较长，建议后续按扫描、连接、回调、状态拆分内部函数；真实压测还需继续观察 `reason=0x7/0x11` 断连。 |
 | server connections | 连接表和 server index 管理。 | 输入连接事件；输出连接状态查询。 | `server_connections.c`、`server_connections.h`。 | 供 SLE client 和 notify 处理使用。 | 保持连接表边界清楚，避免业务字段继续堆进连接管理。 |
-| mock generator | 生成 DTU/设备模拟帧。 | 输入默认模拟参数；输出 notify 队列数据。 | `mock_data_generator.c`。 | 仅在 `--mode mock` 或 `--mode hybrid` 启动，用于板端无真实 SLE 设备时验证 gatewayd 链路。 | Mock 数据结构要和 Modbus/SLE parser 同步，建议保留固定测试样例；不要把 Mock 通过等同于真实 Root 稳定。 |
+| mock generator | 生成 DTU/设备模拟帧。 | 输入默认模拟参数；输出 notify 队列数据。 | `mock_data_generator.c`。 | 仅在 `--mode mock` 启动，用于板端无真实 SLE 设备时验证 gatewayd 链路。 | Mock 数据结构要和 Modbus/SLE parser 同步，建议保留固定测试样例；不要把 Mock 通过等同于真实 Root 稳定。 |
 | notify printer | notify 队列、批处理和转发。 | 输入 SLE/mock 帧；输出 IPC batch。 | `notify_printer.c`。 | 消费有界队列，满批后调用 `ipc_sender_send_batch()`。 | 需要时间窗口 flush，避免低流量场景未满 64 帧时长期不发送。 |
 | IPC sender | 连接 gatewayd 数据 socket 并发送 batch。 | 输入 frame batch；输出 Unix Socket 字节流。 | `ipc_sender.c`。 | 与 gatewayd `IpcReceiver` 使用抽象 socket。 | socket 语义要和测试工具一致；断线重连日志应可过滤。 |
 | 命令 receiver | 监听命令 socket，读取命令帧并回包。 | 输入 gatewayd 命令帧；输出命令响应帧。 | `ipc_cmd_receiver.c`、`ipc_cmd_protocol.h`。 | gatewayd `IpcCmdSender` 连接该 socket。 | 已有长度校验；协议结构变化必须同步 gatewayd include path。 |
