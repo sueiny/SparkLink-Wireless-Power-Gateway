@@ -103,7 +103,19 @@ static uint8_t handle_raw_st_downlink(const ipc_cmd_request_t *req,
     if (ret != 0) {
         fprintf(stderr, "[CMD][ST-RX][WARN] raw ST forward failed ret=%d root_id=%u dst_node_id=%u\n",
             ret, root_id, dst_node_id);
-        return fail_response(resp_data, resp_data_len, "raw ST forward failed");
+        switch (ret) {
+            case SLE_MANAGER_WRITE_NO_READY_ROOT:
+                return fail_response(resp_data, resp_data_len, "no READY root");
+            case SLE_MANAGER_WRITE_ROUTE_AMBIGUOUS:
+                return fail_response(resp_data, resp_data_len, "route ambiguous");
+            case SLE_MANAGER_WRITE_TARGET_NOT_READY:
+                return fail_response(resp_data, resp_data_len, "target root not ready");
+            case SLE_MANAGER_WRITE_INVALID_PARAM:
+            case SLE_MANAGER_WRITE_INVALID_HEADER:
+                return fail_response(resp_data, resp_data_len, "invalid raw ST frame");
+            default:
+                return fail_response(resp_data, resp_data_len, "raw ST forward failed");
+        }
     }
 
     write_json_response(resp_data, resp_data_len, "raw ST forwarded", root_id, dst_node_id, st_len);

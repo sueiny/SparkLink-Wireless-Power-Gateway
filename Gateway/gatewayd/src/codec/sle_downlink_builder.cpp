@@ -8,6 +8,8 @@
 namespace gateway::codec {
 namespace {
 
+constexpr size_t kMinDownlinkPayloadLen = 13; // Matches the currently verified meter downlink size.
+
 uint16_t crc16Modbus(const uint8_t *data, size_t len)
 {
     uint16_t crc = 0xFFFF;
@@ -101,7 +103,18 @@ bool buildStFrame(uint16_t root_node_id,
                   SleDownlinkFrame *out,
                   std::string *error)
 {
-    if (payload.size() > SLE_FRAME_MAX_PAYLOAD) {
+    std::vector<uint8_t> framed_payload = payload;
+    if (framed_payload.size() < kMinDownlinkPayloadLen) {
+        /*
+         * Current DTU RUN firmware reliably prints meter downlinks whose ST
+         * payload is 13 bytes. Shorter relay payloads can be acknowledged by
+         * SSAP but not appear on UART0. Padding is outside modbus_len, so the
+         * Modbus RTU body remains unchanged for downstream parsers.
+         */
+        framed_payload.resize(kMinDownlinkPayloadLen, 0);
+    }
+
+    if (framed_payload.size() > SLE_FRAME_MAX_PAYLOAD) {
         if (error)
             *error = "payload too large for ST frame";
         return false;
@@ -113,7 +126,7 @@ bool buildStFrame(uint16_t root_node_id,
     out->root_node_id = root_node_id;
     out->dst_node_id = dst_node_id;
     out->frame.clear();
-    out->frame.reserve(SLE_FRAME_HEADER_LEN + payload.size());
+    out->frame.reserve(SLE_FRAME_HEADER_LEN + framed_payload.size());
     out->frame.push_back(SLE_FRAME_MAGIC_0);
     out->frame.push_back(SLE_FRAME_MAGIC_1);
     out->frame.push_back(SLE_FRAME_VERSION);
@@ -122,8 +135,8 @@ bool buildStFrame(uint16_t root_node_id,
     appendU16LE(&out->frame, 0);
     appendU16LE(&out->frame, dst_node_id);
     appendU16LE(&out->frame, seq);
-    appendU16LE(&out->frame, static_cast<uint16_t>(payload.size()));
-    out->frame.insert(out->frame.end(), payload.begin(), payload.end());
+    appendU16LE(&out->frame, static_cast<uint16_t>(framed_payload.size()));
+    out->frame.insert(out->frame.end(), framed_payload.begin(), framed_payload.end());
     return true;
 }
 

@@ -68,6 +68,9 @@ void writeU16LE(uint8_t *out, uint16_t value)
     out[1] = static_cast<uint8_t>((value >> 8) & 0xFF);
 }
 
+constexpr int kDefaultIpcTimeoutMs = 3000;
+constexpr int kRawStIpcTimeoutMs = 6000;
+
 } // namespace
 
 CommandExecutor::CommandExecutor(datasource::IpcCmdSender *ipc_cmd_sender)
@@ -179,9 +182,12 @@ CommandResult CommandExecutor::executeViaIpc(const CommandRequest &request,
     uint8_t resp_data[IPC_CMD_MAX_DATA_LEN];
     uint16_t resp_data_len = sizeof(resp_data);
 
+    const int ipc_timeout_ms =
+        cmd_type == CMD_METHOD_RAW_ST_DOWNLINK ? kRawStIpcTimeoutMs : kDefaultIpcTimeoutMs;
+
     const bool ok = ipc_cmd_sender_->sendCommand(
         dtu_id, cmd_type, param_data, param_len,
-        &result_code, resp_data, &resp_data_len, 3000, request.request_id);
+        &result_code, resp_data, &resp_data_len, ipc_timeout_ms, request.request_id);
 
     if (!ok) {
         return makeCommandResult(false, "IPC_FAILED", "failed to send command to sle_data_app");

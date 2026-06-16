@@ -5,6 +5,15 @@
 #include <stdint.h>
 #include "sle_app_config.h"
 
+/* 下行 ST 写入结果。0 表示成功，负数用于 IPC 响应和日志定位。 */
+#define SLE_MANAGER_WRITE_OK                    0
+#define SLE_MANAGER_WRITE_INVALID_PARAM        (-1)
+#define SLE_MANAGER_WRITE_INVALID_HEADER       (-2)
+#define SLE_MANAGER_WRITE_NO_READY_ROOT        (-3)
+#define SLE_MANAGER_WRITE_ROUTE_AMBIGUOUS      (-4)
+#define SLE_MANAGER_WRITE_FAILED               (-5)
+#define SLE_MANAGER_WRITE_TARGET_NOT_READY     (-6)
+
 /* SLE manager: 管理 SLE 协议栈、扫描、一对多连接状态机和连接维护 tick。 */
 int sle_manager_init(const sle_app_config_t *config);
 

@@ -61,6 +61,8 @@
 #define SLE_DOWNLINK_BUFFER_SLOTS                  4
 #define SLE_DOWNLINK_MAX_LEN                       256
 #define SLE_DOWNLINK_WRITE_TIMEOUT_MS              3000
+#define SLE_DOWNLINK_ROUTE_WAIT_MS                 2500
+#define SLE_DOWNLINK_ROUTE_WAIT_STEP_US            100000
 #define SLE_DOWNLINK_POST_WRITE_GAP_US             1000000
 #define SLE_ST_HEADER_LEN                          13
 #define SLE_ROLE_ROOT                              1
@@ -105,6 +107,15 @@ typedef struct {
     uint64_t connect_start_ms;
     uint32_t fail_count;
 } sle_connect_candidate_t;
+
+typedef struct {
+    sle_server_connection_t selected;
+    int selected_index;
+    int ready_count;
+    bool target_known;
+    bool selected_by_addr_hint;
+    sle_server_connection_state_t target_state;
+} sle_downlink_route_t;
 
 static sle_connect_candidate_t g_candidates[SLE_DATA_APP_MAX_CONNECTIONS];
 static uint64_t g_first_connect_start_ms;
@@ -257,6 +268,40 @@ static bool addr_equal(const sle_addr_t *a, const sle_addr_t *b)
 {
     return a != NULL && b != NULL && a->type == b->type &&
         memcmp(a->addr, b->addr, sizeof(a->addr)) == 0;
+}
+
+static uint16_t root_id_hint_from_addr(const sle_addr_t *addr)
+{
+    if (!addr_matches_prefix(addr, g_config.mac_prefix)) {
+        return 0;
+    }
+
+    uint8_t suffix = addr->addr[5];
+    if ((suffix & 0xF0) == 0xA0 && (suffix & 0x0F) != 0) {
+        return (uint16_t)(suffix & 0x0F);
+    }
+    if (suffix > 0 && suffix < 0x80) {
+        return suffix;
+    }
+    return 0;
+}
+
+static uint16_t route_root_id_for_server(const sle_server_connection_t *server, bool *from_addr_hint)
+{
+    if (from_addr_hint != NULL) {
+        *from_addr_hint = false;
+    }
+    if (server == NULL) {
+        return 0;
+    }
+    if (server->root_node_id != 0) {
+        return server->root_node_id;
+    }
+    uint16_t hinted = root_id_hint_from_addr(&server->addr);
+    if (hinted != 0 && from_addr_hint != NULL) {
+        *from_addr_hint = true;
+    }
+    return hinted;
 }
 
 /* --------------------------------------------------------------------------
@@ -1083,11 +1128,21 @@ static void find_property_cb(uint8_t client_id, uint16_t conn_id, ssapc_find_pro
     SLE_VERBOSE("[SLE][SSAP] property server_index=%d conn_id=%u handle=0x%x uuid16=0x%04x op=0x%x status=%d\n",
         server_index, conn_id, property->handle, uuid16, property->operate_indication, status);
     if (uuid_matched || auto_matched) {
+        uint16_t write_handle = property->handle;
+        uint16_t service_start_handle = 0;
+        uint16_t service_end_handle = 0;
+        sle_server_connection_t server;
+
+        if (server_connections_get_server_copy(&g_server_connections, server_index, &server)) {
+            service_start_handle = server.service_start_handle;
+            service_end_handle = server.service_end_handle;
+        }
         server_connections_set_notify_handle(&g_server_connections, server_index, property->handle);
-        server_connections_set_write_handle(&g_server_connections, server_index, property->handle);
+        server_connections_set_write_handle(&g_server_connections, server_index, write_handle);
         errcode_t ret = ssapc_read_req(client_id, conn_id, property->handle, SSAP_PROPERTY_TYPE_VALUE);
-        SLE_VERBOSE("[SLE][SSAP] data property found server_index=%d uuid16=0x%04x handle=0x%x match=%s read_ret=%d\n",
-            server_index, uuid16, property->handle, uuid_matched ? "uuid" : "auto", ret);
+        fprintf(stderr, "[SLE][SSAP] data property found server_index=%d uuid16=0x%04x notify_handle=0x%x write_handle=0x%x service=[0x%x,0x%x] match=%s read_ret=%d\n",
+            server_index, uuid16, property->handle, write_handle, service_start_handle, service_end_handle,
+            uuid_matched ? "uuid" : "auto", ret);
     }
 }
 
@@ -1096,7 +1151,7 @@ static void write_confirm_cb(uint8_t client_id, uint16_t conn_id, ssapc_write_re
 {
     (void)client_id;
     uint16_t handle = write_result != NULL ? write_result->handle : 0;
-    SLE_VERBOSE("[SLE][SSAP] write cfm client=%u conn_id=%u handle=0x%x status=%d\n",
+    fprintf(stderr, "[SLE][SSAP] write cfm client=%u conn_id=%u handle=0x%x status=%d\n",
         client_id, conn_id, handle, status);
 
     pthread_mutex_lock(&g_downlink_lock);
@@ -1145,6 +1200,89 @@ static void notification_cb(uint8_t client_id, uint16_t conn_id, ssapc_handle_va
     }
 }
 
+static bool server_ready_for_downlink(const sle_server_connection_t *server)
+{
+    return server != NULL && server->used && server->state == SLE_SERVER_READY &&
+        server->conn_id != SLE_INVALID_CONN_ID && server->write_handle != 0;
+}
+
+static int select_downlink_route(uint16_t root_id, sle_downlink_route_t *route)
+{
+    if (route == NULL) {
+        return SLE_MANAGER_WRITE_INVALID_PARAM;
+    }
+
+    memset(route, 0, sizeof(*route));
+    route->selected_index = -1;
+
+    for (uint8_t i = 0; i < g_config.max_connections; ++i) {
+        sle_server_connection_t server;
+        if (!server_connections_get_server_copy(&g_server_connections, i, &server) || !server.used) {
+            continue;
+        }
+
+        bool from_addr_hint = false;
+        uint16_t route_root_id = route_root_id_for_server(&server, &from_addr_hint);
+        if (root_id != 0 && route_root_id == root_id) {
+            route->target_known = true;
+            route->target_state = server.state;
+            if (server_ready_for_downlink(&server)) {
+                route->selected = server;
+                route->selected_index = (int)i;
+                route->selected_by_addr_hint = from_addr_hint;
+                return SLE_MANAGER_WRITE_OK;
+            }
+        }
+
+        if (!server_ready_for_downlink(&server)) {
+            continue;
+        }
+
+        route->ready_count++;
+        if (route->selected_index < 0) {
+            route->selected = server;
+            route->selected_index = (int)i;
+        }
+    }
+
+    if (root_id != 0 && route->target_known) {
+        return SLE_MANAGER_WRITE_TARGET_NOT_READY;
+    }
+    if (route->ready_count == 0) {
+        return SLE_MANAGER_WRITE_NO_READY_ROOT;
+    }
+    if (route->ready_count == 1 && root_id != 0 && route->selected.root_node_id == 0) {
+        fprintf(stderr, "[CMD][ST-TX][WARN] fallback to only READY root, requested_root=%u server_index=%d\n",
+            root_id, route->selected_index);
+        return SLE_MANAGER_WRITE_OK;
+    }
+    if (root_id == 0 && route->ready_count == 1) {
+        return SLE_MANAGER_WRITE_OK;
+    }
+    return SLE_MANAGER_WRITE_ROUTE_AMBIGUOUS;
+}
+
+static int wait_for_downlink_route(uint16_t root_id, sle_downlink_route_t *route)
+{
+    uint64_t deadline = now_ms() + SLE_DOWNLINK_ROUTE_WAIT_MS;
+    int status = SLE_MANAGER_WRITE_NO_READY_ROOT;
+
+    do {
+        status = select_downlink_route(root_id, route);
+        if (status == SLE_MANAGER_WRITE_OK) {
+            return status;
+        }
+        if (now_ms() >= deadline) {
+            break;
+        }
+        usleep(SLE_DOWNLINK_ROUTE_WAIT_STEP_US);
+    } while (status == SLE_MANAGER_WRITE_NO_READY_ROOT ||
+             status == SLE_MANAGER_WRITE_TARGET_NOT_READY ||
+             (root_id != 0 && status == SLE_MANAGER_WRITE_ROUTE_AMBIGUOUS));
+
+    return status;
+}
+
 static void register_callbacks(void)
 {
     memset(&g_seek_cbk, 0, sizeof(g_seek_cbk));
@@ -1185,50 +1323,30 @@ int sle_manager_write_st_frame(uint16_t root_id, const uint8_t *data, uint16_t l
     if (data == NULL || len < 13 || len > SLE_DOWNLINK_MAX_LEN) {
         fprintf(stderr, "[CMD][ST-TX][ERROR] invalid ST frame len=%u root_id=%u\n",
             len, root_id);
-        return -1;
+        return SLE_MANAGER_WRITE_INVALID_PARAM;
     }
     if (data[0] != 'S' || data[1] != 'T' || data[2] != 0x01) {
         fprintf(stderr, "[CMD][ST-TX][ERROR] invalid ST header root_id=%u len=%u\n",
             root_id, len);
-        return -2;
+        return SLE_MANAGER_WRITE_INVALID_HEADER;
     }
 
-    sle_server_connection_t selected;
-    int selected_index = -1;
-    int ready_count = 0;
-    bool has_exact_root = false;
-    memset(&selected, 0, sizeof(selected));
-
-    for (uint8_t i = 0; i < g_config.max_connections; ++i) {
-        sle_server_connection_t server;
-        if (!server_connections_get_server_copy(&g_server_connections, i, &server)) {
-            continue;
+    sle_downlink_route_t route;
+    int route_status = wait_for_downlink_route(root_id, &route);
+    if (route_status != SLE_MANAGER_WRITE_OK) {
+        if (route_status == SLE_MANAGER_WRITE_TARGET_NOT_READY) {
+            fprintf(stderr, "[CMD][ST-TX][ERROR] target root not ready root_id=%u state=%s ready_roots=%d\n",
+                root_id, server_connections_state_name(route.target_state), route.ready_count);
+        } else if (route_status == SLE_MANAGER_WRITE_NO_READY_ROOT) {
+            fprintf(stderr, "[CMD][ST-TX][ERROR] no READY root for root_id=%u\n", root_id);
+        } else if (route_status == SLE_MANAGER_WRITE_ROUTE_AMBIGUOUS) {
+            fprintf(stderr, "[CMD][ST-TX][ERROR] route ambiguous root_id=%u ready_roots=%d target_known=%d\n",
+                root_id, route.ready_count, route.target_known ? 1 : 0);
+        } else {
+            fprintf(stderr, "[CMD][ST-TX][ERROR] route select failed root_id=%u ret=%d\n",
+                root_id, route_status);
         }
-        if (!server.used || server.state != SLE_SERVER_READY ||
-            server.conn_id == SLE_INVALID_CONN_ID || server.write_handle == 0) {
-            continue;
-        }
-        ready_count++;
-        if (root_id != 0 && server.root_node_id == root_id) {
-            selected = server;
-            selected_index = (int)i;
-            has_exact_root = true;
-            break;
-        }
-        if (selected_index < 0) {
-            selected = server;
-            selected_index = (int)i;
-        }
-    }
-
-    if (ready_count == 0) {
-        fprintf(stderr, "[CMD][ST-TX][ERROR] no READY root for root_id=%u\n", root_id);
-        return -3;
-    }
-    if (ready_count > 1 && !has_exact_root) {
-        fprintf(stderr, "[CMD][ST-TX][ERROR] multiple READY roots=%d root_id=%u, route mapping unavailable\n",
-            ready_count, root_id);
-        return -4;
+        return route_status;
     }
 
     pthread_mutex_lock(&g_downlink_lock);
@@ -1248,17 +1366,17 @@ int sle_manager_write_st_frame(uint16_t root_id, const uint8_t *data, uint16_t l
     memcpy(g_downlink_buffers[slot], data, len);
     ssapc_write_param_t param;
     memset(&param, 0, sizeof(param));
-    param.handle = selected.write_handle;
+    param.handle = route.selected.write_handle;
     param.type = SSAP_PROPERTY_TYPE_VALUE;
     param.data_len = len;
     param.data = g_downlink_buffers[slot];
     g_downlink_pending = true;
-    g_downlink_pending_conn_id = selected.conn_id;
-    g_downlink_pending_handle = selected.write_handle;
+    g_downlink_pending_conn_id = route.selected.conn_id;
+    g_downlink_pending_handle = route.selected.write_handle;
     g_downlink_status = ERRCODE_SLE_SUCCESS;
     pthread_mutex_unlock(&g_downlink_lock);
 
-    errcode_t ret = ssapc_write_req(g_client_id, selected.conn_id, &param);
+    errcode_t ret = ssapc_write_req(g_client_id, route.selected.conn_id, &param);
     if (ret != ERRCODE_SLE_SUCCESS) {
         pthread_mutex_lock(&g_downlink_lock);
         g_downlink_pending = false;
@@ -1272,7 +1390,7 @@ int sle_manager_write_st_frame(uint16_t root_id, const uint8_t *data, uint16_t l
             int wait_rc = pthread_cond_timedwait(&g_downlink_cond, &g_downlink_lock, &timeout_at);
             if (wait_rc == ETIMEDOUT && g_downlink_pending) {
                 fprintf(stderr, "[CMD][ST-TX][ERROR] write confirm timeout root_id=%u conn_id=%u handle=0x%x len=%u\n",
-                    root_id, selected.conn_id, selected.write_handle, len);
+                    root_id, route.selected.conn_id, route.selected.write_handle, len);
                 g_downlink_pending = false;
                 ret = (errcode_t)ETIMEDOUT;
                 break;
@@ -1285,8 +1403,9 @@ int sle_manager_write_st_frame(uint16_t root_id, const uint8_t *data, uint16_t l
     }
 
     uint16_t dst_node_id = (uint16_t)(data[7] | (data[8] << 8));
-    fprintf(stderr, "[CMD][ST-TX] root_id=%u dst_node_id=%u server_index=%d conn_id=%u handle=0x%x len=%u ret=%d\n",
-        root_id, dst_node_id, selected_index, selected.conn_id, selected.write_handle, len, ret);
+    fprintf(stderr, "[CMD][ST-TX] mode=write_req root_id=%u dst_node_id=%u server_index=%d conn_id=%u handle=0x%x len=%u ret=%d route=%s\n",
+        root_id, dst_node_id, route.selected_index, route.selected.conn_id, route.selected.write_handle, len, ret,
+        route.selected_by_addr_hint ? "addr_hint" : "learned");
     if (ret == ERRCODE_SLE_SUCCESS) {
         /*
          * write_cfm means the stack accepted the write, but the current root
@@ -1296,7 +1415,7 @@ int sle_manager_write_st_frame(uint16_t root_id, const uint8_t *data, uint16_t l
         usleep(SLE_DOWNLINK_POST_WRITE_GAP_US);
         return 0;
     }
-    return -5;
+    return SLE_MANAGER_WRITE_FAILED;
 }
 
 /* --------------------------------------------------------------------------

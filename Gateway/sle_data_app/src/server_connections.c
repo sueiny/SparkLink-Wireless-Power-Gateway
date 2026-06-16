@@ -145,7 +145,6 @@ void server_connections_mark_connecting(sle_server_connections_t *table, int ser
     }
     table->servers[server_index].state = SLE_SERVER_CONNECTING;
     table->servers[server_index].conn_id = SLE_INVALID_CONN_ID;
-    table->servers[server_index].root_node_id = 0;
     
     /* 重置连接流程标志 */
     table->servers[server_index].mtu_done = false;
@@ -180,7 +179,6 @@ void server_connections_mark_connected(sle_server_connections_t *table, int serv
     pthread_mutex_lock(&table->mutex);
     table->servers[server_index].state = SLE_SERVER_CONNECTED;
     table->servers[server_index].conn_id = conn_id;
-    table->servers[server_index].root_node_id = 0;
     table->servers[server_index].pair_state = pair_state;
     
     /* 重置连接流程标志 */
@@ -265,8 +263,6 @@ void server_connections_mark_disconnected(sle_server_connections_t *table, int s
         table->servers[server_index].service_start_handle = 0;
         table->servers[server_index].service_end_handle = 0;
     }
-    table->servers[server_index].root_node_id = 0;
-    
     /* 重置连接流程标志 */
     table->servers[server_index].mtu_done = false;
     table->servers[server_index].discovery_done = false;

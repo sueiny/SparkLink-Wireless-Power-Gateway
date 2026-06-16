@@ -16,7 +16,12 @@ static const sle_app_config_t kDefaultConfig = {
     .conn_scan_interval         = 100,
     .conn_scan_window           = 100,
     .conn_interval              = 0x14,
-    .conn_latency               = 0x1F3,
+    /*
+     * Keep the runtime link close to the verified sample client.  A large
+     * latency with the current 5s supervision timeout causes unstable root
+     * reconnects and makes downlink writes hard to verify on UART.
+     */
+    .conn_latency               = 0xFFFF,
     .supervision_timeout        = 0x1F4,
     .mtu                        = 300,
 
