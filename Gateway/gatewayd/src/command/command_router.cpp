@@ -24,6 +24,7 @@ CommandParseResult CommandRouter::parse(const RawCommandMessage &raw,
         request.source_topic = raw.topic;
         request.request_id = requestIdFromTopic(raw.topic);
         request.received_ts_ms = raw.received_ts_ms;
+        request.local_only = raw.local_only;
         parsed.has_immediate_response = true;
         parsed.immediate_response =
             buildResponse(request, makeCommandError("BAD_JSON", decoded.error));
@@ -43,6 +44,7 @@ CommandParseResult CommandRouter::parse(const RawCommandMessage &raw,
                          ? payload["params"]
                          : nlohmann::json::object();
     request.received_ts_ms = raw.received_ts_ms;
+    request.local_only = raw.local_only;
 
     if (!request.params.is_object())
         request.params = nlohmann::json::object();

@@ -29,14 +29,25 @@ bool INetworkProvider::defaultHasIp(const std::string &ifname) const
     return interfaceHasIpv4(ifname);
 }
 
-bool INetworkProvider::defaultCanReachCloud(const std::string &host, int port) const
+bool INetworkProvider::defaultCanReachCloud(const std::string &host,
+                                            int port,
+                                            std::string *reason) const
 {
-    return tcpConnect(host, port, 5000);
+    const auto result = tcpConnectDetailed(host, port, 5000);
+    if (reason)
+        *reason = result.reason;
+    return result.ok;
 }
 
-bool INetworkProvider::defaultCanReachCloud(const std::string &host, int port, const std::string &ifname) const
+bool INetworkProvider::defaultCanReachCloud(const std::string &host,
+                                            int port,
+                                            const std::string &ifname,
+                                            std::string *reason) const
 {
-    return tcpConnectVia(host, port, 5000, ifname);
+    const auto result = tcpConnectViaDetailed(host, port, 5000, ifname);
+    if (reason)
+        *reason = result.reason;
+    return result.ok;
 }
 
 } // namespace gateway::network

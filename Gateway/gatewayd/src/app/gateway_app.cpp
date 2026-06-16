@@ -145,6 +145,7 @@ bool GatewayApp::init()
         *gateway_cloud_client_,
         cache_store_.get(),
         telemetry_queue_,
+        command_queue_,
         publish_queue_});
     command_manager_ = std::make_unique<CommandManager>(
         cfg,

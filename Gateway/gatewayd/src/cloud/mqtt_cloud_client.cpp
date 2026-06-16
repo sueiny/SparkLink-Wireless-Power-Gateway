@@ -81,7 +81,7 @@ bool MqttCloudClient::connect()
     // 注意：setDefaultRouteVia 由调用方 (PublishManager::ensureCloudConnected) 负责，
     // MQTT 客户端不应修改系统路由。
     logger_.info("MQTT", "connecting to " + config_.host + ":" + std::to_string(config_.port) +
-                " via " + (bind_interface_.empty() ? "default" : bind_interface_));
+                ", expected_ifname=" + (bind_interface_.empty() ? "default" : bind_interface_));
 
     const int rc = mosquitto_connect(
         client_,

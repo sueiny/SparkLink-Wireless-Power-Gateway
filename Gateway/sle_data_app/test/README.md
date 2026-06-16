@@ -101,6 +101,19 @@ run_dtu_root_real.bat
 
 板端由 `driver.sh test-real-listen` 启动 `gatewayd + sle_data_app --mode real`，然后用 `watch-real` 监听 `/tmp/sle_app.log` 与 `gateway.log`。通过标准是 `/tmp/sle_app.log` 出现 `[SLE][DECODED] ... magic=53 54`，随后 `gateway.log` 出现 `SLE-IPC batch collected`、`METER_001` 解析和 MQTT telemetry publish。
 
+### 下行 ST 命令监听
+
+离线规则或云端 `set_relay` 下发后，`gatewayd` 会构造完整 ST DATA 帧，`sle_data_app` 只负责 raw ST 写入 SLE。DTU root 若把收到的下行帧打印到 COM，可用下列脚本校验目标节点、Modbus 功能码、写值和 CRC：
+
+```cmd
+# 电表过流拉闸，root 侧收到完整 ST 包
+py -3 dtu_downlink_command_tester.py COM19 COM23 COM36 --duration 60 --expect meter-trip --expect-root-id 1
+
+# 继电器断开/闭合模拟，验收 root 侧收到完整 ST 包
+py -3 dtu_downlink_command_tester.py COM19 COM23 COM36 --duration 60 --expect relay-open --expect-root-id 1
+py -3 dtu_downlink_command_tester.py COM19 COM23 COM36 --duration 60 --expect relay-close --expect-root-id 1
+```
+
 ## Linux使用方法
 
 ### 步骤1: 启动网关端

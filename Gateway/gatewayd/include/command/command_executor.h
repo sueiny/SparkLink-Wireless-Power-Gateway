@@ -24,7 +24,9 @@ public:
 
 private:
     // 通过 IPC 发送命令到 sle_data_app
-    CommandResult executeViaIpc(const CommandRequest &request, uint8_t dtu_id) const;
+    CommandResult executeViaIpc(const CommandRequest &request,
+                                uint8_t dtu_id,
+                                const config::AppConfig &config) const;
 
     // 模拟执行（兼容无 IPC 场景）
     CommandResult executeSimulated(const CommandRequest &request) const;
@@ -33,6 +35,7 @@ private:
     int findDtuIdForDevice(const CommandRequest &request, const config::AppConfig &config) const;
 
     datasource::IpcCmdSender *ipc_cmd_sender_;
+    mutable uint16_t next_downlink_seq_ = 1;
 };
 
 } // namespace gateway::command

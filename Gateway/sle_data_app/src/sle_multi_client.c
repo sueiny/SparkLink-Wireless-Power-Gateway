@@ -4,13 +4,16 @@
 #include "modbus_sim.h"
 
 #include <errno.h>
+#include <ctype.h>
 #include <pthread.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/time.h>
+#include <time.h>
 #include <unistd.h>
 
 #include "securec.h"
@@ -55,6 +58,12 @@
 #define SLE_DISCONNECT_REASON_PAIRING_TIMEOUT       0xE003
 #define SLE_DISCONNECT_REASON_DISCOVERY_TIMEOUT     0xE004
 #define SLE_DISCONNECT_REASON_ACTIVE_LIMIT          0xE005
+#define SLE_DOWNLINK_BUFFER_SLOTS                  4
+#define SLE_DOWNLINK_MAX_LEN                       256
+#define SLE_DOWNLINK_WRITE_TIMEOUT_MS              3000
+#define SLE_DOWNLINK_POST_WRITE_GAP_US             1000000
+#define SLE_ST_HEADER_LEN                          13
+#define SLE_ROLE_ROOT                              1
 
 /* 日志控制 */
 #define SLE_VERBOSE_LOG 0
@@ -77,6 +86,14 @@ static int g_last_reported_active_count = -1;
 static pthread_mutex_t g_core_lock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t g_scan_restart_lock = PTHREAD_MUTEX_INITIALIZER;
 static bool g_scan_restart_pending;
+static pthread_mutex_t g_downlink_lock = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t g_downlink_cond = PTHREAD_COND_INITIALIZER;
+static uint8_t g_downlink_buffers[SLE_DOWNLINK_BUFFER_SLOTS][SLE_DOWNLINK_MAX_LEN];
+static uint8_t g_downlink_next_slot;
+static bool g_downlink_pending;
+static uint16_t g_downlink_pending_conn_id;
+static uint16_t g_downlink_pending_handle;
+static errcode_t g_downlink_status;
 
 typedef struct {
     bool used;
@@ -108,6 +125,49 @@ static uint64_t now_ms(void)
     return (uint64_t)tv.tv_sec * 1000ULL + (uint64_t)tv.tv_usec / 1000ULL;
 }
 
+static void make_abs_timeout_ms(struct timespec *ts, uint32_t timeout_ms)
+{
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    ts->tv_sec = tv.tv_sec + (time_t)(timeout_ms / 1000);
+    ts->tv_nsec = ((long)tv.tv_usec * 1000L) + (long)(timeout_ms % 1000) * 1000000L;
+    if (ts->tv_nsec >= 1000000000L) {
+        ts->tv_sec += 1;
+        ts->tv_nsec -= 1000000000L;
+    }
+}
+
+static uint16_t root_id_from_st_frame(const uint8_t *data, uint16_t len)
+{
+    if (data == NULL || len < SLE_ST_HEADER_LEN) {
+        return 0;
+    }
+    if (data[0] != 'S' || data[1] != 'T' || data[2] != 0x01 || data[4] != SLE_ROLE_ROOT) {
+        char compact[96] = {0};
+        size_t compact_len = 0;
+        for (uint16_t i = 0; i < len && compact_len + 1 < sizeof(compact); ++i) {
+            if (isxdigit(data[i])) {
+                compact[compact_len++] = (char)toupper(data[i]);
+            }
+        }
+        char *st_hex = strstr(compact, "5354");
+        if (st_hex == NULL || strlen(st_hex) < SLE_ST_HEADER_LEN * 2) {
+            return 0;
+        }
+        uint8_t header[SLE_ST_HEADER_LEN];
+        for (int i = 0; i < SLE_ST_HEADER_LEN; ++i) {
+            char byte_hex[3] = {st_hex[i * 2], st_hex[i * 2 + 1], 0};
+            header[i] = (uint8_t)strtoul(byte_hex, NULL, 16);
+        }
+        if (header[0] != 'S' || header[1] != 'T' || header[2] != 0x01 ||
+            header[4] != SLE_ROLE_ROOT) {
+            return 0;
+        }
+        return (uint16_t)(header[5] | (header[6] << 8));
+    }
+    return (uint16_t)(data[5] | (data[6] << 8));
+}
+
 static void print_connection_table(void)
 {
     fprintf(stderr, "[SLE][TABLE] begin\n");
@@ -118,8 +178,8 @@ static void print_connection_table(void)
         }
         char addr[32] = {0};
         server_connections_addr_to_string(&server.addr, addr, sizeof(addr));
-        fprintf(stderr, "[SLE][TABLE] server_index=%u state=%s conn_id=%u mac=%s rx_count=%u reason=0x%x\n",
-            i, server_connections_state_name(server.state), server.conn_id, addr,
+        fprintf(stderr, "[SLE][TABLE] server_index=%u state=%s conn_id=%u root_id=%u mac=%s rx_count=%u reason=0x%x\n",
+            i, server_connections_state_name(server.state), server.conn_id, server.root_node_id, addr,
             server.rx_count, server.disconnect_reason);
     }
     fprintf(stderr, "[SLE][TABLE] end\n");
@@ -1034,9 +1094,20 @@ static void find_property_cb(uint8_t client_id, uint16_t conn_id, ssapc_find_pro
 static void write_confirm_cb(uint8_t client_id, uint16_t conn_id, ssapc_write_result_t *write_result,
     errcode_t status)
 {
+    (void)client_id;
     uint16_t handle = write_result != NULL ? write_result->handle : 0;
     SLE_VERBOSE("[SLE][SSAP] write cfm client=%u conn_id=%u handle=0x%x status=%d\n",
         client_id, conn_id, handle, status);
+
+    pthread_mutex_lock(&g_downlink_lock);
+    if (g_downlink_pending &&
+        g_downlink_pending_conn_id == conn_id &&
+        g_downlink_pending_handle == handle) {
+        g_downlink_status = status;
+        g_downlink_pending = false;
+        pthread_cond_broadcast(&g_downlink_cond);
+    }
+    pthread_mutex_unlock(&g_downlink_lock);
 }
 
 static void read_confirm_cb(uint8_t client_id, uint16_t conn_id, ssapc_handle_value_t *read_data, errcode_t status)
@@ -1061,6 +1132,12 @@ static void notification_cb(uint8_t client_id, uint16_t conn_id, ssapc_handle_va
         return;
     }
     server_connections_record_rx(&g_server_connections, server_index, now_ms());
+    uint16_t root_id = root_id_from_st_frame(data->data, data->data_len);
+    if (root_id != 0) {
+        server_connections_set_root_node_id(&g_server_connections, server_index, root_id);
+        SLE_VERBOSE("[SLE][ROUTE] learned root_id=%u server_index=%d conn_id=%u\n",
+            root_id, server_index, conn_id);
+    }
 
     sle_server_connection_t server;
     if (server_connections_get_server_copy(&g_server_connections, server_index, &server)) {
@@ -1101,6 +1178,125 @@ static void register_callbacks(void)
     sle_announce_seek_register_callbacks(&g_seek_cbk);
     sle_connection_register_callbacks(&g_connect_cbk);
     ssapc_register_callbacks(&g_ssapc_cbk);
+}
+
+int sle_manager_write_st_frame(uint16_t root_id, const uint8_t *data, uint16_t len)
+{
+    if (data == NULL || len < 13 || len > SLE_DOWNLINK_MAX_LEN) {
+        fprintf(stderr, "[CMD][ST-TX][ERROR] invalid ST frame len=%u root_id=%u\n",
+            len, root_id);
+        return -1;
+    }
+    if (data[0] != 'S' || data[1] != 'T' || data[2] != 0x01) {
+        fprintf(stderr, "[CMD][ST-TX][ERROR] invalid ST header root_id=%u len=%u\n",
+            root_id, len);
+        return -2;
+    }
+
+    sle_server_connection_t selected;
+    int selected_index = -1;
+    int ready_count = 0;
+    bool has_exact_root = false;
+    memset(&selected, 0, sizeof(selected));
+
+    for (uint8_t i = 0; i < g_config.max_connections; ++i) {
+        sle_server_connection_t server;
+        if (!server_connections_get_server_copy(&g_server_connections, i, &server)) {
+            continue;
+        }
+        if (!server.used || server.state != SLE_SERVER_READY ||
+            server.conn_id == SLE_INVALID_CONN_ID || server.write_handle == 0) {
+            continue;
+        }
+        ready_count++;
+        if (root_id != 0 && server.root_node_id == root_id) {
+            selected = server;
+            selected_index = (int)i;
+            has_exact_root = true;
+            break;
+        }
+        if (selected_index < 0) {
+            selected = server;
+            selected_index = (int)i;
+        }
+    }
+
+    if (ready_count == 0) {
+        fprintf(stderr, "[CMD][ST-TX][ERROR] no READY root for root_id=%u\n", root_id);
+        return -3;
+    }
+    if (ready_count > 1 && !has_exact_root) {
+        fprintf(stderr, "[CMD][ST-TX][ERROR] multiple READY roots=%d root_id=%u, route mapping unavailable\n",
+            ready_count, root_id);
+        return -4;
+    }
+
+    pthread_mutex_lock(&g_downlink_lock);
+    while (g_downlink_pending) {
+        struct timespec timeout_at;
+        make_abs_timeout_ms(&timeout_at, SLE_DOWNLINK_WRITE_TIMEOUT_MS);
+        int wait_rc = pthread_cond_timedwait(&g_downlink_cond, &g_downlink_lock, &timeout_at);
+        if (wait_rc == ETIMEDOUT && g_downlink_pending) {
+            fprintf(stderr, "[CMD][ST-TX][ERROR] previous write confirm timeout root_id=%u\n",
+                root_id);
+            g_downlink_pending = false;
+            break;
+        }
+    }
+
+    uint8_t slot = g_downlink_next_slot++ % SLE_DOWNLINK_BUFFER_SLOTS;
+    memcpy(g_downlink_buffers[slot], data, len);
+    ssapc_write_param_t param;
+    memset(&param, 0, sizeof(param));
+    param.handle = selected.write_handle;
+    param.type = SSAP_PROPERTY_TYPE_VALUE;
+    param.data_len = len;
+    param.data = g_downlink_buffers[slot];
+    g_downlink_pending = true;
+    g_downlink_pending_conn_id = selected.conn_id;
+    g_downlink_pending_handle = selected.write_handle;
+    g_downlink_status = ERRCODE_SLE_SUCCESS;
+    pthread_mutex_unlock(&g_downlink_lock);
+
+    errcode_t ret = ssapc_write_req(g_client_id, selected.conn_id, &param);
+    if (ret != ERRCODE_SLE_SUCCESS) {
+        pthread_mutex_lock(&g_downlink_lock);
+        g_downlink_pending = false;
+        pthread_cond_broadcast(&g_downlink_cond);
+        pthread_mutex_unlock(&g_downlink_lock);
+    } else {
+        struct timespec timeout_at;
+        make_abs_timeout_ms(&timeout_at, SLE_DOWNLINK_WRITE_TIMEOUT_MS);
+        pthread_mutex_lock(&g_downlink_lock);
+        while (g_downlink_pending) {
+            int wait_rc = pthread_cond_timedwait(&g_downlink_cond, &g_downlink_lock, &timeout_at);
+            if (wait_rc == ETIMEDOUT && g_downlink_pending) {
+                fprintf(stderr, "[CMD][ST-TX][ERROR] write confirm timeout root_id=%u conn_id=%u handle=0x%x len=%u\n",
+                    root_id, selected.conn_id, selected.write_handle, len);
+                g_downlink_pending = false;
+                ret = (errcode_t)ETIMEDOUT;
+                break;
+            }
+        }
+        if (ret == ERRCODE_SLE_SUCCESS && g_downlink_status != ERRCODE_SLE_SUCCESS) {
+            ret = g_downlink_status;
+        }
+        pthread_mutex_unlock(&g_downlink_lock);
+    }
+
+    uint16_t dst_node_id = (uint16_t)(data[7] | (data[8] << 8));
+    fprintf(stderr, "[CMD][ST-TX] root_id=%u dst_node_id=%u server_index=%d conn_id=%u handle=0x%x len=%u ret=%d\n",
+        root_id, dst_node_id, selected_index, selected.conn_id, selected.write_handle, len, ret);
+    if (ret == ERRCODE_SLE_SUCCESS) {
+        /*
+         * write_cfm means the stack accepted the write, but the current root
+         * UART debug firmware can still miss back-to-back downlink prints.
+         * Keep raw ST transport serialized with a small application-level gap.
+         */
+        usleep(SLE_DOWNLINK_POST_WRITE_GAP_US);
+        return 0;
+    }
+    return -5;
 }
 
 /* --------------------------------------------------------------------------

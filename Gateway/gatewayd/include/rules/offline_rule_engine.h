@@ -19,15 +19,29 @@ struct RuleEvent {
     nlohmann::json details = nlohmann::json::object();
 };
 
+struct OfflineControlAction {
+    std::string request_id;
+    std::string target_device_id;
+    std::string method = "set_relay";
+    nlohmann::json params = nlohmann::json::object();
+    std::string rule_id;
+    std::string message;
+};
+
+struct OfflineRuleEvaluation {
+    std::vector<RuleEvent> events;
+    std::vector<OfflineControlAction> actions;
+};
+
 // 离线规则引擎只做纯计算：输入标准化 TelemetryData，输出待发布事件。
 // 它不处理 MQTT、不写 SQLite，也不解析 SLE/Modbus 原始帧。
 class OfflineRuleEngine {
 public:
     explicit OfflineRuleEngine(const config::AppConfig &config);
 
-    std::vector<RuleEvent> evaluate(const std::vector<model::TelemetryData> &batch,
-                                    bool offline_state,
-                                    int64_t now_ms);
+    OfflineRuleEvaluation evaluate(const std::vector<model::TelemetryData> &batch,
+                                   bool offline_state,
+                                   int64_t now_ms);
 
 private:
     struct RuleState {
@@ -40,10 +54,20 @@ private:
     config::MeterRuleConfig meterConfigFor(const std::string &device_id) const;
     config::EnvRuleConfig envConfigFor(const std::string &device_id) const;
     config::DtuRuleConfig dtuConfigFor(const std::string &device_id) const;
+    bool controlEnabled() const;
+    void enqueueMeterControl(const model::TelemetryData &data,
+                             bool trip,
+                             int64_t now_ms,
+                             std::vector<OfflineControlAction> *actions);
+    void enqueueRelayControls(const model::TelemetryData &data,
+                              bool open,
+                              int64_t now_ms,
+                              std::vector<OfflineControlAction> *actions);
 
     void evaluateMeter(const model::TelemetryData &data,
                        int64_t now_ms,
-                       std::vector<RuleEvent> *events);
+                       std::vector<RuleEvent> *events,
+                       std::vector<OfflineControlAction> *actions);
     void evaluateEnv(const model::TelemetryData &data,
                      int64_t now_ms,
                      std::vector<RuleEvent> *events);
@@ -54,7 +78,8 @@ private:
                     bool condition,
                     int hold_ms,
                     int64_t now_ms,
-                    int64_t *duration_ms);
+                    int64_t *duration_ms,
+                    bool *cleared = nullptr);
 
     void reset();
 

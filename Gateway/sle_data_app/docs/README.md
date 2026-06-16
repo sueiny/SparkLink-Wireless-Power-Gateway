@@ -29,6 +29,7 @@
 
 - `使用说明.md`：启动模式、真实链路、Mock 调试、两路 Root 测试和常用 ADB 检查。
 - `命令对接阅读理解.md`：ThingsKit 下行到命令 IPC、`ipc_cmd_receiver`、`sle_cmd_handler` 的阅读路径。
+- `../gatewayd/docs/上下行测试包格式与用例.md`：上下行 ST/Modbus 测试包、串口脚本、raw ST 转发和当前验收结论。协议封装以 `gatewayd/docs` 为准。
 - `架构分析与改造计划.md`：`sle_data_app` 架构演进和后续改造方向。
 - `Modbus寄存器仿真规格.md`：Mock/脚本侧 Modbus 响应和寄存器规格。
 - `architecture.md`、`connection_flow.md`、`server_connections.md`、`sle_params.md`、`test_plan.md`：早期 SLE client 和连接参数设计记录，保留作为实现背景。

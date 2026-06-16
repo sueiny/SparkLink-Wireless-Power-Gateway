@@ -22,6 +22,7 @@ which writes ST frame bytes directly.
 import argparse
 import csv
 import json
+import re
 import struct
 import sys
 import threading
@@ -59,6 +60,7 @@ SLE_ROLE_LEAF = 0x03
 SLE_ROLE_GATEWAY = 0x04
 SLE_FRAME_HEADER_LEN = 13
 SLE_FRAME_MAX_LEN = 256
+SLE_FRAME_MAX_PAYLOAD = SLE_FRAME_MAX_LEN - SLE_FRAME_HEADER_LEN
 
 TOPOLOGY_NODES: Dict[int, Tuple[int, Tuple[int, ...]]] = {
     1: (0, (2, 3, 8, 9, 10, 11)),
@@ -72,7 +74,7 @@ TOPOLOGY_NODES: Dict[int, Tuple[int, Tuple[int, ...]]] = {
     9: (1, ()),
     10: (1, ()),
     11: (1, ()),
-    12: (0, (13, 14, 15)),
+    12: (0, (13, 14, 15, 23, 26, 29)),
     13: (12, (16, 17, 18)),
     14: (12, (19, 20)),
     15: (12, (21, 22)),
@@ -83,13 +85,13 @@ TOPOLOGY_NODES: Dict[int, Tuple[int, Tuple[int, ...]]] = {
     20: (14, ()),
     21: (15, ()),
     22: (15, ()),
-    23: (0, (24, 25)),
+    23: (12, (24, 25)),
     24: (23, ()),
     25: (23, ()),
-    26: (0, (27, 28)),
+    26: (12, (27, 28)),
     27: (26, ()),
     28: (26, ()),
-    29: (0, (30, 31)),
+    29: (12, (30, 31)),
     30: (29, ()),
     31: (29, ()),
 }
@@ -120,6 +122,14 @@ def crc16_modbus(data: bytes) -> int:
     return crc & 0xFFFF
 
 
+def modbus_crc_ok(frame: bytes) -> bool:
+    if len(frame) < 4:
+        return False
+    expected = crc16_modbus(frame[:-2])
+    actual = frame[-2] | (frame[-1] << 8)
+    return expected == actual
+
+
 def u16be(value: int) -> bytes:
     return struct.pack(">H", value & 0xFFFF)
 
@@ -132,6 +142,155 @@ def u16le(value: int) -> bytes:
     return struct.pack("<H", value & 0xFFFF)
 
 
+def read_u16le(data: bytes, offset: int) -> int:
+    return data[offset] | (data[offset + 1] << 8)
+
+
+def extract_downlink_candidates(line: bytes) -> Iterable[bytes]:
+    if b"ST" in line:
+        start = line.find(b"ST")
+        yield line[start:].rstrip(b"\r\n")
+
+    text = line.decode("ascii", errors="ignore")
+    for match in re.findall(r"(?:53\s*54\s*)[0-9A-Fa-f\s:,-]{20,}", text):
+        hex_text = re.sub(r"[^0-9A-Fa-f]", "", match)
+        if len(hex_text) >= SLE_FRAME_HEADER_LEN * 2 and len(hex_text) % 2 == 0:
+            yield bytes.fromhex(hex_text)
+
+
+def parse_downlink_frame(port: str, raw: bytes) -> Optional[Dict[str, object]]:
+    start = raw.find(b"ST")
+    if start < 0:
+        return None
+    raw = raw[start:]
+    if len(raw) < SLE_FRAME_HEADER_LEN or raw[2] != SLE_FRAME_VERSION:
+        return None
+
+    payload_len = read_u16le(raw, 11)
+    if payload_len > SLE_FRAME_MAX_PAYLOAD:
+        return None
+    total_len = SLE_FRAME_HEADER_LEN + payload_len
+    if len(raw) < total_len:
+        return None
+
+    frame = raw[:total_len]
+    payload = frame[SLE_FRAME_HEADER_LEN:]
+    if len(payload) < 2:
+        return None
+
+    modbus_type = payload[0]
+    modbus_len = payload[1]
+    if modbus_len == 0 or len(payload) < 2 + modbus_len:
+        return None
+
+    modbus_rtu = payload[2:2 + modbus_len]
+    return {
+        "port": port,
+        "raw_hex": frame.hex().upper(),
+        "dst_node_id": read_u16le(frame, 7),
+        "modbus_type": modbus_type,
+        "modbus_rtu": modbus_rtu,
+        "modbus_rtu_hex": modbus_rtu.hex().upper(),
+        "crc_ok": modbus_crc_ok(modbus_rtu),
+    }
+
+
+def downlink_matches(frame: Dict[str, object], args: argparse.Namespace) -> bool:
+    if args.expect_downlink == "none":
+        return False
+    if int(frame["dst_node_id"]) != args.expect_dtu_id or not bool(frame["crc_ok"]):
+        return False
+
+    rtu = frame["modbus_rtu"]
+    if not isinstance(rtu, bytes):
+        return False
+
+    if args.expect_downlink == "meter-trip":
+        return (
+            int(frame["modbus_type"]) == 2
+            and len(rtu) >= 11
+            and rtu[1] == 0x10
+            and rtu[2:4] == b"\x00\x10"
+            and rtu[7:9] == b"\xAA\xAA"
+        )
+
+    if args.expect_downlink in {"relay-open", "relay-close"}:
+        expected_value = b"\x00\x00" if args.expect_downlink == "relay-open" else b"\xFF\x00"
+        return (
+            int(frame["modbus_type"]) == 4
+            and len(rtu) >= 8
+            and rtu[1] == 0x05
+            and rtu[2:4] == bytes([0x00, args.expect_channel & 0xFF])
+            and rtu[4:6] == expected_value
+        )
+
+    return False
+
+
+def record_downlink_candidate(port: str,
+                              candidate: bytes,
+                              args: argparse.Namespace,
+                              stats: Dict[str, object]) -> None:
+    frame = parse_downlink_frame(port, candidate)
+    if frame is None:
+        return
+
+    stats["downlink_frames_seen"] = int(stats["downlink_frames_seen"]) + 1
+    seen_frames = stats.get("downlink_seen_frames")
+    if isinstance(seen_frames, list) and len(seen_frames) < 8:
+        seen_frames.append({
+            "port": port,
+            "dst_node_id": frame["dst_node_id"],
+            "modbus_type": frame["modbus_type"],
+            "modbus_rtu_hex": frame["modbus_rtu_hex"],
+            "crc_ok": frame["crc_ok"],
+            "raw_hex": frame["raw_hex"],
+        })
+    if downlink_matches(frame, args):
+        stats["downlink_matched"] = True
+        stats["downlink_matched_port"] = port
+        stats["downlink_matched_frame_hex"] = str(frame["raw_hex"])
+        stats["downlink_matched_modbus_rtu_hex"] = str(frame["modbus_rtu_hex"])
+
+
+def consume_rx(port: str,
+               rx: bytes,
+               args: argparse.Namespace,
+               stats: Dict[str, object],
+               rx_buffer: bytes) -> bytes:
+    stats["rx_bytes"] = int(stats["rx_bytes"]) + len(rx)
+    if not rx or args.expect_downlink == "none":
+        return rx_buffer[-4096:]
+
+    rx_buffer += rx
+    lines = rx_buffer.split(b"\n")
+    rx_buffer = lines[-1]
+    for line in lines[:-1]:
+        for candidate in extract_downlink_candidates(line):
+            record_downlink_candidate(port, candidate, args, stats)
+
+    # Binary ST frames may not be line-delimited. Consume complete frames from
+    # the remaining buffer without disturbing partial UART text.
+    while True:
+        start = rx_buffer.find(b"ST")
+        if start < 0:
+            break
+        if len(rx_buffer) - start < SLE_FRAME_HEADER_LEN:
+            break
+        payload_len = read_u16le(rx_buffer, start + 11)
+        if payload_len > SLE_FRAME_MAX_PAYLOAD:
+            rx_buffer = rx_buffer[start + 2:]
+            continue
+        total_len = SLE_FRAME_HEADER_LEN + payload_len
+        if len(rx_buffer) - start < total_len:
+            break
+        candidate = rx_buffer[start:start + total_len]
+        record_downlink_candidate(port, candidate, args, stats)
+        rx_buffer = rx_buffer[start + total_len:]
+
+    return rx_buffer[-4096:]
+
+
 def dtu_role(node_id: int) -> int:
     parent_id, child_ids = TOPOLOGY_NODES.get(node_id, (0, ()))
     if parent_id == 0:
@@ -142,9 +301,13 @@ def dtu_role(node_id: int) -> int:
 
 
 def build_meter_modbus_response(seq: int, slave_addr: int = DEFAULT_MODBUS_ADDR,
-                                dtu_id: int = DEFAULT_DTU_ID) -> bytes:
-    voltage = 220.0 + ((seq + dtu_id) % 10) * 0.1
-    current = 5.0 + ((seq + dtu_id) % 8) * 0.2
+                                dtu_id: int = DEFAULT_DTU_ID,
+                                meter_voltage: Optional[float] = None,
+                                meter_current: Optional[float] = None) -> bytes:
+    voltage = meter_voltage if meter_voltage is not None else (
+        220.0 + ((seq + dtu_id) % 10) * 0.1)
+    current = meter_current if meter_current is not None else (
+        5.0 + ((seq + dtu_id) % 8) * 0.2)
     power = int(voltage * current)
     power_factor = 960 + ((seq + dtu_id) % 5)
     frequency = 5000 + ((seq + dtu_id) % 3)
@@ -184,12 +347,19 @@ def build_relay_modbus_response(seq: int, slave_addr: int = DEFAULT_MODBUS_ADDR,
     return frame + bytes([crc & 0xFF, (crc >> 8) & 0xFF])
 
 
-def build_modbus_response(device: Dict[str, object], seq: int) -> bytes:
+def build_modbus_response(device: Dict[str, object], seq: int,
+                          args: Optional[argparse.Namespace] = None) -> bytes:
     dtu_id = int(device["dtu_id"])
     slave_addr = int(device.get("modbus_addr", DEFAULT_MODBUS_ADDR))
     kind = str(device["kind"])
     if kind == "meter":
-        return build_meter_modbus_response(seq, slave_addr, dtu_id)
+        return build_meter_modbus_response(
+            seq,
+            slave_addr,
+            dtu_id,
+            getattr(args, "meter_voltage", None),
+            getattr(args, "meter_current", None),
+        )
     if kind == "env":
         return build_env_modbus_response(seq, slave_addr, dtu_id)
     if kind == "relay":
@@ -197,9 +367,10 @@ def build_modbus_response(device: Dict[str, object], seq: int) -> bytes:
     raise ValueError(f"unsupported device kind: {kind}")
 
 
-def build_gateway_payload(seq: int, device: Optional[Dict[str, object]] = None) -> bytes:
+def build_gateway_payload(seq: int, device: Optional[Dict[str, object]] = None,
+                          args: Optional[argparse.Namespace] = None) -> bytes:
     selected = device or EXTERNAL_DEVICES[0]
-    modbus_rtu = build_modbus_response(selected, seq)
+    modbus_rtu = build_modbus_response(selected, seq, args)
     if len(modbus_rtu) > 241:
         raise ValueError(f"Modbus RTU frame too long: {len(modbus_rtu)}")
     return bytes([int(selected["modbus_type"]), len(modbus_rtu)]) + modbus_rtu
@@ -242,7 +413,7 @@ def build_data_frame(seq: int, args: argparse.Namespace,
                      src_node: Optional[int] = None) -> bytes:
     selected = device or EXTERNAL_DEVICES[0]
     node_id = int(selected["dtu_id"]) if src_node is None else src_node
-    payload = build_gateway_payload(seq, selected)
+    payload = build_gateway_payload(seq, selected, args)
     return build_sle_frame(
         SLE_FRAME_TYPE_DATA,
         dtu_role(node_id),
@@ -273,7 +444,7 @@ def encode_uart_write(raw: bytes, args: argparse.Namespace) -> bytes:
 
 def build_payload_uart_write(seq: int, args: argparse.Namespace,
                              device: Optional[Dict[str, object]] = None) -> bytes:
-    return encode_uart_write(build_gateway_payload(seq, device), args)
+    return encode_uart_write(build_gateway_payload(seq, device, args), args)
 
 
 def build_frame_uart_write(seq: int, args: argparse.Namespace, frame_type: str,
@@ -305,7 +476,7 @@ def iter_round_items(args: argparse.Namespace, round_index: int,
         if args.wire_format == "frame":
             raw = build_data_frame(seq, args, EXTERNAL_DEVICES[0], src_node=1)
         else:
-            raw = build_gateway_payload(round_index, EXTERNAL_DEVICES[0])
+            raw = build_gateway_payload(round_index, EXTERNAL_DEVICES[0], args)
         yield {
             "seq": seq,
             "kind": "data",
@@ -438,12 +609,23 @@ def run_port(port: str, args: argparse.Namespace) -> Dict[str, object]:
         "dtu_id": DEFAULT_DTU_ID,
         "modbus_type": DEFAULT_MODBUS_TYPE,
         "modbus_addr": DEFAULT_MODBUS_ADDR,
+        "meter_voltage": args.meter_voltage,
+        "meter_current": args.meter_current,
         "warmup_sec": args.warmup_sec,
         "warmup_interval": args.warmup_interval,
         "post_warmup_delay": args.post_warmup_delay,
         "hold_open": args.hold_open,
         "dtr": args.dtr,
         "rts": args.rts,
+        "expect_downlink": args.expect_downlink,
+        "expect_dtu_id": args.expect_dtu_id,
+        "expect_channel": args.expect_channel,
+        "downlink_frames_seen": 0,
+        "downlink_seen_frames": [],
+        "downlink_matched": False,
+        "downlink_matched_port": "",
+        "downlink_matched_frame_hex": "",
+        "downlink_matched_modbus_rtu_hex": "",
         "warmup_sent": 0,
         "warmup_errors": 0,
         "sent": 0,
@@ -471,6 +653,7 @@ def run_port(port: str, args: argparse.Namespace) -> Dict[str, object]:
     ser.write_timeout = 1.0
     ser.rtscts = False
     ser.dsrdtr = False
+    rx_buffer = b""
 
     with ser:
         try:
@@ -500,9 +683,12 @@ def run_port(port: str, args: argparse.Namespace) -> Dict[str, object]:
                 # Some firmware builds echo status over UART; consume it if present.
                 try:
                     rx = ser.read(ser.in_waiting or 0)
-                    stats["rx_bytes"] = int(stats["rx_bytes"]) + len(rx)
+                    rx_buffer = consume_rx(port, rx, args, stats, rx_buffer)
                 except Exception:
                     pass
+
+                if args.stop_on_downlink_match and stats["downlink_matched"]:
+                    break
 
                 if args.line_delay > 0 and idx + 1 < len(items):
                     time.sleep(args.line_delay)
@@ -510,6 +696,8 @@ def run_port(port: str, args: argparse.Namespace) -> Dict[str, object]:
             stats["rounds_sent"] = int(stats["rounds_sent"]) + 1
             frame_seq += len(items)
             round_index += 1
+            if args.stop_on_downlink_match and stats["downlink_matched"]:
+                break
             if args.count is None or round_index <= args.count:
                 time.sleep(args.interval)
 
@@ -518,9 +706,11 @@ def run_port(port: str, args: argparse.Namespace) -> Dict[str, object]:
             while time.time() < deadline:
                 try:
                     rx = ser.read(ser.in_waiting or 0)
-                    stats["rx_bytes"] = int(stats["rx_bytes"]) + len(rx)
+                    rx_buffer = consume_rx(port, rx, args, stats, rx_buffer)
                 except Exception:
                     pass
+                if args.stop_on_downlink_match and stats["downlink_matched"]:
+                    break
                 time.sleep(0.1)
 
     elapsed = max(time.time() - start, 0.001)
@@ -661,6 +851,19 @@ def parse_args() -> argparse.Namespace:
                         help="SLE frame source role; 1=root, 2=relay, 3=leaf")
     parser.add_argument("--no-heartbeat", action="store_true",
                         help="Do not send heartbeat frames in --wire-format frame mode")
+    parser.add_argument("--meter-voltage", type=float, default=None,
+                        help="Override generated meter voltage in volts for rule/offline tests")
+    parser.add_argument("--meter-current", type=float, default=None,
+                        help="Override generated meter current in amps for over-current tests")
+    parser.add_argument("--expect-downlink", choices=("none", "meter-trip", "relay-open", "relay-close"),
+                        default="none",
+                        help="Parse UART output and require a matching gateway downlink ST frame")
+    parser.add_argument("--expect-dtu-id", type=int, default=1,
+                        help="Expected downlink ST destination node id")
+    parser.add_argument("--expect-channel", type=int, default=0,
+                        help="Expected relay coil channel for relay downlink checks")
+    parser.add_argument("--stop-on-downlink-match", action="store_true",
+                        help="Stop each port as soon as it receives the expected downlink")
     parser.add_argument("--dry-run", action="store_true",
                         help="Print generated UART lines without opening serial ports")
     parser.add_argument("--preview-count", type=int, default=3,
@@ -698,6 +901,12 @@ def main() -> int:
         return 2
     if args.preview_count <= 0:
         print("--preview-count must be positive", file=sys.stderr)
+        return 2
+    if args.meter_voltage is not None and not (0.0 < args.meter_voltage <= 6553.5):
+        print("--meter-voltage must be in range (0, 6553.5]", file=sys.stderr)
+        return 2
+    if args.meter_current is not None and not (0.0 <= args.meter_current <= 655.35):
+        print("--meter-current must be in range [0, 655.35]", file=sys.stderr)
         return 2
     if args.scenario == "topology-all" and args.wire_format != "frame":
         print("--scenario topology-all requires --wire-format frame", file=sys.stderr)
@@ -737,7 +946,11 @@ def main() -> int:
 
     write_json(args.json_out, records)
     write_csv(args.csv_out, records)
-    return 1 if errors else 0
+    if errors:
+        return 1
+    if args.expect_downlink != "none" and not any(record.get("downlink_matched") for record in records):
+        return 2
+    return 0
 
 
 if __name__ == "__main__":

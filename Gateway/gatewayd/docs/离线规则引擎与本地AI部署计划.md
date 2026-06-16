@@ -26,7 +26,7 @@
 - 函数使用 `camelCase`，成员变量使用 `snake_case_`。
 - 构造函数只保存配置引用，不做 I/O。
 - `OfflineRuleEngine::evaluate()` 只消费标准化后的 `TelemetryData`，不解析 SLE/Modbus 原始帧。
-- 规则引擎只返回事件，不直接发布 MQTT，不写 SQLite。
+- 规则引擎只返回事件和本地控制动作，不直接发布 MQTT，不写 SQLite，不直接执行 IPC。
 - MQTT 回调线程、SLE IPC 线程、命令线程都不执行规则判断。
 - 规则事件统一进入 `PublishManager` 的发布队列，失败后复用 SQLite 缓存补传。
 
@@ -84,10 +84,16 @@
         "over_current_ratio": 1.2
       }
     }
-  },
-  "ai": {
-    "enable": false
-  }
+    },
+    "offline_control": {
+      "enable": true,
+      "offline_only": true,
+      "relay_close_on_recovery": true,
+      "relay_devices": ["RELAY_001", "RELAY_002"]
+    },
+    "ai": {
+      "enable": false
+    }
 }
 ```
 
@@ -137,17 +143,43 @@
 
 事件 topic 由 `MqttCloudClient` 的 `eventsTopic()` 提供，保持和 `thingskit.topic_prefix` 一致。
 
-## 7. 后续 AI 边界
+## 7. 离线自动控制边界
+
+离线控制只在 `offline_analysis.offline_control.enable=true` 且断网门控已经进入 active 后执行。
+
+当前控制策略：
+
+- `over_current` 持续达到 `hold_ms` 后，规则引擎输出本地 `set_relay` 动作。
+- 异常电表只做拉闸：`state=0`，不自动合闸恢复。
+- `offline_control.relay_devices` 中的继电器用于模拟联动，过流时断开，过流恢复并持续达到 `exit_hold_ms` 后可闭合。
+- 在线时不执行本地规则控制，仍由云端/平台侧规则处理。
+
+职责边界：
+
+- `gatewayd` 持有业务、物模型、设备配置、Modbus RTU 和 SLE `ST DATA` 封装。
+- `sle_data_app` 只管理 SLE 连接和 write handle，并把 gatewayd 传来的 raw ST frame 写入 SLE。
+- IPC 下行使用 `CMD_METHOD_RAW_ST_DOWNLINK`，参数包含 `root_id`、Root 传输 `dst_node_id` 和完整 `st_frame`，不再传业务 JSON 给 C 侧解析。
+- gatewayd 只负责封完整 `ST DATA + Modbus RTU` 包。下行 ST 帧头的 `dst_node_id` 指向 Root；Root 之后如何树状转发不由 gatewayd 处理。
+
+控制帧规则：
+
+| 目标 | Modbus | 语义 |
+|------|--------|------|
+| 电表 | `0x10` 写寄存器 `0x0010` | `0xAAAA=拉闸`，`0x5555=合闸`；当前只自动拉闸。 |
+| 继电器 | `0x05` 写线圈 `0x0000` | `0x0000=断开`，`0xFF00=闭合`。 |
+
+## 8. 后续 AI 边界
 
 本地 AI 小模型只在断网期间运行，且第一阶段不允许直接控制设备。后续 `ai-daemon` 只能消费规则引擎或 `TelemetryData` 派生特征，输出 `risk_score`、`risk_level`、`risk_type`、`reason`，再由 `gatewayd` 统一发布事件。
 
-## 8. 验证命令
+## 9. 验证命令
 
 ```bash
 bash .claude/skills/run-gateway/driver.sh build-gw
 bash .claude/skills/run-gateway/driver.sh push
 bash .claude/skills/run-gateway/driver.sh test-real-listen
 adb shell "grep -E 'RULE|rule_event|offline analysis|message cached' /userdata/gateway/data/log/gateway.log | tail -100"
+adb shell "grep -E 'offline control|CMD_METHOD_RAW_ST|cmd sent|cmd response received|ST-TX' /userdata/gateway/data/log/gateway.log /tmp/sle_data_app.out | tail -120"
 adb shell "/userdata/gateway/bin/sqlite3 /userdata/gateway/data/gateway.db 'SELECT topic,payload FROM telemetry_cache ORDER BY id DESC LIMIT 5;'"
 ```
 
@@ -156,3 +188,4 @@ adb shell "/userdata/gateway/bin/sqlite3 /userdata/gateway/data/gateway.db 'SELE
 - MQTT 在线时注入异常数据，本地规则不触发。
 - MQTT 离线超过 `enter_hold_ms` 后注入异常数据，本地规则触发一次并进入冷却。
 - 恢复 MQTT 后，离线期间缓存的规则事件能补传。
+- DTU/root COM 侧可用 `py -3 sle_data_app/test/dtu_downlink_command_tester.py COM19 COM23 COM36 --expect meter-trip --expect-root-id 1` 验证下行 ST 和 Modbus CRC；relay 联动也按 root 传输目标验收，例如 `--expect relay-open --expect-root-id 1`。

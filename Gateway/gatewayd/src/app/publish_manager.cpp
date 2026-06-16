@@ -76,6 +76,7 @@ PublishManager::PublishManager(PublishManagerDeps deps)
       cloud_client_(deps.cloud_client),
       cache_store_(deps.cache_store),
       telemetry_queue_(deps.telemetry_queue),
+      command_queue_(deps.command_queue),
       publish_queue_(deps.publish_queue),
       rule_engine_(deps.config)
 {
@@ -121,7 +122,9 @@ void PublishManager::publishTelemetryBatch(const std::vector<model::TelemetryDat
     const int64_t now = common::nowMs();
     const bool offline_active = offlineAnalysisActive(now);
     if (offline_active) {
-        enqueueRuleEvents(rule_engine_.evaluate(telemetry, true, now));
+        const auto evaluation = rule_engine_.evaluate(telemetry, true, now);
+        enqueueRuleEvents(evaluation.events);
+        enqueueOfflineControlActions(evaluation.actions);
     } else {
         rule_engine_.evaluate(telemetry, false, now);
     }
@@ -201,6 +204,38 @@ void PublishManager::enqueueRuleEvents(const std::vector<rules::RuleEvent> &even
         logger_.warn("RULE", "rule event enqueued device=" + event.device_id +
                                  ", event=" + event.event +
                                  ", severity=" + event.severity);
+    }
+}
+
+void PublishManager::enqueueOfflineControlActions(
+    const std::vector<rules::OfflineControlAction> &actions)
+{
+    if (actions.empty())
+        return;
+
+    for (const auto &action : actions) {
+        nlohmann::json payload = {
+            {"requestId", action.request_id},
+            {"device", action.target_device_id},
+            {"targetDeviceId", action.target_device_id},
+            {"method", action.method},
+            {"params", action.params},
+            {"source", "offline_rule_engine"},
+            {"ruleId", action.rule_id},
+            {"message", action.message},
+        };
+
+        command::RawCommandMessage message;
+        message.topic = codec::thingskit::kGatewayCommandRequestTopic;
+        message.payload = payload.dump();
+        message.received_ts_ms = common::nowMs();
+        message.local_only = true;
+        command_queue_.push(std::move(message));
+
+        logger_.warn("RULE", "offline control enqueued request_id=" + action.request_id +
+                                 ", target=" + action.target_device_id +
+                                 ", method=" + action.method +
+                                 ", rule_id=" + action.rule_id);
     }
 }
 

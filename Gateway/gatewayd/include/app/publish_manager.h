@@ -25,6 +25,7 @@ struct PublishManagerDeps {
     cloud::MqttCloudClient &cloud_client;
     storage::CacheStore *cache_store;
     common::BlockingQueue<std::vector<model::TelemetryData>> &telemetry_queue;
+    common::BlockingQueue<command::RawCommandMessage> &command_queue;
     common::BlockingQueue<PublishMessage> &publish_queue;
 };
 
@@ -51,6 +52,7 @@ private:
 
     bool offlineAnalysisActive(int64_t now_ms);
     void enqueueRuleEvents(const std::vector<rules::RuleEvent> &events);
+    void enqueueOfflineControlActions(const std::vector<rules::OfflineControlAction> &actions);
 
     // 网络可用且云端可达时，按批次补传 SQLite 中的遥测缓存。
     void flushTelemetryCache();
@@ -76,6 +78,7 @@ private:
     cloud::MqttCloudClient &cloud_client_;
     storage::CacheStore *cache_store_ = nullptr;
     common::BlockingQueue<std::vector<model::TelemetryData>> &telemetry_queue_;
+    common::BlockingQueue<command::RawCommandMessage> &command_queue_;
     common::BlockingQueue<PublishMessage> &publish_queue_;
     rules::OfflineRuleEngine rule_engine_;
     int64_t last_status_ms_ = 0;

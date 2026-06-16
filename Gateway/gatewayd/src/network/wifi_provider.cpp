@@ -55,6 +55,29 @@ bool waitForWifiConnected(const std::string &ifname, int timeout_ms)
     return false;
 }
 
+bool wifiAlreadyReady(const std::string &ifname, const std::string &ssid)
+{
+    if (!interfaceHasIpv4(ifname))
+        return false;
+
+    const auto status = runProcess({"wpa_cli", "-i", ifname, "status"}, 2000);
+    if (!status.timeout && status.exit_code == 0 &&
+        status.stdout_output.find("wpa_state=COMPLETED") != std::string::npos) {
+        if (ssid.empty() || status.stdout_output.find("ssid=" + ssid) != std::string::npos)
+            return true;
+    }
+
+    const auto iw = runProcess({"iw", "dev", ifname, "link"}, 2000);
+    if (iw.timeout || iw.exit_code != 0)
+        return false;
+    if (iw.stdout_output.find("Connected") == std::string::npos)
+        return false;
+    if (!ssid.empty() && iw.stdout_output.find("SSID: " + ssid) == std::string::npos)
+        return false;
+
+    return true;
+}
+
 } // namespace
 
 WifiProvider::WifiProvider(config::WifiConfig config, int priority)
@@ -67,14 +90,16 @@ bool WifiProvider::bringUp()
     if (config_.ssid.empty() || config_.password.empty())
         return false;
 
+    if (wifiAlreadyReady(config_.ifname, config_.ssid))
+        return true;
+
     if (!setInterfaceUp(config_.ifname))
         return false;
     if (!writeWpaConfig(config_.ifname, config_.ssid, config_.password, config_.country))
         return false;
 
     runProcess({"ip", "addr", "flush", "dev", config_.ifname}, 2000);
-    runProcess({"killall", "wpa_supplicant"}, 2000);
-    runProcess({"killall", "udhcpc"}, 2000);
+    runProcess({"wpa_cli", "-i", config_.ifname, "terminate"}, 2000);
     runProcess({"rm", "-f", "/var/run/wpa_supplicant/" + config_.ifname}, 2000);
     const auto start = runProcess({
         "wpa_supplicant",
@@ -89,8 +114,6 @@ bool WifiProvider::bringUp()
 
     if (!waitForWifiConnected(config_.ifname, 15000))
         return false;
-    runProcess({"ip", "route", "del", "default", "dev", "eth0"}, 2000);
-    runProcess({"ip", "route", "del", "default", "dev", "eth2"}, 2000);
     return requestDhcp(config_.ifname, 15000);
 }
 
@@ -104,9 +127,11 @@ bool WifiProvider::hasIp() const
     return defaultHasIp(config_.ifname);
 }
 
-bool WifiProvider::canReachCloud(const std::string &host, int port) const
+bool WifiProvider::canReachCloud(const std::string &host,
+                                 int port,
+                                 std::string *reason) const
 {
-    return defaultCanReachCloud(host, port, config_.ifname);
+    return defaultCanReachCloud(host, port, config_.ifname, reason);
 }
 
 } // namespace gateway::network

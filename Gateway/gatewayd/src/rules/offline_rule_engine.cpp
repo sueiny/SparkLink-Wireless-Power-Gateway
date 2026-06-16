@@ -68,6 +68,33 @@ RuleEvent makeRuleEvent(const model::TelemetryData &data,
     return event;
 }
 
+OfflineControlAction makeSetRelayAction(const std::string &request_id,
+                                        const std::string &target_device_id,
+                                        const std::string &rule_id,
+                                        int state,
+                                        const std::string &message)
+{
+    OfflineControlAction action;
+    action.request_id = request_id;
+    action.target_device_id = target_device_id;
+    action.rule_id = rule_id;
+    action.message = message;
+    action.params = {
+        {"state", state},
+        {"source", "offline_rule_engine"},
+        {"rule_id", rule_id},
+    };
+    return action;
+}
+
+std::string buildRequestId(const std::string &target_device_id,
+                           const std::string &rule_id,
+                           int64_t now_ms)
+{
+    return "offline-rule-" + target_device_id + "-" + rule_id + "-" +
+           std::to_string(now_ms);
+}
+
 } // namespace
 
 OfflineRuleEngine::OfflineRuleEngine(const config::AppConfig &config)
@@ -75,26 +102,26 @@ OfflineRuleEngine::OfflineRuleEngine(const config::AppConfig &config)
 {
 }
 
-std::vector<RuleEvent> OfflineRuleEngine::evaluate(
+OfflineRuleEvaluation OfflineRuleEngine::evaluate(
     const std::vector<model::TelemetryData> &batch,
     bool offline_state,
     int64_t now_ms)
 {
-    std::vector<RuleEvent> events;
+    OfflineRuleEvaluation evaluation;
     const auto &analysis = config_.offline_analysis;
     if (!analysis.enable || !analysis.rule_engine.enable || !offline_state) {
         reset();
-        return events;
+        return evaluation;
     }
 
     for (const auto &item : batch) {
         updateDtuSeen(item, now_ms);
         switch (item.type) {
         case model::DeviceType::SinglePhaseMeter:
-            evaluateMeter(item, now_ms, &events);
+            evaluateMeter(item, now_ms, &evaluation.events, &evaluation.actions);
             break;
         case model::DeviceType::EnvSensor:
-            evaluateEnv(item, now_ms, &events);
+            evaluateEnv(item, now_ms, &evaluation.events);
             break;
         case model::DeviceType::DtuNode:
             break;
@@ -103,8 +130,8 @@ std::vector<RuleEvent> OfflineRuleEngine::evaluate(
         }
     }
 
-    evaluateDtuOffline(now_ms, &events);
-    return events;
+    evaluateDtuOffline(now_ms, &evaluation.events);
+    return evaluation;
 }
 
 config::MeterRuleConfig OfflineRuleEngine::meterConfigFor(const std::string &device_id) const
@@ -162,9 +189,56 @@ config::DtuRuleConfig OfflineRuleEngine::dtuConfigFor(const std::string &device_
     return result;
 }
 
+bool OfflineRuleEngine::controlEnabled() const
+{
+    const auto &control = config_.offline_analysis.offline_control;
+    return config_.offline_analysis.enable && control.enable && control.offline_only;
+}
+
+void OfflineRuleEngine::enqueueMeterControl(const model::TelemetryData &data,
+                                            bool trip,
+                                            int64_t now_ms,
+                                            std::vector<OfflineControlAction> *actions)
+{
+    if (!actions || !controlEnabled())
+        return;
+
+    const int state = trip ? 0 : 1;
+    actions->push_back(makeSetRelayAction(
+        buildRequestId(data.device_id, trip ? "over_current_trip" : "over_current_restore", now_ms),
+        data.device_id,
+        trip ? "over_current_trip" : "over_current_restore",
+        state,
+        trip ? "offline over_current trip meter" : "offline over_current meter restore"));
+}
+
+void OfflineRuleEngine::enqueueRelayControls(const model::TelemetryData &data,
+                                             bool open,
+                                             int64_t now_ms,
+                                             std::vector<OfflineControlAction> *actions)
+{
+    if (!actions || !controlEnabled())
+        return;
+
+    if (!open && !config_.offline_analysis.offline_control.relay_close_on_recovery)
+        return;
+
+    const int state = open ? 0 : 1;
+    const std::string rule_id = open ? "over_current_relay_open" : "over_current_relay_close";
+    for (const auto &relay_device_id : config_.offline_analysis.offline_control.relay_devices) {
+        actions->push_back(makeSetRelayAction(
+            buildRequestId(relay_device_id, rule_id, now_ms),
+            relay_device_id,
+            rule_id,
+            state,
+            "offline over_current relay linkage from " + data.device_id));
+    }
+}
+
 void OfflineRuleEngine::evaluateMeter(const model::TelemetryData &data,
                                       int64_t now_ms,
-                                      std::vector<RuleEvent> *events)
+                                      std::vector<RuleEvent> *events,
+                                      std::vector<OfflineControlAction> *actions)
 {
     const auto config = meterConfigFor(data.device_id);
     double value = 0.0;
@@ -227,11 +301,13 @@ void OfflineRuleEngine::evaluateMeter(const model::TelemetryData &data,
 
     if (getDoubleValue(data, "current", &value)) {
         const double threshold = config.rated_current_a * config.over_current_ratio;
+        bool cleared = false;
         if (updateRule(buildStateKey(data.device_id, "over_current"),
                        value > threshold,
                        config.hold_ms,
                        now_ms,
-                       &duration_ms)) {
+                       &duration_ms,
+                       &cleared)) {
             auto details = buildDetails("over_current", value, threshold, "A", duration_ms);
             details["rated_current_a"] = config.rated_current_a;
             details["over_current_ratio"] = config.over_current_ratio;
@@ -242,6 +318,10 @@ void OfflineRuleEngine::evaluateMeter(const model::TelemetryData &data,
                 "current " + formatDouble(value) + "A exceeds " +
                     formatDouble(threshold) + "A",
                 std::move(details)));
+            enqueueMeterControl(data, true, now_ms, actions);
+            enqueueRelayControls(data, true, now_ms, actions);
+        } else if (cleared) {
+            enqueueRelayControls(data, false, now_ms, actions);
         }
     }
 }
@@ -345,8 +425,12 @@ bool OfflineRuleEngine::updateRule(const std::string &state_key,
                                    bool condition,
                                    int hold_ms,
                                    int64_t now_ms,
-                                   int64_t *duration_ms)
+                                   int64_t *duration_ms,
+                                   bool *cleared)
 {
+    if (cleared)
+        *cleared = false;
+
     auto &state = states_[state_key];
     if (!condition) {
         state.condition_since_ms = 0;
@@ -356,6 +440,8 @@ bool OfflineRuleEngine::updateRule(const std::string &state_key,
             if (now_ms - state.normal_since_ms >= config_.offline_analysis.exit_hold_ms) {
                 state.active = false;
                 state.normal_since_ms = 0;
+                if (cleared)
+                    *cleared = true;
             }
         } else {
             state.normal_since_ms = 0;

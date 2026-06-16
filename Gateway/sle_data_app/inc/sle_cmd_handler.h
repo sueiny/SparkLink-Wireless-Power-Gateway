@@ -5,12 +5,9 @@
  * SLE 命令处理器
  *
  * 职责：
- *   接收来自 gatewayd 的命令请求，查找目标 DTU 的 SLE 连接，
- *   构建 Modbus 写请求并通过 ssapc_write_req() 发送到设备。
- *
- * 当前阶段：
- *   Mock 模式 — 不真正调用 SLE SDK，返回模拟成功。
- *   后续接入真实 SLE 时只需修改 handler 内部实现。
+ *   接收来自 gatewayd 的 RAW_ST_DOWNLINK 请求，校验 ST 帧后交给
+ *   sle_multi_client 写入 SLE data property。业务命令、Modbus 和 ST
+ *   封装都由 gatewayd 完成。
  */
 
 #include "ipc_cmd_protocol.h"

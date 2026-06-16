@@ -145,6 +145,7 @@ void server_connections_mark_connecting(sle_server_connections_t *table, int ser
     }
     table->servers[server_index].state = SLE_SERVER_CONNECTING;
     table->servers[server_index].conn_id = SLE_INVALID_CONN_ID;
+    table->servers[server_index].root_node_id = 0;
     
     /* 重置连接流程标志 */
     table->servers[server_index].mtu_done = false;
@@ -179,6 +180,7 @@ void server_connections_mark_connected(sle_server_connections_t *table, int serv
     pthread_mutex_lock(&table->mutex);
     table->servers[server_index].state = SLE_SERVER_CONNECTED;
     table->servers[server_index].conn_id = conn_id;
+    table->servers[server_index].root_node_id = 0;
     table->servers[server_index].pair_state = pair_state;
     
     /* 重置连接流程标志 */
@@ -263,6 +265,7 @@ void server_connections_mark_disconnected(sle_server_connections_t *table, int s
         table->servers[server_index].service_start_handle = 0;
         table->servers[server_index].service_end_handle = 0;
     }
+    table->servers[server_index].root_node_id = 0;
     
     /* 重置连接流程标志 */
     table->servers[server_index].mtu_done = false;
@@ -319,6 +322,16 @@ void server_connections_set_write_handle(sle_server_connections_t *table, int se
     }
     pthread_mutex_lock(&table->mutex);
     table->servers[server_index].write_handle = handle;
+    pthread_mutex_unlock(&table->mutex);
+}
+
+void server_connections_set_root_node_id(sle_server_connections_t *table, int server_index, uint16_t root_node_id)
+{
+    if (table == NULL || server_index < 0 || server_index >= (int)table->max_connections) {
+        return;
+    }
+    pthread_mutex_lock(&table->mutex);
+    table->servers[server_index].root_node_id = root_node_id;
     pthread_mutex_unlock(&table->mutex);
 }
 
@@ -468,9 +481,9 @@ void server_connections_dump_table(sle_server_connections_t *table, const char *
         server_connections_addr_to_string(&s->addr, addr_str, sizeof(addr_str));
         
         fprintf(stderr, "[SLE][TABLE] index=%u used=%d state=%s conn_id=%u "
-            "mac=%s rx=%u param_done=%d reason=0x%x\n",
+            "root_id=%u mac=%s rx=%u param_done=%d reason=0x%x\n",
             i, s->used, server_connections_state_name(s->state),
-            s->conn_id, addr_str, s->rx_count, s->param_update_done,
+            s->conn_id, s->root_node_id, addr_str, s->rx_count, s->param_update_done,
             s->disconnect_reason);
     }
     pthread_mutex_unlock(&table->mutex);

@@ -19,6 +19,7 @@
 #define CMD_METHOD_SET_COLLECT_CYCLE 3      /* 采集周期 */
 #define CMD_METHOD_TRIGGER_COLLECT   4      /* 触发采集 */
 #define CMD_METHOD_REBOOT            5      /* 重启 DTU */
+#define CMD_METHOD_RAW_ST_DOWNLINK   100    /* gatewayd 已封装好的 ST 下行帧 */
 
 /* ── 响应码 ── */
 #define CMD_RESULT_OK                0      /* 执行成功 */
@@ -27,7 +28,9 @@
 #define CMD_RESULT_UNSUPPORTED       3      /* 不支持的方法 */
 
 /* ── 帧大小限制 ── */
-#define IPC_CMD_MAX_PARAM_LEN        256
+#define IPC_CMD_MAX_ST_FRAME_LEN     256
+#define IPC_CMD_RAW_ST_META_LEN      6
+#define IPC_CMD_MAX_PARAM_LEN        320
 #define IPC_CMD_MAX_DATA_LEN         256
 
 /*
@@ -49,6 +52,25 @@ typedef struct {
     uint16_t param_len;
     uint8_t  param_data[IPC_CMD_MAX_PARAM_LEN];
 } __attribute__((packed)) ipc_cmd_request_t;
+
+/*
+ * RAW_ST_DOWNLINK 参数（param_data）。
+ *
+ * sle_data_app 只使用 root_id 选择 SLE 连接，然后把 st_frame 原样写入
+ * SLE data property；不解析 Modbus，不理解设备业务。
+ *
+ * 布局：
+ *   [0-1]    root_id (2B LE) = 目标 Root 节点 ID，用于选择 SLE 连接
+ *   [2-3]    dst_node_id (2B LE) = ST 帧中的目标节点 ID
+ *   [4-5]    st_frame_len (2B LE)
+ *   [6-N]    st_frame = 完整 ST 帧，最大 IPC_CMD_MAX_ST_FRAME_LEN
+ */
+typedef struct {
+    uint16_t root_id;
+    uint16_t dst_node_id;
+    uint16_t st_frame_len;
+    uint8_t  st_frame[IPC_CMD_MAX_ST_FRAME_LEN];
+} __attribute__((packed)) ipc_raw_st_downlink_t;
 
 /*
  * 命令响应帧（sle_data_app → gatewayd）

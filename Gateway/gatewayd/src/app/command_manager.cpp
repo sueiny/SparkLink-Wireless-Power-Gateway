@@ -39,16 +39,18 @@ void CommandManager::run()
         // Router 只处理协议形态。JSON 错误可以直接响应；未知 topic 则忽略。
         const auto parsed = command_router_.parse(raw, config_);
         if (parsed.has_immediate_response) {
-            enqueuePublishMessage({
-                parsed.immediate_response.topic,
-                parsed.immediate_response.payload,
-                PublishMessageKind::CommandResponse,
-                0,
-                0,
-                parsed.request.request_id,
-                parsed.request.method,
-                parsed.request.target_device_id,
-            });
+            if (!raw.local_only) {
+                enqueuePublishMessage({
+                    parsed.immediate_response.topic,
+                    parsed.immediate_response.payload,
+                    PublishMessageKind::CommandResponse,
+                    0,
+                    0,
+                    parsed.request.request_id,
+                    parsed.request.method,
+                    parsed.request.target_device_id,
+                });
+            }
             continue;
         }
 
@@ -75,6 +77,14 @@ void CommandManager::run()
                                 ", method=" + parsed.request.method +
                                 ", target=" + parsed.request.target_device_id +
                                 ", code=" + result.code);
+        if (parsed.request.local_only) {
+            logger_.info("CMD", "local command finished request_id=" + parsed.request.request_id +
+                                    ", method=" + parsed.request.method +
+                                    ", target=" + parsed.request.target_device_id +
+                                    ", code=" + result.code);
+            continue;
+        }
+
         const auto response = command_router_.buildResponse(parsed.request, result);
         logger_.info("CMD", "command response enqueued request_id=" + parsed.request.request_id +
                                 ", method=" + parsed.request.method +

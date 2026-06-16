@@ -23,7 +23,7 @@
 
 ## 2. 拓扑树结构
 
-当前拓扑以 `app/Gateway/docs/00_项目说明/设备拓扑图.md` 和 `gateway_config.json` 为准，共 31 个 DTU 节点。树1负责外接设备采集；树2负责 SLE 中继节点展示，其中 DTU_023、DTU_026、DTU_029 已并入树2。
+当前拓扑以 `app/Gateway/docs/00_项目说明/设备拓扑图.md` 和 `gateway_config.json` 为准，共 31 个 DTU 节点。树1负责外接设备采集；树2负责 SLE 中继节点展示，且树2只有 DTU_012 一个 root。
 
 ### 2.1 树1：外接设备树
 
@@ -44,24 +44,33 @@ DTU_001 (root)
 ### 2.2 树2：SLE 中继树
 
 ```
-DTU_012 (root)        DTU_023 (root)   DTU_026 (root)   DTU_029 (root)
-├── DTU_013           ├── DTU_024      ├── DTU_027      ├── DTU_030
-│   ├── DTU_016       └── DTU_025      └── DTU_028      └── DTU_031
+DTU_012 (root)
+├── DTU_013
+│   ├── DTU_016
 │   ├── DTU_017
 │   └── DTU_018
 ├── DTU_014
 │   ├── DTU_019
 │   └── DTU_020
-└── DTU_015
-    ├── DTU_021
-    └── DTU_022
+├── DTU_015
+│   ├── DTU_021
+│   └── DTU_022
+├── DTU_023
+│   ├── DTU_024
+│   └── DTU_025
+├── DTU_026
+│   ├── DTU_027
+│   └── DTU_028
+└── DTU_029
+    ├── DTU_030
+    └── DTU_031
 ```
 
 **节点统计**：
 - 树1：11 个 DTU 节点（DTU_001 ~ DTU_011）
 - 树2：20 个 DTU 节点（DTU_012 ~ DTU_031）
-- root 节点：5 个（DTU_001、DTU_012、DTU_023、DTU_026、DTU_029）
-- node 节点：26 个
+- root 节点：2 个（DTU_001、DTU_012）
+- node 节点：29 个
 - **总计**：31 个 DTU 节点
 
 ### 2.3 当前 DTU 路由表
@@ -79,7 +88,7 @@ DTU_012 (root)        DTU_023 (root)   DTU_026 (root)   DTU_029 (root)
 | DTU_009 | 1 | - | node |
 | DTU_010 | 1 | - | node |
 | DTU_011 | 1 | - | node |
-| DTU_012 | 0 | 13,14,15 | root |
+| DTU_012 | 0 | 13,14,15,23,26,29 | root |
 | DTU_013 | 12 | 16,17,18 | node |
 | DTU_014 | 12 | 19,20 | node |
 | DTU_015 | 12 | 21,22 | node |
@@ -90,13 +99,13 @@ DTU_012 (root)        DTU_023 (root)   DTU_026 (root)   DTU_029 (root)
 | DTU_020 | 14 | - | node |
 | DTU_021 | 15 | - | node |
 | DTU_022 | 15 | - | node |
-| DTU_023 | 0 | 24,25 | root |
+| DTU_023 | 12 | 24,25 | node |
 | DTU_024 | 23 | - | node |
 | DTU_025 | 23 | - | node |
-| DTU_026 | 0 | 27,28 | root |
+| DTU_026 | 12 | 27,28 | node |
 | DTU_027 | 26 | - | node |
 | DTU_028 | 26 | - | node |
-| DTU_029 | 0 | 30,31 | root |
+| DTU_029 | 12 | 30,31 | node |
 | DTU_030 | 29 | - | node |
 | DTU_031 | 29 | - | node |
 
@@ -119,7 +128,7 @@ DTU_012 (root)        DTU_023 (root)   DTU_026 (root)   DTU_029 (root)
 
 | 值 | 名称 | 说明 |
 |----|------|------|
-| 0 | root | 根节点（parent_id=0，如 DTU_001、DTU_012、DTU_023、DTU_026、DTU_029） |
+| 0 | root | 根节点（parent_id=0，如 DTU_001、DTU_012） |
 | 1 | node | 普通节点（所有非root节点，包括中继和叶子） |
 
 ### 3.3 拓扑信息结构
@@ -158,8 +167,8 @@ DTU_012 (root)        DTU_023 (root)   DTU_026 (root)   DTU_029 (root)
 - **DTU节点**：统一命名为 `DTU_XXX`，`XXX` 为三位数字节点 ID。
 - **树1 root**：`DTU_001`
 - **树1 node**：`DTU_002` ~ `DTU_011`
-- **树2 root**：`DTU_012`、`DTU_023`、`DTU_026`、`DTU_029`
-- **树2 node**：`DTU_013` ~ `DTU_022`、`DTU_024`、`DTU_025`、`DTU_027`、`DTU_028`、`DTU_030`、`DTU_031`
+- **树2 root**：`DTU_012`
+- **树2 node**：`DTU_013` ~ `DTU_031`
 
 ### 3.5 完整JSON定义
 

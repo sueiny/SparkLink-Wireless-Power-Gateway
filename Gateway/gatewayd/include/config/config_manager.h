@@ -148,12 +148,20 @@ struct AiConfig {
     bool enable = false;
 };
 
+struct OfflineControlConfig {
+    bool enable = true;
+    bool offline_only = true;
+    bool relay_close_on_recovery = true;
+    std::vector<std::string> relay_devices;
+};
+
 struct OfflineAnalysisConfig {
     bool enable = true;
     bool offline_only = true;
     int enter_hold_ms = 10000;
     int exit_hold_ms = 30000;
     RuleEngineConfig rule_engine;
+    OfflineControlConfig offline_control;
     AiConfig ai;
 };
 

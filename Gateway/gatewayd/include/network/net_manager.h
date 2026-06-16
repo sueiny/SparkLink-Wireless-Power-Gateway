@@ -5,6 +5,7 @@
 #include "network/i_network_provider.h"
 
 #include <memory>
+#include <string>
 #include <vector>
 
 namespace gateway::network {
@@ -25,15 +26,20 @@ private:
     INetworkProvider *findProvider(const NetworkState &state);
 
     // allow_bring_up 为 true 时允许执行拉起流程；保持现有网络时只做检测。
-    bool checkProvider(INetworkProvider &provider, bool allow_bring_up, bool *cloud_reachable);
+    bool checkProvider(INetworkProvider &provider,
+                       bool allow_bring_up,
+                       bool *cloud_reachable,
+                       std::string *reason);
 
     int priorityFor(const std::string &name) const;
+    bool refreshDefaultRoute(const std::string &ifname, const std::string &context);
     void releaseCurrentProvider();
 
     config::NetworkConfig config_;
     log::Logger *logger_ = nullptr;
     NetworkState current_;
     std::vector<std::unique_ptr<INetworkProvider>> providers_;
+    int current_check_failures_ = 0;
 };
 
 } // namespace gateway::network

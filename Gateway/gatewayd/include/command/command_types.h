@@ -16,6 +16,7 @@ struct RawCommandMessage {
     std::string topic;
     std::string payload;
     int64_t received_ts_ms = 0;
+    bool local_only = false;
 };
 
 struct ServiceParamSpec {
@@ -48,6 +49,7 @@ struct CommandRequest {
     nlohmann::json original_payload = nlohmann::json::object();
     int64_t received_ts_ms = 0;
     bool target_found = false;
+    bool local_only = false;
 };
 
 struct CommandResult {

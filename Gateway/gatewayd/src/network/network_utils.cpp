@@ -23,6 +23,25 @@
 
 namespace gateway::network {
 
+namespace {
+
+std::string joinRoutes(const std::vector<NetlinkRoute> &routes)
+{
+    if (routes.empty())
+        return "none";
+
+    std::ostringstream oss;
+    for (size_t i = 0; i < routes.size(); ++i) {
+        if (i > 0)
+            oss << "; ";
+        oss << routes[i].iface << " via " << routes[i].gateway
+            << " metric=" << routes[i].metric;
+    }
+    return oss.str();
+}
+
+} // namespace
+
 bool interfaceExists(const std::string &ifname)//检查接口是否存在
 {
     struct stat st {};
@@ -63,10 +82,13 @@ bool interfaceHasIpv4(const std::string &ifname)  //
     return found;
 }
 
-bool tcpConnect(const std::string &host, int port, int timeout_ms)
+TcpConnectResult tcpConnectDetailed(const std::string &host, int port, int timeout_ms)
 {
-    if (host.empty() || port <= 0)
-        return false;
+    TcpConnectResult result;
+    if (host.empty() || port <= 0) {
+        result.reason = "invalid endpoint";
+        return result;
+    }
 
     addrinfo hints {};
     hints.ai_socktype = SOCK_STREAM;
@@ -78,6 +100,7 @@ bool tcpConnect(const std::string &host, int port, int timeout_ms)
     // DNS 解析：dhcpcd 重写 resolv.conf 时 nameserver 会暂时消失。
     // 等待最多 15 秒（75×200ms），之后返回 false，由 ensureNetwork 下一轮重试。
     int gai_ret = EAI_AGAIN;
+    bool observed_nameserver = false;
     for (int retry = 0; retry < 75 && gai_ret != 0; ++retry) {
         bool has_ns = false;
         {
@@ -90,6 +113,8 @@ bool tcpConnect(const std::string &host, int port, int timeout_ms)
                 }
             }
         }
+        if (has_ns)
+            observed_nameserver = true;
         if (!has_ns) {
             ::usleep(200000);
             continue;
@@ -98,21 +123,28 @@ bool tcpConnect(const std::string &host, int port, int timeout_ms)
         if (gai_ret != 0)
             ::usleep(200000);
     }
-    if (gai_ret != 0)
-        return false;
+    if (gai_ret != 0) {
+        result.reason = observed_nameserver
+                            ? std::string("getaddrinfo failed: ") + ::gai_strerror(gai_ret)
+                            : "no nameserver in /etc/resolv.conf";
+        return result;
+    }
 
-    bool ok = false;
-    for (addrinfo *it = res; it && !ok; it = it->ai_next) {
+    std::string last_reason;
+    for (addrinfo *it = res; it && !result.ok; it = it->ai_next) {
         const int fd = ::socket(it->ai_family, it->ai_socktype, it->ai_protocol);
-        if (fd < 0)
+        if (fd < 0) {
+            last_reason = std::string("socket failed: ") + std::strerror(errno);
             continue;
+        }
 
         const int flags = ::fcntl(fd, F_GETFL, 0);
-        ::fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+        if (flags >= 0)
+            ::fcntl(fd, F_SETFL, flags | O_NONBLOCK);
 
         const int rc = ::connect(fd, it->ai_addr, it->ai_addrlen);
         if (rc == 0) {
-            ok = true;
+            result.ok = true;
         } else if (errno == EINPROGRESS) {
             pollfd pfd {};
             pfd.fd = fd;
@@ -121,16 +153,27 @@ bool tcpConnect(const std::string &host, int port, int timeout_ms)
             if (pr > 0) {
                 int err = 0;
                 socklen_t len = sizeof(err);
-                if (::getsockopt(fd, SOL_SOCKET, SO_ERROR, &err, &len) == 0 && err == 0)
-                    ok = true;
+                if (::getsockopt(fd, SOL_SOCKET, SO_ERROR, &err, &len) == 0 && err == 0) {
+                    result.ok = true;
+                } else if (err != 0) {
+                    last_reason = std::string("connect failed: ") + std::strerror(err);
+                }
+            } else if (pr == 0) {
+                last_reason = "connect timeout";
+            } else {
+                last_reason = std::string("poll failed: ") + std::strerror(errno);
             }
+        } else {
+            last_reason = std::string("connect failed: ") + std::strerror(errno);
         }
 
         ::close(fd);
     }
 
     ::freeaddrinfo(res);
-    return ok;
+    if (!result.ok)
+        result.reason = last_reason.empty() ? "connect failed" : last_reason;
+    return result;
 }
 
 bool tcpConnectVia(const std::string &host, int port, int timeout_ms, const std::string &ifname)
@@ -139,6 +182,20 @@ bool tcpConnectVia(const std::string &host, int port, int timeout_ms, const std:
     // SO_BINDTODEVICE 在某些内核版本会导致连接失败
     (void)ifname;
     return tcpConnect(host, port, timeout_ms);
+}
+
+TcpConnectResult tcpConnectViaDetailed(const std::string &host,
+                                       int port,
+                                       int timeout_ms,
+                                       const std::string &ifname)
+{
+    (void)ifname;
+    return tcpConnectDetailed(host, port, timeout_ms);
+}
+
+bool tcpConnect(const std::string &host, int port, int timeout_ms)
+{
+    return tcpConnectDetailed(host, port, timeout_ms).ok;
 }
 
 bool setDefaultRouteVia(const std::string &ifname)
@@ -272,19 +329,18 @@ bool requestDhcp(const std::string &ifname, int timeout_ms)
     if (interfaceHasIpv4(ifname))
         return true;
 
-    const auto result = runProcess({"udhcpc", "-i", ifname, "-n", "-q"}, timeout_ms);
-    if (result.timeout || result.exit_code != 0) {
-        const auto dhcpcd_pid = runProcess({"pidof", "dhcpcd"}, 1000);
-        if (!dhcpcd_pid.timeout && dhcpcd_pid.exit_code == 0) {
-            const auto metric = runProcess({"dhcpcd", "-m", "100", ifname}, timeout_ms);
-            if (metric.timeout || metric.exit_code != 0)
-                return false;
-            const auto renew = runProcess({"dhcpcd", "-n", ifname}, timeout_ms);
-            if (renew.timeout || renew.exit_code != 0)
-                return false;
-        } else {
+    const auto dhcpcd_pid = runProcess({"pidof", "dhcpcd"}, 1000);
+    if (!dhcpcd_pid.timeout && dhcpcd_pid.exit_code == 0) {
+        const auto metric = runProcess({"dhcpcd", "-m", "100", ifname}, timeout_ms);
+        if (metric.timeout || metric.exit_code != 0)
             return false;
-        }
+        const auto renew = runProcess({"dhcpcd", "-n", ifname}, timeout_ms);
+        if (renew.timeout || renew.exit_code != 0)
+            return false;
+    } else {
+        const auto result = runProcess({"udhcpc", "-i", ifname, "-n", "-q"}, timeout_ms);
+        if (result.timeout || result.exit_code != 0)
+            return false;
     }
 
     const int step_ms = 500;
@@ -305,6 +361,25 @@ std::string firstUsableInterface(const std::vector<std::string> &ifnames)
             return ifname;
     }
     return "";
+}
+
+std::string firstNameserverLine()
+{
+    std::ifstream in("/etc/resolv.conf");
+    if (!in.is_open())
+        return "";
+
+    std::string line;
+    while (std::getline(in, line)) {
+        if (line.find("nameserver") == 0)
+            return line;
+    }
+    return "";
+}
+
+std::string defaultRouteSummary()
+{
+    return joinRoutes(netlinkGetDefaultRoutes());
 }
 
 } // namespace gateway::network

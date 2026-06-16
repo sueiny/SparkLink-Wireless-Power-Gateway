@@ -1,135 +1,118 @@
 /*
- * sle_cmd_handler.c — SLE 命令处理器
+ * sle_cmd_handler.c - gatewayd raw ST downlink bridge.
  *
- * 职责：
- *   接收来自 gatewayd 的命令请求，查找目标 DTU 的 SLE 连接，
- *   构建 Modbus 写请求并通过 ssapc_write_req() 发送到设备。
- *
- * 当前阶段：
- *   Mock 模式 — 不真正调用 SLE SDK，返回模拟成功。
- *   后续接入真实 SLE 时只需修改此文件内部实现。
- *
- * 线程安全：
- *   由 ipc_cmd_receiver 线程调用，不涉及共享状态。
+ * Boundary:
+ *   gatewayd owns device model, command validation, Modbus, and ST framing.
+ *   sle_data_app only validates the transport frame and writes bytes to SLE.
  */
 
 #include "sle_cmd_handler.h"
 
+#include "sle_multi_client.h"
+
 #include <stdio.h>
 #include <string.h>
 
-/* ── Mock 模式实现 ── */
-
-/*
- * Mock: 处理 set_relay 命令。
- * 真实实现应构建 Modbus 写单个寄存器请求并调用 ssapc_write_req。
- */
-static uint8_t handle_set_relay(const ipc_cmd_request_t *req,
-                                uint8_t *resp_data, uint16_t *resp_data_len)
+static uint16_t read_u16_le(const uint8_t *data)
 {
-    /*
-     * Modbus 写单个寄存器（功能码 0x06）：
-     *   [0]   station_addr (DTU 下挂设备站号)
-     *   [1]   func_code = 0x06
-     *   [2-3] register_addr (继电器寄存器地址)
-     *   [4-5] register_value (0=断开, 1=闭合)
-     *   [6-7] CRC16
-     *
-     * 当前 Mock：直接返回成功。
-     */
-    fprintf(stderr, "[CMD][MOCK] set_relay dtu_id=%u param_len=%u\n",
-            req->dtu_id, req->param_len);
+    return (uint16_t)data[0] | ((uint16_t)data[1] << 8);
+}
 
-    /* 构建 JSON 响应 */
-    const char *resp = "{\"result\":1,\"message\":\"relay set (mock)\"}";
-    uint16_t resp_len = (uint16_t)strlen(resp);
+static uint16_t write_json_response(uint8_t *resp_data,
+                                    uint16_t *resp_data_len,
+                                    const char *message,
+                                    uint16_t root_id,
+                                    uint16_t dst_node_id,
+                                    uint16_t st_len)
+{
+    char resp[160];
+    int n = snprintf(resp, sizeof(resp),
+        "{\"result\":1,\"message\":\"%s\",\"root_id\":%u,\"dst_node_id\":%u,\"st_len\":%u}",
+        message, root_id, dst_node_id, st_len);
+    if (n < 0) {
+        *resp_data_len = 0;
+        return 0;
+    }
+
+    uint16_t resp_len = (uint16_t)n;
     if (resp_len > *resp_data_len)
         resp_len = *resp_data_len;
     memcpy(resp_data, resp, resp_len);
     *resp_data_len = resp_len;
-
-    return CMD_RESULT_OK;
+    return resp_len;
 }
 
-/*
- * Mock: 处理 set_mode 命令。
- */
-static uint8_t handle_set_mode(const ipc_cmd_request_t *req,
-                               uint8_t *resp_data, uint16_t *resp_data_len)
+static uint8_t fail_response(uint8_t *resp_data,
+                             uint16_t *resp_data_len,
+                             const char *message)
 {
-    fprintf(stderr, "[CMD][MOCK] set_mode dtu_id=%u param_len=%u\n",
-            req->dtu_id, req->param_len);
-
-    const char *resp = "{\"result\":1,\"message\":\"mode set (mock)\"}";
-    uint16_t resp_len = (uint16_t)strlen(resp);
-    if (resp_len > *resp_data_len)
-        resp_len = *resp_data_len;
-    memcpy(resp_data, resp, resp_len);
-    *resp_data_len = resp_len;
-
-    return CMD_RESULT_OK;
+    char resp[128];
+    int n = snprintf(resp, sizeof(resp),
+        "{\"result\":0,\"message\":\"%s\"}", message);
+    if (n > 0) {
+        uint16_t resp_len = (uint16_t)n;
+        if (resp_len > *resp_data_len)
+            resp_len = *resp_data_len;
+        memcpy(resp_data, resp, resp_len);
+        *resp_data_len = resp_len;
+    } else {
+        *resp_data_len = 0;
+    }
+    return CMD_RESULT_FAILED;
 }
 
-/*
- * Mock: 处理 set_collect_cycle 命令。
- */
-static uint8_t handle_set_collect_cycle(const ipc_cmd_request_t *req,
-                                        uint8_t *resp_data, uint16_t *resp_data_len)
+static uint8_t handle_raw_st_downlink(const ipc_cmd_request_t *req,
+                                      uint8_t *resp_data,
+                                      uint16_t *resp_data_len)
 {
-    fprintf(stderr, "[CMD][MOCK] set_collect_cycle dtu_id=%u param_len=%u\n",
-            req->dtu_id, req->param_len);
+    if (req->param_len < IPC_CMD_RAW_ST_META_LEN) {
+        fprintf(stderr, "[CMD][ST-RX][WARN] raw ST param too short len=%u\n", req->param_len);
+        return fail_response(resp_data, resp_data_len, "raw ST param too short");
+    }
 
-    const char *resp = "{\"result\":1,\"message\":\"collect cycle set (mock)\"}";
-    uint16_t resp_len = (uint16_t)strlen(resp);
-    if (resp_len > *resp_data_len)
-        resp_len = *resp_data_len;
-    memcpy(resp_data, resp, resp_len);
-    *resp_data_len = resp_len;
+    const uint8_t *param = req->param_data;
+    uint16_t root_id = read_u16_le(param);
+    uint16_t dst_node_id = read_u16_le(param + 2);
+    uint16_t st_len = read_u16_le(param + 4);
 
+    if (st_len == 0 || st_len > IPC_CMD_MAX_ST_FRAME_LEN ||
+        req->param_len != IPC_CMD_RAW_ST_META_LEN + st_len) {
+        fprintf(stderr, "[CMD][ST-RX][WARN] invalid raw ST len root_id=%u dst_node_id=%u st_len=%u param_len=%u\n",
+            root_id, dst_node_id, st_len, req->param_len);
+        return fail_response(resp_data, resp_data_len, "invalid raw ST length");
+    }
+
+    const uint8_t *frame = param + IPC_CMD_RAW_ST_META_LEN;
+    if (st_len < 13 || frame[0] != 'S' || frame[1] != 'T' || frame[2] != 0x01) {
+        fprintf(stderr, "[CMD][ST-RX][WARN] invalid ST header root_id=%u dst_node_id=%u st_len=%u\n",
+            root_id, dst_node_id, st_len);
+        return fail_response(resp_data, resp_data_len, "invalid ST header");
+    }
+
+    uint16_t frame_dst = read_u16_le(frame + 7);
+    if (frame_dst != dst_node_id) {
+        fprintf(stderr, "[CMD][ST-RX][WARN] ST dst mismatch meta=%u frame=%u\n",
+            dst_node_id, frame_dst);
+        return fail_response(resp_data, resp_data_len, "ST dst mismatch");
+    }
+
+    fprintf(stderr, "[CMD][ST-RX] seq=%u root_id=%u dst_node_id=%u st_len=%u\n",
+        req->seq, root_id, dst_node_id, st_len);
+
+    int ret = sle_manager_write_st_frame(root_id, frame, st_len);
+    if (ret != 0) {
+        fprintf(stderr, "[CMD][ST-RX][WARN] raw ST forward failed ret=%d root_id=%u dst_node_id=%u\n",
+            ret, root_id, dst_node_id);
+        return fail_response(resp_data, resp_data_len, "raw ST forward failed");
+    }
+
+    write_json_response(resp_data, resp_data_len, "raw ST forwarded", root_id, dst_node_id, st_len);
     return CMD_RESULT_OK;
 }
-
-/*
- * Mock: 处理 trigger_collect 命令。
- */
-static uint8_t handle_trigger_collect(const ipc_cmd_request_t *req,
-                                      uint8_t *resp_data, uint16_t *resp_data_len)
-{
-    fprintf(stderr, "[CMD][MOCK] trigger_collect dtu_id=%u\n", req->dtu_id);
-
-    const char *resp = "{\"result\":1,\"message\":\"collect triggered (mock)\"}";
-    uint16_t resp_len = (uint16_t)strlen(resp);
-    if (resp_len > *resp_data_len)
-        resp_len = *resp_data_len;
-    memcpy(resp_data, resp, resp_len);
-    *resp_data_len = resp_len;
-
-    return CMD_RESULT_OK;
-}
-
-/*
- * Mock: 处理 reboot 命令。
- */
-static uint8_t handle_reboot(const ipc_cmd_request_t *req,
-                             uint8_t *resp_data, uint16_t *resp_data_len)
-{
-    fprintf(stderr, "[CMD][MOCK] reboot dtu_id=%u\n", req->dtu_id);
-
-    const char *resp = "{\"result\":1,\"message\":\"reboot accepted (mock)\"}";
-    uint16_t resp_len = (uint16_t)strlen(resp);
-    if (resp_len > *resp_data_len)
-        resp_len = *resp_data_len;
-    memcpy(resp_data, resp, resp_len);
-    *resp_data_len = resp_len;
-
-    return CMD_RESULT_OK;
-}
-
-/* ── 公开接口 ── */
 
 int sle_cmd_handler_init(void)
 {
-    fprintf(stderr, "[CMD][STATUS] sle_cmd_handler initialized (mock mode)\n");
+    fprintf(stderr, "[CMD][STATUS] sle_cmd_handler initialized (raw ST bridge)\n");
     return 0;
 }
 
@@ -139,30 +122,20 @@ void sle_cmd_handler_deinit(void)
 }
 
 uint8_t sle_cmd_handler_process(const ipc_cmd_request_t *req,
-                                uint8_t *resp_data, uint16_t *resp_data_len)
+                                uint8_t *resp_data,
+                                uint16_t *resp_data_len)
 {
-    if (!req) {
-        *resp_data_len = 0;
+    if (!req || !resp_data || !resp_data_len) {
         return CMD_RESULT_FAILED;
     }
 
-    fprintf(stderr, "[CMD][PROCESS] dtu_id=%u method=%u seq=%u\n",
-            req->dtu_id, req->method, req->seq);
+    fprintf(stderr, "[CMD][PROCESS] dtu_id=%u method=%u seq=%u param_len=%u\n",
+            req->dtu_id, req->method, req->seq, req->param_len);
 
-    switch (req->method) {
-    case CMD_METHOD_SET_RELAY:
-        return handle_set_relay(req, resp_data, resp_data_len);
-    case CMD_METHOD_SET_MODE:
-        return handle_set_mode(req, resp_data, resp_data_len);
-    case CMD_METHOD_SET_COLLECT_CYCLE:
-        return handle_set_collect_cycle(req, resp_data, resp_data_len);
-    case CMD_METHOD_TRIGGER_COLLECT:
-        return handle_trigger_collect(req, resp_data, resp_data_len);
-    case CMD_METHOD_REBOOT:
-        return handle_reboot(req, resp_data, resp_data_len);
-    default:
-        fprintf(stderr, "[CMD][WARN] unsupported method: %u\n", req->method);
-        *resp_data_len = 0;
-        return CMD_RESULT_UNSUPPORTED;
-    }
+    if (req->method == CMD_METHOD_RAW_ST_DOWNLINK)
+        return handle_raw_st_downlink(req, resp_data, resp_data_len);
+
+    fprintf(stderr, "[CMD][WARN] unsupported non-raw method: %u\n", req->method);
+    *resp_data_len = 0;
+    return CMD_RESULT_UNSUPPORTED;
 }

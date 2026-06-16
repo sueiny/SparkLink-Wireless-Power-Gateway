@@ -264,6 +264,15 @@ bool ConfigManager::load(const std::string &path, std::string *error)
         cfg.offline_analysis.rule_engine.device_overrides[item.key()] =
             parseRuleDeviceOverride(item.value());
 
+    const auto offline_control = offline.value("offline_control", nlohmann::json::object());
+    cfg.offline_analysis.offline_control.enable = offline_control.value("enable", true);
+    cfg.offline_analysis.offline_control.offline_only = offline_control.value("offline_only", true);
+    cfg.offline_analysis.offline_control.relay_close_on_recovery =
+        offline_control.value("relay_close_on_recovery", true);
+    cfg.offline_analysis.offline_control.relay_devices.clear();
+    for (const auto &item : offline_control.value("relay_devices", nlohmann::json::array()))
+        cfg.offline_analysis.offline_control.relay_devices.push_back(item.get<std::string>());
+
     const auto ai = offline.value("ai", nlohmann::json::object());
     cfg.offline_analysis.ai.enable = ai.value("enable", false);
 
@@ -327,6 +336,8 @@ bool ConfigManager::validate(const AppConfig &config, std::string *error) const
             return fail("offline_analysis.exit_hold_ms must be positive");
         if (offline.ai.enable)
             return fail("offline_analysis.ai.enable is reserved and must be false");
+        if (offline.offline_control.enable && !offline.offline_control.offline_only)
+            return fail("offline_analysis.offline_control.offline_only must be true");
 
         const auto &rules = offline.rule_engine;
         if (rules.enable) {
@@ -383,6 +394,19 @@ bool ConfigManager::validate(const AppConfig &config, std::string *error) const
         device_types[device.device_id] = device.type;
     for (const auto &device : config.dtu_devices)
         device_types[device.device_id] = model::DeviceType::DtuNode;
+
+    if (config.offline_analysis.enable &&
+        config.offline_analysis.offline_control.enable) {
+        for (const auto &relay_device_id : config.offline_analysis.offline_control.relay_devices) {
+            const auto type_it = device_types.find(relay_device_id);
+            if (type_it == device_types.end())
+                return fail("offline_analysis.offline_control.relay_devices unknown device: " +
+                            relay_device_id);
+            if (type_it->second != model::DeviceType::Relay)
+                return fail("offline_analysis.offline_control.relay_devices must be relay device: " +
+                            relay_device_id);
+        }
+    }
 
     for (const auto &item : config.offline_analysis.rule_engine.device_overrides) {
         const auto type_it = device_types.find(item.first);

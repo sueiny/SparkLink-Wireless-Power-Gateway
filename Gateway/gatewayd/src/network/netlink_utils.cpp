@@ -240,8 +240,22 @@ bool netlinkSetDefaultRouteVia(const std::string &ifname)
     // 2. 删除其他接口的默认路由
     netlinkDelOtherDefaultRoutes(ifname);
 
-    // 3. 添加选中接口的默认路由（metric=100）
-    return netlinkAddDefaultRoute(ifname, gw, 100);
+    // 3. 如果目标默认路由已经存在，视为成功。部分内核/路由属性组合下
+    // RTM_NEWROUTE 即使使用 REPLACE 也可能失败，但当前路由已经满足需求。
+    for (const auto &route : netlinkGetDefaultRoutes()) {
+        if (route.iface == ifname && route.gateway == gw && route.metric == 100)
+            return true;
+    }
+
+    // 4. 添加选中接口的默认路由（metric=100）
+    if (netlinkAddDefaultRoute(ifname, gw, 100))
+        return true;
+
+    for (const auto &route : netlinkGetDefaultRoutes()) {
+        if (route.iface == ifname && route.gateway == gw && route.metric == 100)
+            return true;
+    }
+    return false;
 }
 
 } // namespace gateway::network

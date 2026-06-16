@@ -23,7 +23,9 @@ public:
     bool bringUp() override;
     bool isInterfaceUp() const override;
     bool hasIp() const override;
-    bool canReachCloud(const std::string &host, int port) const override;
+    bool canReachCloud(const std::string &host,
+                       int port,
+                       std::string *reason = nullptr) const override;
 
 private:
     std::vector<std::string> candidateIfnames() const;

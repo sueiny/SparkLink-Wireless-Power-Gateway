@@ -70,6 +70,7 @@ add_executable(gatewayd
     src/app/network_worker.cpp
     src/app/publish_manager.cpp
     src/codec/thingskit_codec.cpp
+    src/codec/sle_downlink_builder.cpp
     src/command/command_payload_codec.cpp
     src/common/file_utils.cpp
     src/common/device_model.cpp

@@ -34,14 +34,21 @@ public:
     virtual bool bringUp() = 0;
     virtual bool isInterfaceUp() const = 0;
     virtual bool hasIp() const = 0;
-    virtual bool canReachCloud(const std::string &host, int port) const = 0;
+    virtual bool canReachCloud(const std::string &host,
+                               int port,
+                               std::string *reason = nullptr) const = 0;
 
 protected:
     // 默认工具函数放在接口基类里，避免各 provider 重复写 Linux 网络检测逻辑。
     bool defaultIsInterfaceUp(const std::string &ifname) const;
     bool defaultHasIp(const std::string &ifname) const;
-    bool defaultCanReachCloud(const std::string &host, int port) const;
-    bool defaultCanReachCloud(const std::string &host, int port, const std::string &ifname) const;
+    bool defaultCanReachCloud(const std::string &host,
+                              int port,
+                              std::string *reason = nullptr) const;
+    bool defaultCanReachCloud(const std::string &host,
+                              int port,
+                              const std::string &ifname,
+                              std::string *reason = nullptr) const;
 };
 
 std::string toString(NetworkType type);

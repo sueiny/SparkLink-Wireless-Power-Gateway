@@ -64,6 +64,12 @@
         }
       }
     },
+    "offline_control": {
+      "enable": true,
+      "offline_only": true,
+      "relay_close_on_recovery": true,
+      "relay_devices": ["RELAY_001", "RELAY_002"]
+    },
     "ai": {
       "enable": false
     }

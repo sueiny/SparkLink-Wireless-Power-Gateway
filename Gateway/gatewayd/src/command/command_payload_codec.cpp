@@ -71,14 +71,14 @@ std::string CommandPayloadCodec::extractTarget(const nlohmann::json &request) co
     if (!request.is_object())
         return {};
 
-    for (const char *key : {"device", "deviceId", "deviceName", "target", "targetDevice"}) {
+    for (const char *key : {"device", "deviceId", "deviceName", "target", "targetDevice", "targetDeviceId"}) {
         if (request.contains(key) && request[key].is_string())
             return request[key].get<std::string>();
     }
 
     const auto params = request.contains("params") ? request["params"] : nlohmann::json::object();
     if (params.is_object()) {
-        for (const char *key : {"device", "deviceId", "deviceName", "target", "targetDevice"}) {
+        for (const char *key : {"device", "deviceId", "deviceName", "target", "targetDevice", "targetDeviceId"}) {
             if (params.contains(key) && params[key].is_string())
                 return params[key].get<std::string>();
         }
