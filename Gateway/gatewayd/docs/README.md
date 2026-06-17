@@ -8,10 +8,12 @@
 
 - `gatewayd框架理解.md`：`gatewayd` 主流程、线程、IPC、MQTT、SQLite、命令链路。
 - `gatewayd与sle_data_app通信机制.md`：当前 `gatewayd` 与 `sle_data_app` 的数据上行、命令下行、IPC 帧格式和调试点。
+- `云到DTU上下行链路与包格式.md`：云端、gatewayd、IPC、`sle_data_app`、DTU root 的上下行流程、测试包集合和 root 拓扑初始化包格式。
 - `上下行测试包格式与用例.md`：真实 SLE 联调使用的 ST/Modbus 上下行包格式、COM/ADB 测试命令和当前验收结论。
 - `网络管理模块实现细节.md`：`gatewayd` 网络线程、NetManager、Provider、DHCP、DNS、Netlink 路由和 MQTT 连接关系。
 - `网络管理模块后续改进计划.md`：P0 后网络模块暂停状态、P1/P2 候选改进、恢复条件和回归命令。
 - `离线规则引擎与本地AI部署计划.md`：断网时本地规则引擎和后续 AI 小模型的配置、阈值、事件和验证边界。
+- `本地AI数据集与两路Root联调.md`：V2 本地 AI 数据集生成、Logistic 模型训练、两路 DTU root 回放和板端验收。
 - `SLE数据源替换MockDataSource计划.md`：从 Mock 数据源切换到真实 SLE IPC 数据源的改造计划。
 - `Modbus寄存器仿真规格.md`：当前 Modbus 设备响应格式和寄存器解释，供 `codec/modbus_parser.cpp` 对照。
 - `sle_gateway_protocol.md`：SLE ST 帧协议说明。

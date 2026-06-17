@@ -45,7 +45,25 @@
 
 过流、温度、湿度没有在本项目中硬编码为南网统一值。它们取决于现场 CT、断路器、柜体、传感器和安装环境，必须通过 `gateway_config.json` 配置。
 
-## 4. 配置结构
+## 4. 配置支持状态
+
+当前规则引擎配置已经接入 `gatewayd/config/gateway_config.json`，入口是根节点下的 `offline_analysis` 段。启动时 `ConfigManager::load()` 会把该段解析到 `AppConfig::offline_analysis`，`PublishManager` 构造 `OfflineRuleEngine` 时把完整 `AppConfig` 引用传入规则引擎。
+
+因此当前支持：
+
+- 通过 JSON 调整是否启用离线分析、断网进入/退出保持时间、规则冷却时间。
+- 通过 JSON 调整单相电表、温湿度、DTU 的默认阈值。
+- 通过 JSON 对指定 `device_id` 做阈值覆盖。
+- 通过 JSON 配置过流联动继电器列表。
+- 通过 JSON 配置本地 AI 线性风险评分模型，默认关闭。
+
+当前不支持：
+
+- 运行期热更新配置。修改 `gateway_config.json` 后需要重启 `gatewayd` 才会生效。
+- 在线状态下执行本地规则或本地 AI。`offline_only=false` 会被启动校验拒绝。
+- root 上报规则阈值自动覆盖本地配置。当前阈值来源仍是 `gateway_config.json`。
+
+## 5. 配置结构
 
 配置入口位于 `gatewayd/config/gateway_config.json`：
 
@@ -84,16 +102,24 @@
         "over_current_ratio": 1.2
       }
     }
-    },
-    "offline_control": {
-      "enable": true,
-      "offline_only": true,
-      "relay_close_on_recovery": true,
-      "relay_devices": ["RELAY_001", "RELAY_002"]
-    },
-    "ai": {
-      "enable": false
-    }
+  },
+  "offline_control": {
+    "enable": true,
+    "offline_only": true,
+    "relay_close_on_recovery": true,
+    "relay_devices": ["RELAY_001", "RELAY_002"]
+  },
+  "ai": {
+    "enable": false,
+    "offline_only": true,
+    "mode": "linear_score",
+    "model_path": "/userdata/gateway/models/offline_ai_model.json",
+    "window_ms": 300000,
+    "min_samples": 12,
+    "cooldown_ms": 300000,
+    "risk_threshold_medium": 0.55,
+    "risk_threshold_high": 0.8
+  }
 }
 ```
 
@@ -105,7 +131,100 @@
 
 `ConfigManager::validate()` 会拒绝负阈值、零阈值、上下限反转、非法 hold/cooldown，以及 `offline_only=false` 或 `ai.enable=true`。
 
-## 5. 首版规则
+### 5.1 顶层字段
+
+| 字段 | 类型 | 当前默认值 | 说明 |
+|------|------|------------|------|
+| `offline_analysis.enable` | bool | `true` | 总开关；关闭后规则和离线控制都不执行。 |
+| `offline_analysis.offline_only` | bool | `true` | 必须为 `true`；保证规则和 AI 只在断网/云不可达时运行。 |
+| `offline_analysis.enter_hold_ms` | int | `10000` | 网络/云/MQTT 任一失败持续多久后进入本地离线分析。 |
+| `offline_analysis.exit_hold_ms` | int | `30000` | 网络、云、MQTT 全部恢复持续多久后退出本地离线分析；也用于异常恢复保持判断。 |
+| `offline_analysis.rule_engine.enable` | bool | `true` | 规则引擎开关。 |
+| `offline_analysis.rule_engine.cooldown_ms` | int | `60000` | 单个 `device_id + rule_id` 触发后的冷却时间，避免重复刷屏。 |
+| `offline_analysis.ai.enable` | bool | `false` | 本地 AI 开关；默认关闭，启用后只在离线门控 active 时运行。 |
+| `offline_analysis.ai.mode` | string | `linear_score` | 首版只支持线性风险评分模型。 |
+| `offline_analysis.ai.model_path` | string | `/userdata/gateway/models/offline_ai_model.json` | PC 侧训练后部署到板端的模型 JSON。 |
+| `offline_analysis.ai.window_ms` | int | `300000` | AI 特征滑动窗口。 |
+| `offline_analysis.ai.min_samples` | int | `12` | 单设备窗口内达到该样本数后才评估。 |
+| `offline_analysis.ai.cooldown_ms` | int | `300000` | 同一设备同一风险头事件冷却时间。 |
+| `offline_analysis.ai.risk_threshold_medium` | double | `0.55` | 中风险触发阈值。 |
+| `offline_analysis.ai.risk_threshold_high` | double | `0.8` | 高风险触发阈值。 |
+
+### 5.2 电表默认阈值
+
+配置路径：`offline_analysis.rule_engine.defaults.single_phase_meter`
+
+| 字段 | 默认值 | 触发/用途 |
+|------|--------|-----------|
+| `nominal_voltage_v` | `220.0` | 额定电压，当前主要用于配置说明和后续扩展。 |
+| `over_voltage_v` | `235.4` | `voltage > over_voltage_v` 触发 `over_voltage`。 |
+| `under_voltage_v` | `198.0` | `voltage < under_voltage_v` 触发 `under_voltage`。 |
+| `frequency_low_hz` | `49.8` | `frequency < frequency_low_hz` 触发 `frequency_deviation`。 |
+| `frequency_high_hz` | `50.2` | `frequency > frequency_high_hz` 触发 `frequency_deviation`。 |
+| `rated_current_a` | `60.0` | 额定电流，用于计算过流阈值。 |
+| `over_current_ratio` | `1.1` | 过流倍率，阈值为 `rated_current_a * over_current_ratio`。 |
+| `hold_ms` | `10000` | 电表异常持续时间门槛。 |
+
+### 5.3 温湿度默认阈值
+
+配置路径：`offline_analysis.rule_engine.defaults.env_sensor`
+
+| 字段 | 默认值 | 触发/用途 |
+|------|--------|-----------|
+| `high_temperature_c` | `55.0` | `temperature >= high_temperature_c` 触发 `high_temperature`。 |
+| `high_humidity_rh` | `90.0` | `humidity >= high_humidity_rh` 触发 `high_humidity`。 |
+| `hold_ms` | `30000` | 温湿度异常持续时间门槛。 |
+
+### 5.4 DTU 默认阈值
+
+配置路径：`offline_analysis.rule_engine.defaults.dtu_node`
+
+| 字段 | 默认值 | 触发/用途 |
+|------|--------|-----------|
+| `offline_timeout_ms` | `60000` | 某个 DTU 超过该时间没有心跳或相关 telemetry 时触发 `node_offline`。 |
+
+### 5.5 设备级覆盖
+
+配置路径：`offline_analysis.rule_engine.device_overrides`
+
+覆盖键必须是 `gateway_config.json` 中存在的 `device_id`，例如：
+
+```json
+"device_overrides": {
+  "METER_001": {
+    "rated_current_a": 80.0,
+    "over_current_ratio": 1.2,
+    "hold_ms": 5000
+  },
+  "ENV_001": {
+    "high_temperature_c": 50.0,
+    "high_humidity_rh": 85.0
+  },
+  "DTU_001": {
+    "offline_timeout_ms": 120000
+  }
+}
+```
+
+覆盖规则：
+
+- 未写某字段时继承设备类型默认值。
+- 写出的覆盖值必须为正数；显式写 `0` 或负数会被启动校验拒绝。
+- 电表覆盖后仍会校验 `under_voltage_v < over_voltage_v`、`frequency_low_hz < frequency_high_hz`。
+- `device_id` 不存在会启动失败。
+
+### 5.6 离线自动控制配置
+
+配置路径：`offline_analysis.offline_control`
+
+| 字段 | 类型 | 当前默认值 | 说明 |
+|------|------|------------|------|
+| `enable` | bool | `true` | 离线规则自动控制总开关。 |
+| `offline_only` | bool | `true` | 必须为 `true`；在线时不允许本地自动控制。 |
+| `relay_close_on_recovery` | bool | `true` | 过流恢复后是否闭合联动继电器。电表本体不自动合闸。 |
+| `relay_devices` | string[] | 空 | 过流时联动断开的继电器设备列表，必须都是 `relay_device`。 |
+
+## 6. 首版规则
 
 | 设备 | 规则 | 触发条件 | 持续时间 | 事件 |
 |------|------|----------|----------|------|
@@ -119,7 +238,7 @@
 
 每条规则按 `device_id + rule_id` 维护状态。触发后进入 `cooldown_ms` 冷却，避免断网期间重复刷屏。恢复正常持续 `exit_hold_ms` 后清除 active 状态。
 
-## 6. 事件格式
+## 7. 事件格式
 
 规则事件使用现有 ThingsKit event payload：
 
@@ -143,7 +262,9 @@
 
 事件 topic 由 `MqttCloudClient` 的 `eventsTopic()` 提供，保持和 `thingskit.topic_prefix` 一致。
 
-## 7. 离线自动控制边界
+离线期间事件会先进入 `PublishManager` 发布队列。由于云不可达，发布失败后会复用 SQLite `telemetry_cache` 缓存；联网恢复后由缓存补传流程发送。
+
+## 8. 离线自动控制边界
 
 离线控制只在 `offline_analysis.offline_control.enable=true` 且断网门控已经进入 active 后执行。
 
@@ -168,11 +289,66 @@
 | 电表 | `0x10` 写寄存器 `0x0010` | `0xAAAA=拉闸`，`0x5555=合闸`；当前只自动拉闸。 |
 | 继电器 | `0x05` 写线圈 `0x0000` | `0x0000=断开`，`0xFF00=闭合`。 |
 
-## 8. 后续 AI 边界
+## 9. 当前代码路径
 
-本地 AI 小模型只在断网期间运行，且第一阶段不允许直接控制设备。后续 `ai-daemon` 只能消费规则引擎或 `TelemetryData` 派生特征，输出 `risk_score`、`risk_level`、`risk_type`、`reason`，再由 `gatewayd` 统一发布事件。
+配置和运行路径：
 
-## 9. 验证命令
+```text
+gateway_config.json
+  -> ConfigManager::load()
+  -> AppConfig::offline_analysis
+  -> PublishManager::offlineAnalysisActive()
+  -> OfflineRuleEngine::evaluate()
+  -> RuleEvent / OfflineControlAction
+```
+
+关键源码：
+
+| 文件 | 作用 |
+|------|------|
+| `include/config/config_manager.h` | 定义 `OfflineAnalysisConfig`、`RuleEngineConfig`、阈值结构体。 |
+| `src/config/config_manager.cpp` | 解析 JSON，填默认值，校验阈值和设备引用。 |
+| `src/rules/offline_rule_engine.cpp` | 规则状态、持续时间、冷却、事件和离线控制动作计算。 |
+| `src/app/publish_manager.cpp` | 判断离线门控，调用规则引擎，发布/缓存事件，入队本地控制命令。 |
+| `src/command/command_executor.cpp` | 把 `set_relay` 转成 Modbus RTU + ST DATA，并走 raw ST IPC 下发。 |
+
+## 10. 本地 AI V2 边界
+
+本地 AI 小模型只在断网期间运行，且不允许直接控制设备。当前 V2 目标不是本地 LLM，也不是独立 `ai-daemon`，而是 `gatewayd` 内部的轻量线性风险评分：
+
+- PC 侧生成训练数据并训练多标签 Logistic Regression。
+- 板端只加载 JSON 模型参数，使用 C++ 推理，不依赖 Python/scikit-learn。
+- AI 输入为 `TelemetryData` 与滑动窗口派生特征，不解析 SLE/Modbus 原始帧。
+- AI 输出 `ai_risk` 事件，字段包含 `risk_score`、`risk_level`、`risk_type`、`features`、`source=offline_ai`、`offline=true`。
+- AI 事件走 `PublishManager` 统一发布队列；MQTT 离线时复用 SQLite 缓存补传。
+
+配置入口已经扩展为：
+
+```json
+"ai": {
+  "enable": false,
+  "offline_only": true,
+  "mode": "linear_score",
+  "model_path": "/userdata/gateway/models/offline_ai_model.json",
+  "window_ms": 300000,
+  "min_samples": 12,
+  "cooldown_ms": 300000,
+  "risk_threshold_medium": 0.55,
+  "risk_threshold_high": 0.8
+}
+```
+
+启用约束：
+
+- `offline_only` 必须为 `true`。
+- `mode` 首版只允许 `linear_score`。
+- `window_ms`、`min_samples`、`cooldown_ms` 必须为正数。
+- `0 < risk_threshold_medium < risk_threshold_high <= 1`。
+- 模型文件缺失时只禁用 AI 并打印日志，不能影响遥测、规则、下行控制。
+
+两路 root 数据集和回放流程见 `本地AI数据集与两路Root联调.md`。
+
+## 11. 验证命令
 
 ```bash
 bash .claude/skills/run-gateway/driver.sh build-gw

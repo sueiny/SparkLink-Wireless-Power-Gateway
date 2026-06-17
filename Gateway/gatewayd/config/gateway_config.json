@@ -71,7 +71,15 @@
       "relay_devices": ["RELAY_001", "RELAY_002"]
     },
     "ai": {
-      "enable": false
+      "enable": false,
+      "offline_only": true,
+      "mode": "linear_score",
+      "model_path": "/userdata/gateway/models/offline_ai_model.json",
+      "window_ms": 300000,
+      "min_samples": 12,
+      "cooldown_ms": 300000,
+      "risk_threshold_medium": 0.55,
+      "risk_threshold_high": 0.8
     }
   },
   "log": {"dir": "/userdata/gateway/data/log", "level": "info"},

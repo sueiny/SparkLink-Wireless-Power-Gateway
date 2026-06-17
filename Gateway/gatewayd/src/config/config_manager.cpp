@@ -275,6 +275,20 @@ bool ConfigManager::load(const std::string &path, std::string *error)
 
     const auto ai = offline.value("ai", nlohmann::json::object());
     cfg.offline_analysis.ai.enable = ai.value("enable", false);
+    cfg.offline_analysis.ai.offline_only = ai.value("offline_only", true);
+    cfg.offline_analysis.ai.mode = ai.value("mode", cfg.offline_analysis.ai.mode);
+    cfg.offline_analysis.ai.model_path =
+        ai.value("model_path", cfg.offline_analysis.ai.model_path);
+    cfg.offline_analysis.ai.window_ms =
+        ai.value("window_ms", cfg.offline_analysis.ai.window_ms);
+    cfg.offline_analysis.ai.min_samples =
+        ai.value("min_samples", cfg.offline_analysis.ai.min_samples);
+    cfg.offline_analysis.ai.cooldown_ms =
+        ai.value("cooldown_ms", cfg.offline_analysis.ai.cooldown_ms);
+    cfg.offline_analysis.ai.risk_threshold_medium =
+        ai.value("risk_threshold_medium", cfg.offline_analysis.ai.risk_threshold_medium);
+    cfg.offline_analysis.ai.risk_threshold_high =
+        ai.value("risk_threshold_high", cfg.offline_analysis.ai.risk_threshold_high);
 
     cfg.devices.clear();
     cfg.dtu_devices.clear();
@@ -334,8 +348,25 @@ bool ConfigManager::validate(const AppConfig &config, std::string *error) const
             return fail("offline_analysis.enter_hold_ms must be positive");
         if (offline.exit_hold_ms <= 0)
             return fail("offline_analysis.exit_hold_ms must be positive");
-        if (offline.ai.enable)
-            return fail("offline_analysis.ai.enable is reserved and must be false");
+        if (offline.ai.enable) {
+            if (!offline.ai.offline_only)
+                return fail("offline_analysis.ai.offline_only must be true");
+            if (offline.ai.mode != "linear_score")
+                return fail("offline_analysis.ai.mode must be linear_score");
+            if (offline.ai.model_path.empty())
+                return fail("offline_analysis.ai.model_path must not be empty");
+            if (offline.ai.window_ms <= 0)
+                return fail("offline_analysis.ai.window_ms must be positive");
+            if (offline.ai.min_samples <= 0)
+                return fail("offline_analysis.ai.min_samples must be positive");
+            if (offline.ai.cooldown_ms <= 0)
+                return fail("offline_analysis.ai.cooldown_ms must be positive");
+            if (offline.ai.risk_threshold_medium <= 0.0 ||
+                offline.ai.risk_threshold_high <= 0.0 ||
+                offline.ai.risk_threshold_medium >= offline.ai.risk_threshold_high ||
+                offline.ai.risk_threshold_high > 1.0)
+                return fail("offline_analysis.ai risk thresholds must be 0 < medium < high <= 1");
+        }
         if (offline.offline_control.enable && !offline.offline_control.offline_only)
             return fail("offline_analysis.offline_control.offline_only must be true");
 

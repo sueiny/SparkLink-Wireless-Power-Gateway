@@ -49,6 +49,7 @@ DEFAULT_DEVICE_ID = "METER_001"
 DEFAULT_DTU_ID = 1
 DEFAULT_MODBUS_TYPE = 2
 DEFAULT_MODBUS_ADDR = 1
+DEFAULT_PORT_ROOTS = {"COM19": 1, "COM23": 12}
 
 SLE_FRAME_MAGIC = b"ST"
 SLE_FRAME_VERSION = 0x01
@@ -300,6 +301,22 @@ def dtu_role(node_id: int) -> int:
     return SLE_ROLE_LEAF
 
 
+def root_for_node(node_id: int) -> int:
+    current = node_id
+    seen = set()
+    while current and current not in seen:
+        seen.add(current)
+        parent_id, _ = TOPOLOGY_NODES.get(current, (0, ()))
+        if parent_id == 0:
+            return current
+        current = parent_id
+    return 1 if node_id <= 11 else 12
+
+
+def root_for_device(device: Dict[str, object]) -> int:
+    return root_for_node(int(device["dtu_id"]))
+
+
 def build_meter_modbus_response(seq: int, slave_addr: int = DEFAULT_MODBUS_ADDR,
                                 dtu_id: int = DEFAULT_DTU_ID,
                                 meter_voltage: Optional[float] = None,
@@ -460,16 +477,50 @@ def build_frame_uart_write(seq: int, args: argparse.Namespace, frame_type: str,
     return encode_uart_write(raw, args)
 
 
+def replay_record_to_item(record: Dict[str, object], seq: int) -> Dict[str, object]:
+    frame_hex = str(record.get("frame_hex") or record.get("raw_hex") or "")
+    if not frame_hex:
+        raise ValueError("scenario-file record missing frame_hex/raw_hex")
+    raw = bytes.fromhex(re.sub(r"[^0-9A-Fa-f]", "", frame_hex))
+    return {
+        "seq": int(record.get("seq", seq)),
+        "kind": str(record.get("kind", "data")),
+        "device_id": str(record.get("device_id", "")),
+        "dtu_id": int(record.get("dtu_id", 0) or 0),
+        "root_id": int(record.get("root_id", 0) or 0),
+        "scenario": str(record.get("scenario", "scenario-file")),
+        "raw": raw,
+    }
+
+
+def iter_replay_items(args: argparse.Namespace, root_id: Optional[int],
+                      seq_start: int) -> Iterable[Dict[str, object]]:
+    seq = seq_start
+    for record in getattr(args, "replay_records", []):
+        record_root = int(record.get("root_id", 0) or 0)
+        if root_id is not None and record_root and record_root != root_id:
+            continue
+        yield replay_record_to_item(record, seq)
+        seq += 1
+
+
 def iter_round_items(args: argparse.Namespace, round_index: int,
-                     seq_start: int) -> Iterable[Dict[str, object]]:
+                     seq_start: int, root_id: Optional[int] = None) -> Iterable[Dict[str, object]]:
+    if getattr(args, "replay_records", None):
+        yield from iter_replay_items(args, root_id, seq_start)
+        return
+
     seq = seq_start
     if args.scenario == "meter-001":
+        if root_id is not None and root_id != 1:
+            return
         if args.wire_format == "frame" and not args.no_heartbeat:
             yield {
                 "seq": seq,
                 "kind": "heartbeat",
                 "device_id": "DTU_001",
                 "dtu_id": 1,
+                "root_id": 1,
                 "raw": build_heartbeat_frame(seq, args, src_node=1, src_role=SLE_ROLE_ROOT),
             }
             seq += 1
@@ -482,6 +533,7 @@ def iter_round_items(args: argparse.Namespace, round_index: int,
             "kind": "data",
             "device_id": "METER_001",
             "dtu_id": 1,
+            "root_id": 1,
             "raw": raw,
         }
         return
@@ -494,34 +546,50 @@ def iter_round_items(args: argparse.Namespace, round_index: int,
 
     if not args.no_heartbeat:
         for node_id in sorted(TOPOLOGY_NODES):
+            node_root = root_for_node(node_id)
+            if root_id is not None and node_root != root_id:
+                continue
             role = dtu_role(node_id)
             yield {
                 "seq": seq,
                 "kind": "heartbeat",
                 "device_id": f"DTU_{node_id:03d}",
                 "dtu_id": node_id,
+                "root_id": node_root,
                 "raw": build_heartbeat_frame(seq, args, src_node=node_id, src_role=role),
             }
             seq += 1
 
     for device in EXTERNAL_DEVICES:
         dtu_id = int(device["dtu_id"])
+        device_root = root_for_device(device)
+        if root_id is not None and device_root != root_id:
+            continue
         yield {
             "seq": seq,
             "kind": "data",
             "device_id": str(device["device_id"]),
             "dtu_id": dtu_id,
+            "root_id": device_root,
             "raw": build_data_frame(seq, args, device, src_node=dtu_id),
             "modbus_type": int(device["modbus_type"]),
         }
         seq += 1
 
 
-def round_item_count(args: argparse.Namespace) -> int:
+def round_item_count(args: argparse.Namespace, root_id: Optional[int] = None) -> int:
+    if getattr(args, "replay_records", None):
+        return sum(1 for _ in iter_replay_items(args, root_id, 1))
     if args.scenario == "meter-001":
+        if root_id is not None and root_id != 1:
+            return 0
         return (0 if args.no_heartbeat or args.wire_format != "frame" else 1) + 1
     if args.scenario == "topology-all":
-        return (0 if args.no_heartbeat else len(TOPOLOGY_NODES)) + len(EXTERNAL_DEVICES)
+        node_count = sum(1 for node_id in TOPOLOGY_NODES
+                         if root_id is None or root_for_node(node_id) == root_id)
+        device_count = sum(1 for device in EXTERNAL_DEVICES
+                           if root_id is None or root_for_device(device) == root_id)
+        return (0 if args.no_heartbeat else node_count) + device_count
     raise ValueError(f"unsupported scenario: {args.scenario}")
 
 
@@ -587,20 +655,47 @@ def send_item(ser, args: argparse.Namespace, stats: Dict[str, object],
         stats["write_errors"] = int(stats["write_errors"]) + 1
 
 
+def normalize_port_name(port: str) -> str:
+    return port.upper()
+
+
+def parse_port_root_items(items: List[str]) -> Dict[str, int]:
+    result = dict(DEFAULT_PORT_ROOTS)
+    for item in items:
+        if "=" not in item:
+            raise ValueError(f"--port-root expects PORT=ROOT_ID, got {item}")
+        port, root_text = item.split("=", 1)
+        root_id = int(root_text)
+        if root_id not in (1, 12):
+            raise ValueError("--port-root currently supports root 1 or 12")
+        result[normalize_port_name(port.strip())] = root_id
+    return result
+
+
+def root_for_port(port: str, args: argparse.Namespace) -> Optional[int]:
+    if args.root_id is not None:
+        return args.root_id
+    mapping = getattr(args, "port_roots", {})
+    return mapping.get(normalize_port_name(port))
+
+
 def run_port(port: str, args: argparse.Namespace) -> Dict[str, object]:
     try:
         import serial
     except ImportError as exc:
         raise RuntimeError("pyserial is required: py -3 -m pip install pyserial") from exc
 
+    root_id = root_for_port(port, args)
     stats: Dict[str, object] = {
         "port": port,
+        "root_id": root_id,
         "baudrate": BAUDRATE,
         "scenario": args.scenario,
         "wire_format": args.wire_format,
         "uart_encoding": args.uart_encoding,
         "raw_terminator": args.raw_terminator,
-        "round_frames": round_item_count(args),
+        "scenario_file": args.scenario_file,
+        "round_frames": round_item_count(args, root_id),
         "line_delay": args.line_delay,
         "dst_node": args.dst_node,
         "src_node": args.src_node,
@@ -676,7 +771,7 @@ def run_port(port: str, args: argparse.Namespace) -> Dict[str, object]:
             if args.count is None and time.time() >= deadline:
                 break
 
-            items = list(iter_round_items(args, round_index, frame_seq))
+            items = list(iter_round_items(args, round_index, frame_seq, root_id))
             for idx, item in enumerate(items):
                 send_item(ser, args, stats, item)
 
@@ -754,8 +849,10 @@ def dry_run_record(args: argparse.Namespace, round_index: int,
         "kind": item["kind"],
         "device_id": item.get("device_id", ""),
         "dtu_id": item.get("dtu_id", ""),
+        "root_id": item.get("root_id", ""),
         "modbus_type": item.get("modbus_type", ""),
-        "scenario": args.scenario,
+        "scenario": item.get("scenario", args.scenario),
+        "scenario_file": args.scenario_file,
         "wire_format": args.wire_format,
         "uart_encoding": args.uart_encoding,
         "raw_terminator": args.raw_terminator,
@@ -779,8 +876,9 @@ def dry_run_record(args: argparse.Namespace, round_index: int,
 def dry_run(args: argparse.Namespace) -> List[Dict[str, object]]:
     records = []
     frame_seq = 1
+    root_id = args.root_id
     for round_index in range(1, args.preview_count + 1):
-        items = list(iter_round_items(args, round_index, frame_seq))
+        items = list(iter_round_items(args, round_index, frame_seq, root_id))
         frame_seq += len(items)
         for item in items:
             record = dry_run_record(args, round_index, item)
@@ -815,6 +913,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("ports", nargs="*", help="Serial ports, for example COM19 COM23 COM36")
     parser.add_argument("--scenario", choices=("meter-001", "topology-all"), default=DEFAULT_SCENARIO,
                         help="meter-001 sends one DTU and one meter; topology-all sends 31 DTU heartbeats and 11 external device data frames per round")
+    parser.add_argument("--scenario-file", default=None,
+                        help="Replay JSONL/JSON records generated by offline_ai_dataset.py")
+    parser.add_argument("--port-root", action="append", default=[],
+                        help="Map a serial port to a root id, for example COM19=1 or COM23=12")
+    parser.add_argument("--root-id", type=int, default=None,
+                        help="Force all ports/dry-run output to one root id")
     parser.add_argument("--wire-format", choices=("frame", "payload"), default="frame",
                         help="frame sends a full ST frame; payload sends the legacy modbus payload only")
     parser.add_argument("--uart-encoding", choices=("raw", "text-hex"), default=DEFAULT_UART_ENCODING,
@@ -873,8 +977,41 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def load_replay_records(path: Optional[str]) -> List[Dict[str, object]]:
+    if not path:
+        return []
+
+    with open(path, "r", encoding="utf-8") as fp:
+        text = fp.read().strip()
+    if not text:
+        return []
+
+    if text[0] == "[":
+        data = json.loads(text)
+        if not isinstance(data, list):
+            raise ValueError("--scenario-file JSON must be an array or JSONL")
+        return [item for item in data if isinstance(item, dict)]
+
+    records: List[Dict[str, object]] = []
+    for line in text.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        item = json.loads(line)
+        if isinstance(item, dict):
+            records.append(item)
+    return records
+
+
 def main() -> int:
     args = parse_args()
+    try:
+        args.port_roots = parse_port_root_items(args.port_root)
+        args.replay_records = load_replay_records(args.scenario_file)
+    except Exception as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+
     if args.interval <= 0:
         print("--interval must be positive", file=sys.stderr)
         return 2
@@ -910,6 +1047,12 @@ def main() -> int:
         return 2
     if args.scenario == "topology-all" and args.wire_format != "frame":
         print("--scenario topology-all requires --wire-format frame", file=sys.stderr)
+        return 2
+    if args.root_id is not None and args.root_id not in (1, 12):
+        print("--root-id currently supports 1 or 12", file=sys.stderr)
+        return 2
+    if args.scenario_file and not args.replay_records:
+        print("--scenario-file contains no replay records", file=sys.stderr)
         return 2
 
     if args.dry_run:

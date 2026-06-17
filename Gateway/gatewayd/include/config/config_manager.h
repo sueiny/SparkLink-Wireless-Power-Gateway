@@ -146,6 +146,14 @@ struct RuleEngineConfig {
 
 struct AiConfig {
     bool enable = false;
+    bool offline_only = true;
+    std::string mode = "linear_score";
+    std::string model_path = "/userdata/gateway/models/offline_ai_model.json";
+    int window_ms = 300000;
+    int min_samples = 12;
+    int cooldown_ms = 300000;
+    double risk_threshold_medium = 0.55;
+    double risk_threshold_high = 0.8;
 };
 
 struct OfflineControlConfig {

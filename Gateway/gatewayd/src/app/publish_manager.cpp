@@ -78,12 +78,15 @@ PublishManager::PublishManager(PublishManagerDeps deps)
       telemetry_queue_(deps.telemetry_queue),
       command_queue_(deps.command_queue),
       publish_queue_(deps.publish_queue),
-      rule_engine_(deps.config)
+      rule_engine_(deps.config),
+      ai_analyzer_(deps.config, deps.logger)
 {
 }
 
 void PublishManager::run()
 {
+    ai_analyzer_.init();
+
     int64_t last_cache_flush_ms = 0;
     std::vector<PublishMessage> delayed_messages;
 
@@ -125,8 +128,11 @@ void PublishManager::publishTelemetryBatch(const std::vector<model::TelemetryDat
         const auto evaluation = rule_engine_.evaluate(telemetry, true, now);
         enqueueRuleEvents(evaluation.events);
         enqueueOfflineControlActions(evaluation.actions);
+        const auto ai_evaluation = ai_analyzer_.evaluate(telemetry, true, now);
+        enqueueAiEvents(ai_evaluation.events);
     } else {
         rule_engine_.evaluate(telemetry, false, now);
+        ai_analyzer_.evaluate(telemetry, false, now);
     }
 
     logger_.info("MQTT", "telemetry batch devices=" + std::to_string(telemetry.size()) +
@@ -148,7 +154,9 @@ void PublishManager::publishTelemetryBatch(const std::vector<model::TelemetryDat
 
 bool PublishManager::offlineAnalysisActive(int64_t now_ms)
 {
-    if (!config_.offline_analysis.enable || !config_.offline_analysis.rule_engine.enable) {
+    if (!config_.offline_analysis.enable ||
+        (!config_.offline_analysis.rule_engine.enable &&
+         !config_.offline_analysis.ai.enable)) {
         offline_raw_state_ = false;
         offline_raw_since_ms_ = 0;
         offline_analysis_active_ = false;
@@ -204,6 +212,30 @@ void PublishManager::enqueueRuleEvents(const std::vector<rules::RuleEvent> &even
         logger_.warn("RULE", "rule event enqueued device=" + event.device_id +
                                  ", event=" + event.event +
                                  ", severity=" + event.severity);
+    }
+}
+
+void PublishManager::enqueueAiEvents(const std::vector<ai::AiRiskEvent> &events)
+{
+    if (events.empty())
+        return;
+
+    for (const auto &event : events) {
+        const std::string payload = codec::ThingsKitCodec::buildEventPayload(
+            event.device_id, "ai_risk", event.risk_level, event.message, event.details);
+        publish_queue_.push({
+            cloud_client_.eventsTopic(),
+            payload,
+            PublishMessageKind::RuleEvent,
+            0,
+            0,
+            {},
+            "ai_risk",
+            event.device_id,
+        });
+        logger_.warn("AI", "ai risk event enqueued device=" + event.device_id +
+                           ", risk_type=" + event.risk_type +
+                           ", level=" + event.risk_level);
     }
 }
 

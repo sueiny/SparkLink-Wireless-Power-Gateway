@@ -76,6 +76,7 @@ add_executable(gatewayd
     src/common/device_model.cpp
     src/common/logger.cpp
     src/common/time_utils.cpp
+    src/ai/offline_ai_analyzer.cpp
     src/config/config_manager.cpp
     src/cloud/mqtt_cloud_client.cpp
     src/command/command_executor.cpp

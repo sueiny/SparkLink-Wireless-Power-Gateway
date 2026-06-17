@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ai/offline_ai_analyzer.h"
 #include "app/publish_types.h"
 #include "app/worker_base.h"
 #include "app/network_worker.h"
@@ -52,6 +53,7 @@ private:
 
     bool offlineAnalysisActive(int64_t now_ms);
     void enqueueRuleEvents(const std::vector<rules::RuleEvent> &events);
+    void enqueueAiEvents(const std::vector<ai::AiRiskEvent> &events);
     void enqueueOfflineControlActions(const std::vector<rules::OfflineControlAction> &actions);
 
     // 网络可用且云端可达时，按批次补传 SQLite 中的遥测缓存。
@@ -81,6 +83,7 @@ private:
     common::BlockingQueue<command::RawCommandMessage> &command_queue_;
     common::BlockingQueue<PublishMessage> &publish_queue_;
     rules::OfflineRuleEngine rule_engine_;
+    ai::OfflineAiAnalyzer ai_analyzer_;
     int64_t last_status_ms_ = 0;
     int64_t offline_raw_since_ms_ = 0;
     bool offline_raw_state_ = false;
