@@ -68,6 +68,26 @@ std::string telemetryDeviceIds(const std::vector<model::TelemetryData> &telemetr
     return oss.str();
 }
 
+bool telemetryOnlineValue(const model::TelemetryData &data, bool *online)
+{
+    if (online == nullptr)
+        return false;
+
+    const auto int_it = data.integer_values.find("online");
+    if (int_it != data.integer_values.end()) {
+        *online = int_it->second != 0;
+        return true;
+    }
+
+    const auto bool_it = data.bool_values.find("online");
+    if (bool_it != data.bool_values.end()) {
+        *online = bool_it->second;
+        return true;
+    }
+
+    return false;
+}
+
 } // namespace
 
 PublishManager::PublishManager(PublishManagerDeps deps)
@@ -82,6 +102,14 @@ PublishManager::PublishManager(PublishManagerDeps deps)
       rule_engine_(deps.config),
       ai_analyzer_(deps.config, deps.logger)
 {
+    for (const auto &dtu : config_.dtu_devices) {
+        if (!dtu.device_id.empty())
+            device_online_states_[dtu.device_id] = false;
+    }
+    for (const auto &device : config_.devices) {
+        if (!device.device_id.empty())
+            device_online_states_[device.device_id] = false;
+    }
 }
 
 void PublishManager::run()
@@ -131,6 +159,7 @@ void PublishManager::publishTelemetryBatch(const std::vector<model::TelemetryDat
                                  std::to_string(telemetry.size()) +
                                  ", unique=" + std::to_string(coalesced.size()));
     }
+    updateDeviceOnlineStates(coalesced);
 
     const int64_t now = common::nowMs();
     const bool offline_active = offlineAnalysisActive(now);
@@ -195,6 +224,30 @@ std::vector<model::TelemetryData> PublishManager::coalesceTelemetryBatch(
     }
 
     return result;
+}
+
+void PublishManager::updateDeviceOnlineStates(
+    const std::vector<model::TelemetryData> &telemetry)
+{
+    for (const auto &item : telemetry) {
+        auto state_it = device_online_states_.find(item.device_id);
+        if (state_it == device_online_states_.end())
+            continue;
+
+        bool online = false;
+        if (telemetryOnlineValue(item, &online))
+            state_it->second = online;
+    }
+}
+
+int PublishManager::onlineDeviceCount() const
+{
+    int count = 0;
+    for (const auto &item : device_online_states_) {
+        if (item.second)
+            ++count;
+    }
+    return count;
 }
 
 bool PublishManager::offlineAnalysisActive(int64_t now_ms)
@@ -380,7 +433,7 @@ void PublishManager::publishGatewayStatusIfDue()
     status.network_type = network_state.available ? network_state.name : "none";
     status.network_ifname = network_state.available ? network_state.ifname : "none";
     status.cloud_connected = cloud_client_.isConnected();
-    status.device_count = config_.topology.expected_external_device_count;
+    status.device_count = onlineDeviceCount();
     status.cache_count = cache_store_ ? static_cast<int>(cache_store_->pendingCount()) : 0;
     status.ts_ms = now;
 

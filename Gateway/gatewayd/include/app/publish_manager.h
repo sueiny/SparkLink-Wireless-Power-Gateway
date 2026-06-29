@@ -13,6 +13,7 @@
 #include "rules/offline_rule_engine.h"
 #include "storage/cache_store.h"
 
+#include <unordered_map>
 #include <vector>
 
 namespace gateway::app {
@@ -52,6 +53,8 @@ private:
     void publishTelemetryBatch(const std::vector<model::TelemetryData> &telemetry);
     std::vector<model::TelemetryData> coalesceTelemetryBatch(
         const std::vector<model::TelemetryData> &telemetry) const;
+    void updateDeviceOnlineStates(const std::vector<model::TelemetryData> &telemetry);
+    int onlineDeviceCount() const;
 
     bool offlineAnalysisActive(int64_t now_ms);
     void enqueueRuleEvents(const std::vector<rules::RuleEvent> &events);
@@ -92,6 +95,7 @@ private:
     bool offline_analysis_active_ = false;
     bool command_topics_subscribed_ = false;
     std::string connected_ifname_;
+    std::unordered_map<std::string, bool> device_online_states_;
 };
 
 } // namespace gateway::app

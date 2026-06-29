@@ -51,7 +51,7 @@ std::string joinNameservers(const std::vector<std::string> &nameservers)
 
 constexpr uint32_t kProbeRouteMetricOffset = 4000;
 constexpr int kPreemptConfirmCount = 2;
-constexpr int64_t kPreemptStableMs = 30000;
+constexpr int64_t kPreemptStableMs = 5000;
 constexpr int kCurrentSoftFailureConfirmCount = 3;
 
 bool isCurrentSoftFailure(const NetworkState &state)
