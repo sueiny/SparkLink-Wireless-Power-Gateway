@@ -43,6 +43,8 @@ private:
 
     // 读取精确 n 字节；Timeout 表示当前帧尚未到达，不关闭 client。
     ReadStatus readExact(uint8_t *buf, size_t n);
+    // 已经读到长度前缀后，帧体短暂未到也属于半帧等待。
+    ReadStatus readExactStarted(uint8_t *buf, size_t n);
 
     int listen_fd_;
     int client_fd_;

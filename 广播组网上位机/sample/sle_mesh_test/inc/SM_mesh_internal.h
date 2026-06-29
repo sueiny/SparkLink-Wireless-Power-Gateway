@@ -55,7 +55,7 @@ typedef enum {
  * Timing constants (ms) / 定时常数（毫秒）
  *--------------------------------------------------------------------------*/
 #define SM_RSSI_REPORT_PERIOD_MS            5000
-#define SM_ADV_DURATION_MS                  125
+#define SM_ADV_DURATION_MS                  400
 #define SM_SCAN_COLLECT_WINDOW_MS           3000
 #define SM_NEIGHBOR_TIMEOUT_MS              15000
 #define SM_DEDUP_TIMEOUT_MS                 2000

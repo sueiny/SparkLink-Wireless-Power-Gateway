@@ -31,9 +31,9 @@ JSON 结构参考 ThingsKit 物模型导入示例：
 ## 文件说明
 
 - `single_phase_meter_model.json`：`METER_001` 到 `METER_007` 使用的单相电表产品物模型。
-- `env_sensor_model.json`：`ENV_001` 和 `ENV_002` 使用的温湿度变送器产品物模型。
-- `relay_device_model.json`：`RELAY_001` 和 `RELAY_002` 使用的继电器产品物模型。
-- `dtu_node_model.json`：`DTU_001` 到 `DTU_011` 使用的 DTU 节点产品物模型。
+- `env_sensor_model.json`：`ENV_001` 使用的温湿度变送器产品物模型。
+- `relay_device_model.json`：`RELAY_001` 使用的继电器产品物模型。
+- `dtu_node_model.json`：`DTU_001` 到 `DTU_010` 使用的 DTU 节点产品物模型。
 - `gateway_model.json`：`dtu网关` 使用的 DTU 网关产品物模型。
 - `all_product_models.json`：所有产品和设备的索引配置。
 
@@ -100,9 +100,7 @@ dtu网关
 │       ├── DTU_006
 │       └── DTU_007
 ├── DTU_008
-├── DTU_009
-├── DTU_010
-└── DTU_011
+└── DTU_010
 ```
 
 ### 电表业务拓扑
@@ -144,7 +142,5 @@ DTU_005 ── METER_005
 DTU_006 ── METER_006
 DTU_007 ── METER_007
 DTU_008 ── ENV_001
-DTU_009 ── ENV_002
 DTU_010 ── RELAY_001
-DTU_011 ── RELAY_002
 ```

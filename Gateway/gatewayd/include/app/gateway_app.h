@@ -40,7 +40,7 @@ public:
     bool init();
 
     // gatewayd 主循环：启动采集、发布、命令线程并等待退出信号。
-    // quit 由 SIGINT/SIGTERM 修改，确保程序可干净退出。
+    // quit 由 SIGINT/SIGTERM 修改，Wi-Fi 自愈完全由网络线程自动执行。
     int run(const std::atomic_bool &quit);
 
 private:

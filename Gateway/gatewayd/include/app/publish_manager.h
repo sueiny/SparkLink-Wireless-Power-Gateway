@@ -50,6 +50,8 @@ private:
 
     // 把内部 TelemetryData 批次转成 ThingsKit 网关子设备遥测消息。
     void publishTelemetryBatch(const std::vector<model::TelemetryData> &telemetry);
+    std::vector<model::TelemetryData> coalesceTelemetryBatch(
+        const std::vector<model::TelemetryData> &telemetry) const;
 
     bool offlineAnalysisActive(int64_t now_ms);
     void enqueueRuleEvents(const std::vector<rules::RuleEvent> &events);
@@ -89,6 +91,7 @@ private:
     bool offline_raw_state_ = false;
     bool offline_analysis_active_ = false;
     bool command_topics_subscribed_ = false;
+    std::string connected_ifname_;
 };
 
 } // namespace gateway::app

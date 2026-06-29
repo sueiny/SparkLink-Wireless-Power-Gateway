@@ -331,6 +331,22 @@ void server_connections_set_root_node_id(sle_server_connections_t *table, int se
     pthread_mutex_unlock(&table->mutex);
 }
 
+void server_connections_set_root_identity(sle_server_connections_t *table, int server_index,
+    uint16_t root_node_id, const char *tree_magic)
+{
+    if (table == NULL || server_index < 0 || server_index >= (int)table->max_connections) {
+        return;
+    }
+    pthread_mutex_lock(&table->mutex);
+    table->servers[server_index].root_node_id = root_node_id;
+    if (tree_magic != NULL && tree_magic[0] != '\0' && tree_magic[1] != '\0') {
+        table->servers[server_index].tree_magic[0] = tree_magic[0];
+        table->servers[server_index].tree_magic[1] = tree_magic[1];
+        table->servers[server_index].tree_magic[2] = '\0';
+    }
+    pthread_mutex_unlock(&table->mutex);
+}
+
 void server_connections_record_rx(sle_server_connections_t *table, int server_index, uint64_t now_ms)
 {
     if (table == NULL || server_index < 0 || server_index >= (int)table->max_connections) {
@@ -477,9 +493,10 @@ void server_connections_dump_table(sle_server_connections_t *table, const char *
         server_connections_addr_to_string(&s->addr, addr_str, sizeof(addr_str));
         
         fprintf(stderr, "[SLE][TABLE] index=%u used=%d state=%s conn_id=%u "
-            "root_id=%u mac=%s rx=%u param_done=%d reason=0x%x\n",
+            "tree=%s root_id=%u mac=%s rx=%u param_done=%d reason=0x%x\n",
             i, s->used, server_connections_state_name(s->state),
-            s->conn_id, s->root_node_id, addr_str, s->rx_count, s->param_update_done,
+            s->conn_id, s->tree_magic[0] != '\0' ? s->tree_magic : "--",
+            s->root_node_id, addr_str, s->rx_count, s->param_update_done,
             s->disconnect_reason);
     }
     pthread_mutex_unlock(&table->mutex);

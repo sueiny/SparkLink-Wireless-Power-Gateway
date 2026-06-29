@@ -17,7 +17,8 @@ CommandManager::CommandManager(
     common::BlockingQueue<command::RawCommandMessage> &command_queue,
     common::BlockingQueue<std::vector<model::TelemetryData>> &telemetry_queue,
     common::BlockingQueue<PublishMessage> &publish_queue,
-    datasource::IpcCmdSender *ipc_cmd_sender)
+    datasource::IpcCmdSender *ipc_cmd_sender,
+    datasource::SleDataSource *sle_data_source)
     : config_(config),
       logger_(logger),
       service_registry_(service_registry),
@@ -25,7 +26,7 @@ CommandManager::CommandManager(
       command_queue_(command_queue),
       telemetry_queue_(telemetry_queue),
       publish_queue_(publish_queue),
-      command_executor_(ipc_cmd_sender)
+      command_executor_(ipc_cmd_sender, sle_data_source)
 {
 }
 

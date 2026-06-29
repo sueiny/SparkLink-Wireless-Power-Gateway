@@ -77,7 +77,7 @@ bool GatewayApp::init()
     // 根据 sle.enable 配置选择数据源：SLE 真实数据 或 模拟数据。
     if (cfg.sle.enable) {
         sle_data_source_ = std::make_unique<datasource::SleDataSource>(
-            cfg.devices, cfg.dtu_devices, state_store_, route_table_, logger_);
+            cfg.devices, cfg.dtu_devices, cfg.topology, state_store_, route_table_, logger_);
         if (!sle_data_source_->init(cfg.sle.data_socket)) {
             logger_.error("DATA", "failed to initialize SleDataSource");
             return false;
@@ -155,7 +155,8 @@ bool GatewayApp::init()
         command_queue_,
         telemetry_queue_,
         publish_queue_,
-        ipc_cmd_sender_.get());
+        ipc_cmd_sender_.get(),
+        sle_data_source_.get());
 
     return true;
 }

@@ -1,5 +1,10 @@
 # Modbus 寄存器规格（基于实际设备手册）
 
+> Status: Current Modbus reference.
+> Authority: Modbus 仿真寄存器和设备手册字段解释以本文为入口。
+> Superseded by: None.
+> Last verified against: `gatewayd/src/codec/modbus_parser.cpp` should be rechecked before parser changes; doc status reviewed on 2026-06-28.
+
 **版本**: v2.0
 **日期**: 2026-06-01
 **依据**: 三份实际设备手册

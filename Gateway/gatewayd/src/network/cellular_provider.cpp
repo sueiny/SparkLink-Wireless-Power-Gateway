@@ -14,7 +14,7 @@ std::string CellularProvider::ifname() const
     return firstUsableInterface(candidateIfnames());
 }
 
-bool CellularProvider::bringUp()
+bool CellularProvider::bringUp(uint32_t)
 {
     return false;
 }

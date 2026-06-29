@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <string>
 
 namespace gateway::network {
@@ -17,6 +18,11 @@ struct NetworkState {
     std::string ifname = "none";
     bool cloud_reachable = false;
     bool available = false;
+    std::string fault_code = "none";
+    std::string fault_message;
+    int retry_delay_ms = 5000;
+    int failure_count = 0;
+    int recovery_level = 0;
 };
 
 // 单一网络类型的适配器接口。
@@ -31,7 +37,7 @@ public:
     virtual int priority() const = 0;
     virtual bool enabled() const = 0;
 
-    virtual bool bringUp() = 0;
+    virtual bool bringUp(uint32_t route_metric = 0) = 0;
     virtual bool isInterfaceUp() const = 0;
     virtual bool hasIp() const = 0;
     virtual bool canReachCloud(const std::string &host,

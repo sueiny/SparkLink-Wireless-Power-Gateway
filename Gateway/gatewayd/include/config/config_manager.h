@@ -55,17 +55,40 @@ struct MockConfig {
     double humidity_base = 60.0;
 };
 
-// 单个 Root 节点配置（V2：ID-based，无 MAC）
-struct SleRootConfig {
-    int node_id = 0;             // Root 节点 ID (1/2/3)
-};
-
 // SLE 数据源配置。enable=true 时使用 SleDataSource 替代 MockDataSource。
 struct SleConfig {
     bool enable = false;
     std::string data_socket = "/var/run/gateway/sle_data.sock";
     std::string cmd_socket = "/var/run/gateway/sle_cmd.sock";
-    std::vector<SleRootConfig> roots;  // Root 节点列表
+};
+
+struct TopologyOnlinePolicyConfig {
+    bool dtu_from_topology_snapshot = true;
+    bool external_from_device_map = true;
+    bool external_inherits_dtu_online = true;
+    bool emit_online_change = true;
+    bool missing_dtu_online = false;
+    bool missing_external_online = false;
+};
+
+struct StaticTopologyConfig {
+    bool enable_for_test = false;
+};
+
+struct DynamicTopologyConfig {
+    std::vector<std::string> required_frames = {"dtu_topology", "external_map"};
+    int startup_timeout_ms = 30000;
+    std::string persist_path = "/userdata/gateway/data/dynamic_topology.json";
+    bool allow_fallback_to_static = false;
+};
+
+struct TopologyConfig {
+    std::string source = "root_report";
+    int expected_dtu_count = 0;
+    int expected_external_device_count = 0;
+    TopologyOnlinePolicyConfig online_policy;
+    StaticTopologyConfig static_json;
+    DynamicTopologyConfig dynamic;
 };
 
 struct EthernetConfig {
@@ -182,6 +205,7 @@ struct AppConfig {
     LogConfig log;
     MockConfig mock;
     SleConfig sle;
+    TopologyConfig topology;
     OfflineAnalysisConfig offline_analysis;
     std::vector<model::DeviceInfo> devices;         // 外接设备（电表/继电器/温湿度）
     std::vector<model::DtuDeviceInfo> dtu_devices;  // DTU 节点

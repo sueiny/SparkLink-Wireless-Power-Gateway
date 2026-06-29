@@ -28,9 +28,9 @@
 #define CMD_RESULT_UNSUPPORTED       3      /* 不支持的方法 */
 
 /* ── 帧大小限制 ── */
-#define IPC_CMD_MAX_ST_FRAME_LEN     256
+#define IPC_CMD_MAX_ST_FRAME_LEN     1024
 #define IPC_CMD_RAW_ST_META_LEN      6
-#define IPC_CMD_MAX_PARAM_LEN        320
+#define IPC_CMD_MAX_PARAM_LEN        (IPC_CMD_RAW_ST_META_LEN + IPC_CMD_MAX_ST_FRAME_LEN)
 #define IPC_CMD_MAX_DATA_LEN         256
 
 /*

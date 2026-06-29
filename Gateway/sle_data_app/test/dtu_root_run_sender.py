@@ -4,9 +4,10 @@ Send RUN-mode SLE frames to one or more DTU root UARTs.
 
 Windows lab usage uses the Python launcher and writes ASCII-hex ST frames by default:
 
-    py -3 dtu_root_run_sender.py COM19 COM23 COM36 --scenario topology-all --duration 60 --interval 5
+    py -3 dtu_root_run_sender.py COM19 COM23 --scenario topology-all --duration 60 --interval 5
 
-The current DTU root UART path reliably forwards printable ASCII. The default
+The topology-all scenario sends ST 0x05/0x06 snapshots first, then ST 0x02
+device DATA frames. The current DTU root UART path reliably forwards printable ASCII. The default
 serial write is:
 
     <dst_node_id> <ST_FRAME_HEX>\r\n
@@ -49,52 +50,27 @@ DEFAULT_DEVICE_ID = "METER_001"
 DEFAULT_DTU_ID = 1
 DEFAULT_MODBUS_TYPE = 2
 DEFAULT_MODBUS_ADDR = 1
-DEFAULT_PORT_ROOTS = {"COM19": 1, "COM23": 12}
+DEFAULT_PORT_ROOTS = {"COM19": 1, "COM23": 10}
 
 SLE_FRAME_MAGIC = b"ST"
 SLE_FRAME_VERSION = 0x01
 SLE_FRAME_TYPE_HEARTBEAT = 0x01
 SLE_FRAME_TYPE_DATA = 0x02
+SLE_FRAME_TYPE_DTU_TOPOLOGY = 0x05
+SLE_FRAME_TYPE_EXTERNAL_MAP = 0x06
 SLE_ROLE_ROOT = 0x01
 SLE_ROLE_RELAY = 0x02
 SLE_ROLE_LEAF = 0x03
 SLE_ROLE_GATEWAY = 0x04
 SLE_FRAME_HEADER_LEN = 13
-SLE_FRAME_MAX_LEN = 256
+SLE_FRAME_MAX_LEN = 1024
 SLE_FRAME_MAX_PAYLOAD = SLE_FRAME_MAX_LEN - SLE_FRAME_HEADER_LEN
 
 TOPOLOGY_NODES: Dict[int, Tuple[int, Tuple[int, ...]]] = {
-    1: (0, (2, 3, 8, 9, 10, 11)),
-    2: (1, (4, 5)),
-    3: (1, (6, 7)),
-    4: (2, ()),
-    5: (2, ()),
-    6: (3, ()),
-    7: (3, ()),
-    8: (1, ()),
-    9: (1, ()),
-    10: (1, ()),
-    11: (1, ()),
-    12: (0, (13, 14, 15, 23, 26, 29)),
-    13: (12, (16, 17, 18)),
-    14: (12, (19, 20)),
-    15: (12, (21, 22)),
-    16: (13, ()),
-    17: (13, ()),
-    18: (13, ()),
-    19: (14, ()),
-    20: (14, ()),
-    21: (15, ()),
-    22: (15, ()),
-    23: (12, (24, 25)),
-    24: (23, ()),
-    25: (23, ()),
-    26: (12, (27, 28)),
-    27: (26, ()),
-    28: (26, ()),
-    29: (12, (30, 31)),
-    30: (29, ()),
-    31: (29, ()),
+    1: (0, tuple(range(2, 10))),
+    **{node_id: (1, ()) for node_id in range(2, 10)},
+    10: (0, tuple(range(11, 70))),
+    **{node_id: (10, ()) for node_id in range(11, 70)},
 }
 
 EXTERNAL_DEVICES: List[Dict[str, object]] = [
@@ -106,9 +82,7 @@ EXTERNAL_DEVICES: List[Dict[str, object]] = [
     {"device_id": "METER_006", "dtu_id": 6, "kind": "meter", "modbus_type": 2, "modbus_addr": 1},
     {"device_id": "METER_007", "dtu_id": 7, "kind": "meter", "modbus_type": 2, "modbus_addr": 1},
     {"device_id": "ENV_001", "dtu_id": 8, "kind": "env", "modbus_type": 3, "modbus_addr": 1},
-    {"device_id": "ENV_002", "dtu_id": 9, "kind": "env", "modbus_type": 3, "modbus_addr": 1},
-    {"device_id": "RELAY_001", "dtu_id": 10, "kind": "relay", "modbus_type": 4, "modbus_addr": 1},
-    {"device_id": "RELAY_002", "dtu_id": 11, "kind": "relay", "modbus_type": 4, "modbus_addr": 1},
+    {"device_id": "RELAY_001", "dtu_id": 9, "kind": "relay", "modbus_type": 4, "modbus_addr": 1},
 ]
 
 def crc16_modbus(data: bytes) -> int:
@@ -176,20 +150,14 @@ def parse_downlink_frame(port: str, raw: bytes) -> Optional[Dict[str, object]]:
 
     frame = raw[:total_len]
     payload = frame[SLE_FRAME_HEADER_LEN:]
-    if len(payload) < 2:
+    if len(payload) < 4:
         return None
 
-    modbus_type = payload[0]
-    modbus_len = payload[1]
-    if modbus_len == 0 or len(payload) < 2 + modbus_len:
-        return None
-
-    modbus_rtu = payload[2:2 + modbus_len]
+    modbus_rtu = payload
     return {
         "port": port,
         "raw_hex": frame.hex().upper(),
         "dst_node_id": read_u16le(frame, 7),
-        "modbus_type": modbus_type,
         "modbus_rtu": modbus_rtu,
         "modbus_rtu_hex": modbus_rtu.hex().upper(),
         "crc_ok": modbus_crc_ok(modbus_rtu),
@@ -208,8 +176,7 @@ def downlink_matches(frame: Dict[str, object], args: argparse.Namespace) -> bool
 
     if args.expect_downlink == "meter-trip":
         return (
-            int(frame["modbus_type"]) == 2
-            and len(rtu) >= 11
+            len(rtu) >= 11
             and rtu[1] == 0x10
             and rtu[2:4] == b"\x00\x10"
             and rtu[7:9] == b"\xAA\xAA"
@@ -218,8 +185,7 @@ def downlink_matches(frame: Dict[str, object], args: argparse.Namespace) -> bool
     if args.expect_downlink in {"relay-open", "relay-close"}:
         expected_value = b"\x00\x00" if args.expect_downlink == "relay-open" else b"\xFF\x00"
         return (
-            int(frame["modbus_type"]) == 4
-            and len(rtu) >= 8
+            len(rtu) >= 8
             and rtu[1] == 0x05
             and rtu[2:4] == bytes([0x00, args.expect_channel & 0xFF])
             and rtu[4:6] == expected_value
@@ -239,13 +205,12 @@ def record_downlink_candidate(port: str,
     stats["downlink_frames_seen"] = int(stats["downlink_frames_seen"]) + 1
     seen_frames = stats.get("downlink_seen_frames")
     if isinstance(seen_frames, list) and len(seen_frames) < 8:
-        seen_frames.append({
-            "port": port,
-            "dst_node_id": frame["dst_node_id"],
-            "modbus_type": frame["modbus_type"],
-            "modbus_rtu_hex": frame["modbus_rtu_hex"],
-            "crc_ok": frame["crc_ok"],
-            "raw_hex": frame["raw_hex"],
+            seen_frames.append({
+                "port": port,
+                "dst_node_id": frame["dst_node_id"],
+                "modbus_rtu_hex": frame["modbus_rtu_hex"],
+                "crc_ok": frame["crc_ok"],
+                "raw_hex": frame["raw_hex"],
         })
     if downlink_matches(frame, args):
         stats["downlink_matched"] = True
@@ -310,11 +275,47 @@ def root_for_node(node_id: int) -> int:
         if parent_id == 0:
             return current
         current = parent_id
-    return 1 if node_id <= 11 else 12
+    return 1 if node_id <= 9 else 10
 
 
 def root_for_device(device: Dict[str, object]) -> int:
     return root_for_node(int(device["dtu_id"]))
+
+
+def topology_roots() -> List[int]:
+    return sorted(node_id for node_id, (parent_id, _) in TOPOLOGY_NODES.items()
+                  if parent_id == 0)
+
+
+def build_tree_lines(node_id: int, prefix: str = "") -> List[str]:
+    _, children = TOPOLOGY_NODES[node_id]
+    lines: List[str] = []
+    for index, child_id in enumerate(children):
+        is_last = index == len(children) - 1
+        branch = "`- " if is_last else "|- "
+        lines.append(f"{prefix}{branch}{child_id}")
+        child_prefix = prefix + ("   " if is_last else "|  ")
+        lines.extend(build_tree_lines(child_id, child_prefix))
+    return lines
+
+
+def build_dtu_topology_text(root_id: int) -> bytes:
+    if root_id not in TOPOLOGY_NODES:
+        raise ValueError(f"unknown topology root: {root_id}")
+    lines = [str(root_id)]
+    lines.extend(build_tree_lines(root_id))
+    return ("\n".join(lines) + "\n").encode("ascii")
+
+
+def build_external_map_text(root_id: int) -> bytes:
+    lines = [
+        f"DTU_{int(device['dtu_id']):03d}-{device['device_id']}"
+        for device in EXTERNAL_DEVICES
+        if root_for_device(device) == root_id
+    ]
+    if not lines:
+        return b""
+    return ("\n".join(lines) + "\n").encode("ascii")
 
 
 def build_meter_modbus_response(seq: int, slave_addr: int = DEFAULT_MODBUS_ADDR,
@@ -388,9 +389,7 @@ def build_gateway_payload(seq: int, device: Optional[Dict[str, object]] = None,
                           args: Optional[argparse.Namespace] = None) -> bytes:
     selected = device or EXTERNAL_DEVICES[0]
     modbus_rtu = build_modbus_response(selected, seq, args)
-    if len(modbus_rtu) > 241:
-        raise ValueError(f"Modbus RTU frame too long: {len(modbus_rtu)}")
-    return bytes([int(selected["modbus_type"]), len(modbus_rtu)]) + modbus_rtu
+    return modbus_rtu
 
 
 def build_sle_frame(frame_type: int, src_role: int, src_node: int,
@@ -438,6 +437,28 @@ def build_data_frame(seq: int, args: argparse.Namespace,
         args.dst_node,
         seq,
         payload,
+    )
+
+
+def build_dtu_topology_frame(seq: int, args: argparse.Namespace, root_id: int) -> bytes:
+    return build_sle_frame(
+        SLE_FRAME_TYPE_DTU_TOPOLOGY,
+        SLE_ROLE_ROOT,
+        root_id,
+        args.dst_node,
+        seq,
+        build_dtu_topology_text(root_id),
+    )
+
+
+def build_external_map_frame(seq: int, args: argparse.Namespace, root_id: int) -> bytes:
+    return build_sle_frame(
+        SLE_FRAME_TYPE_EXTERNAL_MAP,
+        SLE_ROLE_ROOT,
+        root_id,
+        args.dst_node,
+        seq,
+        build_external_map_text(root_id),
     )
 
 
@@ -544,21 +565,27 @@ def iter_round_items(args: argparse.Namespace, round_index: int,
     if args.wire_format != "frame":
         raise ValueError("topology-all requires --wire-format frame")
 
-    if not args.no_heartbeat:
-        for node_id in sorted(TOPOLOGY_NODES):
-            node_root = root_for_node(node_id)
-            if root_id is not None and node_root != root_id:
-                continue
-            role = dtu_role(node_id)
-            yield {
-                "seq": seq,
-                "kind": "heartbeat",
-                "device_id": f"DTU_{node_id:03d}",
-                "dtu_id": node_id,
-                "root_id": node_root,
-                "raw": build_heartbeat_frame(seq, args, src_node=node_id, src_role=role),
-            }
-            seq += 1
+    for topology_root in topology_roots():
+        if root_id is not None and topology_root != root_id:
+            continue
+        yield {
+            "seq": seq,
+            "kind": "dtu_topology",
+            "device_id": f"DTU_{topology_root:03d}",
+            "dtu_id": topology_root,
+            "root_id": topology_root,
+            "raw": build_dtu_topology_frame(seq, args, topology_root),
+        }
+        seq += 1
+        yield {
+            "seq": seq,
+            "kind": "external_map",
+            "device_id": f"DTU_{topology_root:03d}",
+            "dtu_id": topology_root,
+            "root_id": topology_root,
+            "raw": build_external_map_frame(seq, args, topology_root),
+        }
+        seq += 1
 
     for device in EXTERNAL_DEVICES:
         dtu_id = int(device["dtu_id"])
@@ -585,11 +612,11 @@ def round_item_count(args: argparse.Namespace, root_id: Optional[int] = None) ->
             return 0
         return (0 if args.no_heartbeat or args.wire_format != "frame" else 1) + 1
     if args.scenario == "topology-all":
-        node_count = sum(1 for node_id in TOPOLOGY_NODES
-                         if root_id is None or root_for_node(node_id) == root_id)
+        topology_frame_count = 2 * sum(1 for topology_root in topology_roots()
+                                       if root_id is None or topology_root == root_id)
         device_count = sum(1 for device in EXTERNAL_DEVICES
                            if root_id is None or root_for_device(device) == root_id)
-        return (0 if args.no_heartbeat else node_count) + device_count
+        return topology_frame_count + device_count
     raise ValueError(f"unsupported scenario: {args.scenario}")
 
 
@@ -641,6 +668,10 @@ def send_item(ser, args: argparse.Namespace, stats: Dict[str, object],
         stats["sent"] = int(stats["sent"]) + 1
         if item["kind"] == "heartbeat":
             stats["heartbeat_sent"] = int(stats["heartbeat_sent"]) + 1
+        elif item["kind"] == "dtu_topology":
+            stats["topology_sent"] = int(stats["topology_sent"]) + 1
+        elif item["kind"] == "external_map":
+            stats["external_map_sent"] = int(stats["external_map_sent"]) + 1
         else:
             stats["data_sent"] = int(stats["data_sent"]) + 1
         stats["last_ts"] = utc_now()
@@ -666,8 +697,8 @@ def parse_port_root_items(items: List[str]) -> Dict[str, int]:
             raise ValueError(f"--port-root expects PORT=ROOT_ID, got {item}")
         port, root_text = item.split("=", 1)
         root_id = int(root_text)
-        if root_id not in (1, 12):
-            raise ValueError("--port-root currently supports root 1 or 12")
+        if root_id not in (1, 10):
+            raise ValueError("--port-root currently supports root 1 or 10")
         result[normalize_port_name(port.strip())] = root_id
     return result
 
@@ -726,6 +757,8 @@ def run_port(port: str, args: argparse.Namespace) -> Dict[str, object]:
         "sent": 0,
         "rounds_sent": 0,
         "heartbeat_sent": 0,
+        "topology_sent": 0,
+        "external_map_sent": 0,
         "data_sent": 0,
         "write_errors": 0,
         "rx_bytes": 0,
@@ -833,13 +866,13 @@ def dry_run_record(args: argparse.Namespace, round_index: int,
         payload_len = raw[11] | (raw[12] << 8) if len(raw) >= SLE_FRAME_HEADER_LEN else 0
         payload = raw[SLE_FRAME_HEADER_LEN:SLE_FRAME_HEADER_LEN + payload_len]
         if item["kind"] == "data" and len(payload) >= 4:
-            modbus_rtu = payload[2:]
+            modbus_rtu = payload
             modbus_crc_ok = crc16_modbus(modbus_rtu[:-2]) == (
                 modbus_rtu[-2] | (modbus_rtu[-1] << 8))
     else:
         payload = raw
         if item["kind"] == "data" and len(payload) >= 4:
-            modbus_rtu = payload[2:]
+            modbus_rtu = payload
             modbus_crc_ok = crc16_modbus(modbus_rtu[:-2]) == (
                 modbus_rtu[-2] | (modbus_rtu[-1] << 8))
 
@@ -912,7 +945,7 @@ def parse_args() -> argparse.Namespace:
         description="Send RUN-mode SLE frames to DTU root UARTs at 115200 8N1.")
     parser.add_argument("ports", nargs="*", help="Serial ports, for example COM19 COM23 COM36")
     parser.add_argument("--scenario", choices=("meter-001", "topology-all"), default=DEFAULT_SCENARIO,
-                        help="meter-001 sends one DTU and one meter; topology-all sends 31 DTU heartbeats and 11 external device data frames per round")
+                        help="meter-001 sends one meter frame; topology-all sends ST 0x05/0x06 topology snapshots and 9 external device DATA frames per round")
     parser.add_argument("--scenario-file", default=None,
                         help="Replay JSONL/JSON records generated by offline_ai_dataset.py")
     parser.add_argument("--port-root", action="append", default=[],
@@ -954,7 +987,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--src-role", type=int, default=DEFAULT_SRC_ROLE,
                         help="SLE frame source role; 1=root, 2=relay, 3=leaf")
     parser.add_argument("--no-heartbeat", action="store_true",
-                        help="Do not send heartbeat frames in --wire-format frame mode")
+                        help="Legacy meter-001 option; topology-all uses only ST 0x05/0x06/0x02")
     parser.add_argument("--meter-voltage", type=float, default=None,
                         help="Override generated meter voltage in volts for rule/offline tests")
     parser.add_argument("--meter-current", type=float, default=None,
@@ -1048,8 +1081,8 @@ def main() -> int:
     if args.scenario == "topology-all" and args.wire_format != "frame":
         print("--scenario topology-all requires --wire-format frame", file=sys.stderr)
         return 2
-    if args.root_id is not None and args.root_id not in (1, 12):
-        print("--root-id currently supports 1 or 12", file=sys.stderr)
+    if args.root_id is not None and args.root_id not in (1, 10):
+        print("--root-id currently supports 1 or 10", file=sys.stderr)
         return 2
     if args.scenario_file and not args.replay_records:
         print("--scenario-file contains no replay records", file=sys.stderr)

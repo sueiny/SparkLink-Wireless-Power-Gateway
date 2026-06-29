@@ -1,5 +1,10 @@
 # 物模型 V2 设计文档
 
+> Status: Current ThingsKit model reference.
+> Authority: 当前 ThingsKit/DTU_001..DTU_069 物模型说明以本文为入口；实际产品 JSON 仍以 `gatewayd/things_model/*.json` 为准。
+> Superseded by: None.
+> Last verified against: `gatewayd/config/gateway_config.json` inventory counts on 2026-06-28.
+
 ## 0. 关键指示
 
 > **云端展示原则**：对用户而言，只有 **root** 和 **node** 两种角色概念。中继、叶子等SLE网络内部概念用户不需要了解，云端统一展示为node。
@@ -17,97 +22,53 @@
 ## 1. 设计原则
 
 - **统一使用ID标识**：所有设备使用数字ID（1-255），不再使用MAC地址
-- **命名规范**：DTU节点命名为 `DTU_XXX`（如DTU_001, DTU_012），设备命名为 `METER_XXX`、`ENV_XXX`、`RELAY_XXX`
+- **命名规范**：DTU节点命名为 `DTU_XXX`（如 DTU_001、DTU_010、DTU_069），设备命名为 `METER_XXX`、`ENV_XXX`、`RELAY_XXX`
 - **拓扑信息简化**：使用父节点ID和子节点ID列表，便于路由表解析
 - **物模型精简**：去除冗余字段，保留必要属性
 
 ## 2. 拓扑树结构
 
-当前拓扑以 `app/Gateway/docs/00_项目说明/设备拓扑图.md` 和 `gateway_config.json` 为准，共 31 个 DTU 节点。树1负责外接设备采集；树2负责 SLE 中继节点展示，且树2只有 DTU_012 一个 root。
+当前拓扑以 `app/Gateway/docs/00_项目说明/设备拓扑图.md` 和 `gateway_config.json` 为准，共 69 个 DTU 节点。正式 `root_report` 模式下，JSON 只保留 DTU/外设 inventory；父子关系和外设挂载关系只来自 root 上报的 0x05/0x06 快照。
 
 ### 2.1 树1：外接设备树
 
 ```
 DTU_001 (root)
 ├── DTU_002
-│   ├── DTU_004
-│   └── DTU_005
 ├── DTU_003
-│   ├── DTU_006
-│   └── DTU_007
+├── DTU_004
+├── DTU_005
+├── DTU_006
+├── DTU_007
 ├── DTU_008
-├── DTU_009
-├── DTU_010
-└── DTU_011
+└── DTU_009
 ```
 
 ### 2.2 树2：SLE 中继树
 
 ```
-DTU_012 (root)
-├── DTU_013
-│   ├── DTU_016
-│   ├── DTU_017
-│   └── DTU_018
-├── DTU_014
-│   ├── DTU_019
-│   └── DTU_020
-├── DTU_015
-│   ├── DTU_021
-│   └── DTU_022
-├── DTU_023
-│   ├── DTU_024
-│   └── DTU_025
-├── DTU_026
-│   ├── DTU_027
-│   └── DTU_028
-└── DTU_029
-    ├── DTU_030
-    └── DTU_031
+DTU_010 (root)
+├── DTU_011
+├── DTU_012
+...
+└── DTU_069
 ```
 
 **节点统计**：
-- 树1：11 个 DTU 节点（DTU_001 ~ DTU_011）
-- 树2：20 个 DTU 节点（DTU_012 ~ DTU_031）
-- root 节点：2 个（DTU_001、DTU_012）
-- node 节点：29 个
-- **总计**：31 个 DTU 节点
+- 树1：9 个 DTU 节点（DTU_001 ~ DTU_009），挂载 9 台外接设备。
+- 树2：60 个 DTU 节点（DTU_010 ~ DTU_069），纯 DTU 树。
+- root 节点：2 个（DTU_001、DTU_010）
+- node 节点：67 个
+- **总计**：69 个 DTU 节点
 
-### 2.3 当前 DTU 路由表
+### 2.3 当前 DTU 路由表来源
 
-| DTU节点 | parent_id | child_ids | 云端角色 |
-|---------|-----------|-----------|----------|
-| DTU_001 | 0 | 2,3,8,9,10,11 | root |
-| DTU_002 | 1 | 4,5 | node |
-| DTU_003 | 1 | 6,7 | node |
-| DTU_004 | 2 | - | node |
-| DTU_005 | 2 | - | node |
-| DTU_006 | 3 | - | node |
-| DTU_007 | 3 | - | node |
-| DTU_008 | 1 | - | node |
-| DTU_009 | 1 | - | node |
-| DTU_010 | 1 | - | node |
-| DTU_011 | 1 | - | node |
-| DTU_012 | 0 | 13,14,15,23,26,29 | root |
-| DTU_013 | 12 | 16,17,18 | node |
-| DTU_014 | 12 | 19,20 | node |
-| DTU_015 | 12 | 21,22 | node |
-| DTU_016 | 13 | - | node |
-| DTU_017 | 13 | - | node |
-| DTU_018 | 13 | - | node |
-| DTU_019 | 14 | - | node |
-| DTU_020 | 14 | - | node |
-| DTU_021 | 15 | - | node |
-| DTU_022 | 15 | - | node |
-| DTU_023 | 12 | 24,25 | node |
-| DTU_024 | 23 | - | node |
-| DTU_025 | 23 | - | node |
-| DTU_026 | 12 | 27,28 | node |
-| DTU_027 | 26 | - | node |
-| DTU_028 | 26 | - | node |
-| DTU_029 | 12 | 30,31 | node |
-| DTU_030 | 29 | - | node |
-| DTU_031 | 29 | - | node |
+正式配置不保存 DTU `parent_id/child_ids`。云端展示的 DTU 拓扑由 root 上报的 0x05 快照生成：
+
+| 范围 | root | 说明 |
+|---------|------|----------|
+| DTU_001 ~ DTU_009 | DTU_001 | 外接设备树 |
+| DTU_010 ~ DTU_069 | DTU_010 | 纯 DTU 树 |
 
 ## 3. DTU节点物模型（简化版）
 
@@ -128,7 +89,7 @@ DTU_012 (root)
 
 | 值 | 名称 | 说明 |
 |----|------|------|
-| 0 | root | 根节点（parent_id=0，如 DTU_001、DTU_012） |
+| 0 | root | 根节点（parent_id=0，如 DTU_001、DTU_010） |
 | 1 | node | 普通节点（所有非root节点，包括中继和叶子） |
 
 ### 3.3 拓扑信息结构
@@ -166,9 +127,9 @@ DTU_012 (root)
 
 - **DTU节点**：统一命名为 `DTU_XXX`，`XXX` 为三位数字节点 ID。
 - **树1 root**：`DTU_001`
-- **树1 node**：`DTU_002` ~ `DTU_011`
-- **树2 root**：`DTU_012`
-- **树2 node**：`DTU_013` ~ `DTU_031`
+- **树1 node**：`DTU_002` ~ `DTU_009`
+- **树2 root**：`DTU_010`
+- **树2 node**：`DTU_011` ~ `DTU_069`
 
 ### 3.5 完整JSON定义
 
@@ -753,7 +714,7 @@ DTU_012 (root)
 ```cpp
 struct DtuNodeInfo {
     int node_id;                    // 节点ID (1-255)
-    std::string name;               // 设备名称，如 "DTU_012"
+    std::string name;               // 设备名称，如 "DTU_010"
     bool online;                    // 在线状态（根据拓扑路由表判断）
     int parent_id;                  // 父节点ID (0表示无父节点)
     std::vector<int> child_ids;     // 子节点ID列表
@@ -812,8 +773,8 @@ std::map<int, RouteEntry> route_table;
 
 对于 DTU_018：
 - 目标：18
-- 路径：12 → 13 → 18
-- 下一跳：13（从 root 12 出发）
+- 路径示例：10 → 13 → 18
+- 下一跳：13（从 root 10 出发）
 - 跳数：2
 
 ## 10. 物模型变更对比

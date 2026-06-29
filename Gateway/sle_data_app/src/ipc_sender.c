@@ -20,6 +20,9 @@
 static int g_fd = -1;
 static pthread_mutex_t g_mutex = PTHREAD_MUTEX_INITIALIZER;
 static uint64_t g_last_reconnect_ms;
+static uint64_t g_raw_send_count;
+static uint64_t g_batch_send_count;
+static uint64_t g_send_fail_count;
 
 static uint64_t get_now_ms(void)
 {
@@ -66,6 +69,9 @@ int ipc_sender_init(void)
     // 抽象命名空间不需要创建目录
     g_fd = -1;
     g_last_reconnect_ms = 0;
+    g_raw_send_count = 0;
+    g_batch_send_count = 0;
+    g_send_fail_count = 0;
     fprintf(stderr, "[IPC] sender initialized\n");
     return 0;
 }
@@ -164,7 +170,16 @@ bool ipc_sender_send_raw(const uint8_t *data, uint16_t len)
 
     bool ok = write_frame(data, len);
     if (!ok) {
+        g_send_fail_count++;
+        fprintf(stderr, "[IPC][ERROR] raw send failed len=%u fail_count=%llu\n",
+            len, (unsigned long long)g_send_fail_count);
         handle_write_error();
+    } else {
+        g_raw_send_count++;
+        if (g_raw_send_count == 1 || (g_raw_send_count % 50) == 0) {
+            fprintf(stderr, "[IPC] raw send ok count=%llu len=%u\n",
+                (unsigned long long)g_raw_send_count, len);
+        }
     }
 
     pthread_mutex_unlock(&g_mutex);
@@ -237,7 +252,16 @@ bool ipc_sender_send_batch(const ipc_frame_t *frames, int count)
     }
 
     if (!ok) {
+        g_send_fail_count++;
+        fprintf(stderr, "[IPC][ERROR] batch send failed frames=%d sent=%zd/%zd fail_count=%llu\n",
+            count, total_sent, total_size, (unsigned long long)g_send_fail_count);
         handle_write_error();
+    } else {
+        g_batch_send_count++;
+        if (g_batch_send_count == 1 || (g_batch_send_count % 20) == 0) {
+            fprintf(stderr, "[IPC] batch send ok count=%llu frames=%d bytes=%zd\n",
+                (unsigned long long)g_batch_send_count, count, total_size);
+        }
     }
 
     pthread_mutex_unlock(&g_mutex);

@@ -86,8 +86,6 @@ components.append(make_component(1120, 580, 200, 40, "【环境监测】", 18, "
 env_cards = [
     (1120, 630, "ENV_001 温度\n28.5 °C", "#00ff88"),
     (1310, 630, "ENV_001 湿度\n65.3 %RH", "#00ccff"),
-    (1500, 630, "ENV_002 温度\n26.1 °C", "#00ff88"),
-    (1690, 630, "ENV_002 湿度\n58.2 %RH", "#00ccff"),
 ]
 for x, y, text, color in env_cards:
     components.append(make_component(x, y, 180, 80, text, 15, color, "#1a2a3a"))
@@ -104,9 +102,7 @@ topo_lines = [
     "│     ├─ DTU_006 ● node",
     "│     └─ DTU_007 ● node",
     "├─ DTU_008 ● node",
-    "├─ DTU_009 ● node",
-    "├─ DTU_010 ● node",
-    "└─ DTU_011 ● node",
+    "└─ DTU_010 ● node",
 ]
 for i, line in enumerate(topo_lines):
     color = "#00ff88" if "●" in line else "#B9B8CE"
@@ -116,10 +112,10 @@ for i, line in enumerate(topo_lines):
 components.append(make_component(420, 340, 200, 40, "【设备运行状态】", 18, "#51d6a9"))
 status_devices = [
     ("电表", ["METER_001●", "METER_002●", "METER_003●", "METER_004●", "METER_005●", "METER_006●", "METER_007●"]),
-    ("变送器", ["ENV_001●", "ENV_002●"]),
-    ("继电器", ["RELAY_001●", "RELAY_002●"]),
+    ("变送器", ["ENV_001●"]),
+    ("继电器", ["RELAY_001●"]),
     ("DTU节点", ["DTU_001●", "DTU_002●", "DTU_003●", "DTU_004●", "DTU_005●", "DTU_006●",
-                 "DTU_007●", "DTU_008●", "DTU_009●", "DTU_010●", "DTU_011●"]),
+                 "DTU_007●", "DTU_008●", "DTU_010●"]),
 ]
 y_base = 390
 for group_name, devices in status_devices:

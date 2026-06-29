@@ -164,6 +164,47 @@ bool netlinkAddDefaultRoute(const std::string &ifname, const std::string &gatewa
     return sendNetlinkRequest(&req.nlh);
 }
 
+bool netlinkEnsureDefaultRoute(const std::string &ifname, const std::string &gateway, uint32_t metric)
+{
+    for (const auto &route : netlinkGetDefaultRoutes()) {
+        if (route.iface == ifname && route.gateway == gateway && route.metric == metric)
+            return true;
+    }
+
+    NetlinkRequest req;
+    memset(&req, 0, sizeof(req));
+
+    req.nlh.nlmsg_len = NLMSG_LENGTH(sizeof(struct rtmsg));
+    req.nlh.nlmsg_type = RTM_NEWROUTE;
+    req.nlh.nlmsg_flags = NLM_F_REQUEST | NLM_F_CREATE | NLM_F_EXCL;
+    req.nlh.nlmsg_seq = 3;
+
+    req.rtm.rtm_family = AF_INET;
+    req.rtm.rtm_table = RT_TABLE_MAIN;
+    req.rtm.rtm_protocol = RTPROT_BOOT;
+    req.rtm.rtm_scope = RT_SCOPE_UNIVERSE;
+    req.rtm.rtm_type = RTN_UNICAST;
+    req.rtm.rtm_dst_len = 0;
+
+    uint32_t gw_ip = stringToIp(gateway);
+    addRtattr(&req.nlh, sizeof(req), RTA_GATEWAY, &gw_ip, 4);
+
+    unsigned int ifidx = if_nametoindex(ifname.c_str());
+    if (ifidx == 0)
+        return false;
+    addRtattr(&req.nlh, sizeof(req), RTA_OIF, &ifidx, 4);
+    addRtattr(&req.nlh, sizeof(req), RTA_PRIORITY, &metric, 4);
+
+    if (sendNetlinkRequest(&req.nlh))
+        return true;
+
+    for (const auto &route : netlinkGetDefaultRoutes()) {
+        if (route.iface == ifname && route.gateway == gateway && route.metric == metric)
+            return true;
+    }
+    return false;
+}
+
 bool netlinkDelDefaultRoute(const std::string &ifname, const std::string &gateway, uint32_t metric)
 {
     NetlinkRequest req;
@@ -194,26 +235,38 @@ bool netlinkDelDefaultRoute(const std::string &ifname, const std::string &gatewa
     return sendNetlinkRequest(&req.nlh);
 }
 
-bool netlinkDelOtherDefaultRoutes(const std::string &keep_ifname)
+bool netlinkDelOtherDefaultRoutes(const std::string &keep_ifname, uint32_t keep_metric)
 {
     auto routes = netlinkGetDefaultRoutes();
     bool ok = true;
     for (const auto &r : routes) {
-        if (r.iface == keep_ifname && r.metric == 100)
+        if (r.iface == keep_ifname && r.metric == keep_metric)
             continue; // 保留我们设置的路由
-        // Netlink 删除需要精确匹配属性，dhcpcd 路由有 proto/src 等额外属性
-        // 直接用 Netlink 可能删不掉，改用 ip route del（更可靠）
-        char cmd[128];
+        if (netlinkDelDefaultRoute(r.iface, r.gateway, r.metric))
+            continue;
+
+        // DHCP 路由常带 proto/src，精确 via 删除可能失败；按 dev+metric 删除更稳。
+        char cmd[192];
+        snprintf(cmd, sizeof(cmd), "ip route del default dev %s metric %u 2>/dev/null",
+                 r.iface.c_str(), r.metric);
+        if (system(cmd) == 0)
+            continue;
+
         snprintf(cmd, sizeof(cmd), "ip route del default via %s dev %s metric %u 2>/dev/null",
                  r.gateway.c_str(), r.iface.c_str(), r.metric);
-        if (system(cmd) != 0)
-            ok = false;
+        if (system(cmd) == 0)
+            continue;
+
+        ok = false;
     }
     return ok;
 }
 
-bool netlinkSetDefaultRouteVia(const std::string &ifname)
+bool netlinkSetDefaultRouteVia(const std::string &ifname, uint32_t metric)
 {
+    if (metric == 0)
+        metric = 100;
+
     // 1. 获取目标接口的网关
     std::ifstream file("/proc/net/route");
     if (!file.is_open())
@@ -237,22 +290,32 @@ bool netlinkSetDefaultRouteVia(const std::string &ifname)
     if (gw.empty())
         return false;
 
-    // 2. 删除其他接口的默认路由
-    netlinkDelOtherDefaultRoutes(ifname);
-
-    // 3. 如果目标默认路由已经存在，视为成功。部分内核/路由属性组合下
+    // 2. 如果目标默认路由已经存在，视为成功。部分内核/路由属性组合下
     // RTM_NEWROUTE 即使使用 REPLACE 也可能失败，但当前路由已经满足需求。
+    bool target_present = false;
     for (const auto &route : netlinkGetDefaultRoutes()) {
-        if (route.iface == ifname && route.gateway == gw && route.metric == 100)
-            return true;
+        if (route.iface == ifname && route.gateway == gw && route.metric == metric) {
+            target_present = true;
+            break;
+        }
     }
 
-    // 4. 添加选中接口的默认路由（metric=100）
-    if (netlinkAddDefaultRoute(ifname, gw, 100))
-        return true;
+    // 3. 先添加/修正目标路由，再清理其它默认路由，避免短暂失路由。
+    if (!target_present && !netlinkAddDefaultRoute(ifname, gw, metric)) {
+        for (const auto &route : netlinkGetDefaultRoutes()) {
+            if (route.iface == ifname && route.gateway == gw && route.metric == metric) {
+                target_present = true;
+                break;
+            }
+        }
+        if (!target_present)
+            return false;
+    }
+
+    netlinkDelOtherDefaultRoutes(ifname, metric);
 
     for (const auto &route : netlinkGetDefaultRoutes()) {
-        if (route.iface == ifname && route.gateway == gw && route.metric == 100)
+        if (route.iface == ifname && route.gateway == gw && route.metric == metric)
             return true;
     }
     return false;

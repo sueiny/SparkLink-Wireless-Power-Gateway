@@ -1,0 +1,202 @@
+#!/bin/sh
+#
+# Gateway route policy for board-side persistent startup.
+# Runs after dhcpcd and only reconciles default routes. Connected subnet
+# routes such as "proto dhcp scope link" are intentionally left untouched.
+#
+
+LOG_DIR="/userdata/gateway/data/log"
+LOG_FILE="$LOG_DIR/network_policy.log"
+CONFIG="/userdata/gateway/config/gateway_config.json"
+
+ETH_IF="eth1"
+WIFI_IF="wlan0"
+CELL_IF="ppp0"
+
+ETH_METRIC="100"
+WIFI_METRIC="200"
+CELL_METRIC="300"
+
+log_msg()
+{
+    mkdir -p "$LOG_DIR" 2>/dev/null || true
+    echo "$(date '+%Y-%m-%d %H:%M:%S') $*" >> "$LOG_FILE"
+}
+
+iface_exists()
+{
+    [ -d "/sys/class/net/$1" ]
+}
+
+iface_has_ipv4()
+{
+    ip -4 addr show dev "$1" 2>/dev/null | grep -q 'inet '
+}
+
+default_route_for()
+{
+    ip route show default dev "$1" 2>/dev/null | sed -n '1p'
+}
+
+network_mode()
+{
+    mode="$(awk '
+        /"network"[[:space:]]*:/ { in_network = 1; next }
+        in_network && /"mode"[[:space:]]*:/ {
+            line = $0
+            sub(/.*"mode"[[:space:]]*:[[:space:]]*"/, "", line)
+            sub(/".*/, "", line)
+            print line
+            exit
+        }
+        in_network && /^[[:space:]]*}[,]?[[:space:]]*$/ { in_network = 0 }
+    ' "$CONFIG" 2>/dev/null)"
+    [ -n "$mode" ] || mode="auto"
+    echo "$mode"
+}
+
+gateway_from_route()
+{
+    echo "$1" | awk '{
+        for (i = 1; i <= NF; ++i) {
+            if ($i == "via" && i < NF) {
+                print $(i + 1);
+                exit;
+            }
+        }
+    }'
+}
+
+gateway_from_connected_route()
+{
+    ifname="$1"
+    cidr="$(ip -4 route show dev "$ifname" scope link 2>/dev/null |
+        sed -n 's/^\([0-9][0-9.]*\/[0-9][0-9]*\).*/\1/p' |
+        sed -n '1p')"
+    [ -n "$cidr" ] || return 1
+
+    network="${cidr%/*}"
+    echo "$network" | awk -F. '
+        NF == 4 {
+            $4 = $4 + 1;
+            printf "%d.%d.%d.%d\n", $1, $2, $3, $4;
+        }
+    '
+}
+
+replace_default_route_with()
+{
+    ifname="$1"
+    metric="$2"
+    gw="$3"
+
+    if [ -n "$gw" ]; then
+        ip route replace default via "$gw" dev "$ifname" metric "$metric" 2>/dev/null
+    else
+        ip route replace default dev "$ifname" metric "$metric" 2>/dev/null
+    fi
+}
+
+delete_other_default_routes()
+{
+    keep_ifname="$1"
+    keep_metric="$2"
+
+    ip route show default 2>/dev/null | while IFS= read -r route; do
+        echo "$route" | grep -q " dev $keep_ifname " &&
+            echo "$route" | grep -q " metric $keep_metric" &&
+            continue
+        ip route del $route 2>/dev/null || true
+    done
+}
+
+try_iface()
+{
+    ifname="$1"
+    metric="$2"
+
+    iface_exists "$ifname" || return 1
+
+    if ! iface_has_ipv4 "$ifname"; then
+        return 1
+    fi
+
+    route="$(default_route_for "$ifname")"
+    if [ -z "$route" ] && command -v dhcpcd >/dev/null 2>&1; then
+        dhcpcd -n "$ifname" >/dev/null 2>&1 || true
+        sleep 1
+        route="$(default_route_for "$ifname")"
+    fi
+
+    if [ -n "$route" ]; then
+        gw="$(gateway_from_route "$route")"
+    else
+        gw="$(gateway_from_connected_route "$ifname")"
+    fi
+
+    replace_default_route_with "$ifname" "$metric" "$gw" || return 1
+    delete_other_default_routes "$ifname" "$metric"
+    log_msg "selected default route dev=$ifname metric=$metric routes=$(ip route show default 2>/dev/null | tr '\n' ';')"
+    return 0
+}
+
+apply_policy_once()
+{
+    mode="$(network_mode)"
+    case "$mode" in
+        ethernet)
+            try_iface "$ETH_IF" "$ETH_METRIC" && return 0
+            ;;
+        wifi)
+            try_iface "$WIFI_IF" "$WIFI_METRIC" && return 0
+            ;;
+        cellular)
+            try_iface "$CELL_IF" "$CELL_METRIC" && return 0
+            ;;
+        auto|"")
+            try_iface "$ETH_IF" "$ETH_METRIC" && return 0
+            try_iface "$WIFI_IF" "$WIFI_METRIC" && return 0
+            try_iface "$CELL_IF" "$CELL_METRIC" && return 0
+            ;;
+        *)
+            log_msg "unknown network.mode=$mode, fallback auto policy"
+            try_iface "$ETH_IF" "$ETH_METRIC" && return 0
+            try_iface "$WIFI_IF" "$WIFI_METRIC" && return 0
+            try_iface "$CELL_IF" "$CELL_METRIC" && return 0
+            ;;
+    esac
+    return 1
+}
+
+start_policy()
+{
+    log_msg "gateway network policy start mode=$(network_mode)"
+
+    i=0
+    while [ "$i" -lt 20 ]; do
+        if apply_policy_once; then
+            return 0
+        fi
+        i=$((i + 1))
+        sleep 1
+    done
+
+    log_msg "no managed default route found after wait routes=$(ip route show default 2>/dev/null | tr '\n' ';')"
+    return 0
+}
+
+case "$1" in
+    start)
+        start_policy
+        ;;
+    stop)
+        log_msg "gateway network policy stop noop"
+        ;;
+    restart|reload|force-reload)
+        start_policy
+        ;;
+    *)
+        echo "Usage: $0 {start|stop|restart|reload|force-reload}"
+        exit 1
+        ;;
+esac

@@ -5,6 +5,7 @@
 #include "network/network_utils.h"
 
 #include <chrono>
+#include <map>
 #include <sstream>
 #include <thread>
 
@@ -122,24 +123,33 @@ void PublishManager::publishTelemetryBatch(const std::vector<model::TelemetryDat
     if (telemetry.empty())
         return;
 
+    auto coalesced = coalesceTelemetryBatch(telemetry);
+    if (coalesced.empty())
+        return;
+    if (coalesced.size() != telemetry.size()) {
+        logger_.info("MQTT", "telemetry batch coalesced raw=" +
+                                 std::to_string(telemetry.size()) +
+                                 ", unique=" + std::to_string(coalesced.size()));
+    }
+
     const int64_t now = common::nowMs();
     const bool offline_active = offlineAnalysisActive(now);
     if (offline_active) {
-        const auto evaluation = rule_engine_.evaluate(telemetry, true, now);
+        const auto evaluation = rule_engine_.evaluate(coalesced, true, now);
         enqueueRuleEvents(evaluation.events);
         enqueueOfflineControlActions(evaluation.actions);
-        const auto ai_evaluation = ai_analyzer_.evaluate(telemetry, true, now);
+        const auto ai_evaluation = ai_analyzer_.evaluate(coalesced, true, now);
         enqueueAiEvents(ai_evaluation.events);
     } else {
-        rule_engine_.evaluate(telemetry, false, now);
-        ai_analyzer_.evaluate(telemetry, false, now);
+        rule_engine_.evaluate(coalesced, false, now);
+        ai_analyzer_.evaluate(coalesced, false, now);
     }
 
-    logger_.info("MQTT", "telemetry batch devices=" + std::to_string(telemetry.size()) +
-                         ", ids=" + telemetryDeviceIds(telemetry));
+    logger_.info("MQTT", "telemetry batch devices=" + std::to_string(coalesced.size()) +
+                         ", ids=" + telemetryDeviceIds(coalesced));
 
     const std::string payload =
-        codec::ThingsKitCodec::buildGatewaySubDeviceTelemetryPayload(telemetry);
+        codec::ThingsKitCodec::buildGatewaySubDeviceTelemetryPayload(coalesced);
     publish_queue_.push({
         codec::thingskit::kGatewaySubDeviceTelemetryTopic,
         payload,
@@ -150,6 +160,41 @@ void PublishManager::publishTelemetryBatch(const std::vector<model::TelemetryDat
         {},
         {},
     });
+}
+
+std::vector<model::TelemetryData> PublishManager::coalesceTelemetryBatch(
+    const std::vector<model::TelemetryData> &telemetry) const
+{
+    std::vector<model::TelemetryData> result;
+    std::map<std::string, size_t> index_by_device;
+
+    for (const auto &item : telemetry) {
+        if (item.device_id.empty())
+            continue;
+
+        const auto it = index_by_device.find(item.device_id);
+        if (it == index_by_device.end()) {
+            index_by_device[item.device_id] = result.size();
+            result.push_back(item);
+            continue;
+        }
+
+        auto &merged = result[it->second];
+        merged.ts_ms = std::max(merged.ts_ms, item.ts_ms);
+        merged.type = item.type;
+        for (const auto &[key, value] : item.integer_values)
+            merged.integer_values[key] = value;
+        for (const auto &[key, value] : item.numeric_values)
+            merged.numeric_values[key] = value;
+        for (const auto &[key, value] : item.string_values)
+            merged.string_values[key] = value;
+        for (const auto &[key, value] : item.bool_values)
+            merged.bool_values[key] = value;
+        for (const auto &[key, value] : item.object_values)
+            merged.object_values[key] = value;
+    }
+
+    return result;
 }
 
 bool PublishManager::offlineAnalysisActive(int64_t now_ms)
@@ -335,7 +380,7 @@ void PublishManager::publishGatewayStatusIfDue()
     status.network_type = network_state.available ? network_state.name : "none";
     status.network_ifname = network_state.available ? network_state.ifname : "none";
     status.cloud_connected = cloud_client_.isConnected();
-    status.device_count = static_cast<int>(config_.devices.size());
+    status.device_count = config_.topology.expected_external_device_count;
     status.cache_count = cache_store_ ? static_cast<int>(cache_store_->pendingCount()) : 0;
     status.ts_ms = now;
 
@@ -344,20 +389,10 @@ void PublishManager::publishGatewayStatusIfDue()
         status.cloud_connected = cloud_client_.isConnected();
     }
 
-    // 网关状态同时走 attributes 和 telemetry，方便平台侧在线状态和趋势图都能消费。
+    // 网关自身状态走 telemetry，避免平台属性 scope 差异导致页面只显示部分字段。
     const std::string payload = codec::ThingsKitCodec::buildGatewayAttributesValuesPayload(status);
-    logger_.info("ATTR", payload);
+    logger_.info("MQTT", "gateway status telemetry payload=" + payload);
 
-    publish_queue_.push({
-        codec::thingskit::kGatewayAttributesTopic,
-        payload,
-        PublishMessageKind::GatewayStatus,
-        0,
-        0,
-        {},
-        {},
-        {},
-    });
     publish_queue_.push({
         codec::thingskit::kGatewayTelemetryTopic,
         payload,
@@ -372,6 +407,16 @@ void PublishManager::publishGatewayStatusIfDue()
 
 bool PublishManager::ensureCloudConnected()
 {
+    const auto ns = network_worker_.state();
+    if (cloud_client_.isConnected() && ns.available && !connected_ifname_.empty() &&
+        connected_ifname_ != ns.ifname) {
+        logger_.info("MQTT", "network interface changed " + connected_ifname_ +
+                                 " -> " + ns.ifname + ", reconnecting MQTT");
+        cloud_client_.disconnect();
+        command_topics_subscribed_ = false;
+        connected_ifname_.clear();
+    }
+
     if (cloud_client_.isConnected()) {
         if (!command_topics_subscribed_) {
             // MQTT 可能重连成功但订阅状态丢失，所以连接存在时也要确认订阅标记。
@@ -385,18 +430,25 @@ bool PublishManager::ensureCloudConnected()
 
     command_topics_subscribed_ = false;
 
-    // 在 MQTT 连接前，确保默认路由走选中的网络接口。
-    // mosquitto 内部创建 socket 时使用系统默认路由，
-    // 必须在 connect 之前把路由切到正确的接口。
-    const auto ns = network_worker_.state();
     if (ns.available) {
         cloud_client_.setBindInterface(ns.ifname);
-        // 强制设置默认路由走选中接口
-        network::setDefaultRouteVia(ns.ifname);
+        network::InterfaceLeaseInfo lease_info;
+        std::string reason;
+        if (!network::reconcileInterfaceNetwork(
+                ns.ifname,
+                network::defaultRouteMetricForIfname(ns.ifname),
+                &lease_info,
+                &reason)) {
+            logger_.warn("MQTT", "network alignment failed before connect ifname=" +
+                                     ns.ifname + ", reason=" + reason);
+            return false;
+        }
     }
 
     if (!cloud_client_.connect())
         return false;
+
+    connected_ifname_ = ns.available ? ns.ifname : "";
 
     const bool rpc_ok = cloud_client_.subscribeRaw(codec::thingskit::kRpcRequestTopicFilter);
     const bool gateway_ok =

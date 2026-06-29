@@ -188,9 +188,7 @@ class LoopTester:
             "METER_006": [self.generate_meter_data("METER_006")],
             "METER_007": [self.generate_meter_data("METER_007")],
             "ENV_001": [self.generate_env_data()],
-            "ENV_002": [self.generate_env_data()],
             "RELAY_001": [self.generate_relay_data()],
-            "RELAY_002": [self.generate_relay_data()],
             "DTU_001": [self.generate_dtu_data()]
         }
         self.client.publish("v1/gateway/telemetry", json.dumps(payload))

@@ -16,7 +16,10 @@
 #define NOTIFY_BATCH_MAX    64
 #define NOTIFY_BATCH_FLUSH_MS 1000
 #define NOTIFY_REASSEMBLY_SLOTS 8
-#define NOTIFY_HEX_LINE_MAX 1024
+#define NOTIFY_HEX_LINE_MAX 4096
+#define SLE_ST_HEADER_LEN   13
+#define SLE_ST_MAX_FRAME_LEN 1024
+#define SLE_ST_MAX_PAYLOAD_LEN (SLE_ST_MAX_FRAME_LEN - SLE_ST_HEADER_LEN)
 
 /*
  * notify_printer 是 SLE/mock 回调和 gatewayd 数据 IPC 之间的缓冲层。
@@ -329,15 +332,15 @@ static bool decode_hex_digits(const uint8_t *hex, uint16_t hex_len,
 static bool decoded_st_frame_complete(const uint8_t *decoded, uint16_t decoded_len,
     uint16_t *frame_len)
 {
-    if (decoded == NULL || frame_len == NULL || decoded_len < 13) {
+    if (decoded == NULL || frame_len == NULL || decoded_len < SLE_ST_HEADER_LEN) {
         return false;
     }
     if (decoded[0] != 'S' || decoded[1] != 'T') {
         return false;
     }
     uint16_t payload_len = (uint16_t)(decoded[11] | (decoded[12] << 8));
-    uint16_t total_len = (uint16_t)(13 + payload_len);
-    if (payload_len > 243 || total_len > NOTIFY_PAYLOAD_MAX) {
+    uint16_t total_len = (uint16_t)(SLE_ST_HEADER_LEN + payload_len);
+    if (payload_len > SLE_ST_MAX_PAYLOAD_LEN || total_len > NOTIFY_PAYLOAD_MAX) {
         return false;
     }
     if (decoded_len < total_len) {

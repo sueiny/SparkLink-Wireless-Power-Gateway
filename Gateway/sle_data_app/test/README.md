@@ -41,8 +41,8 @@
 killall sle_data_app
 sleep 5
 
-# 启动sle_data_app，日志输出到文件
-/userdata/gateway/bin/sle_data_app --config /userdata/gateway/config/sle_data_app.json 2>&1 | tee /tmp/sle_app.log
+# 启动真实 SLE 模式，日志输出到文件
+/userdata/gateway/bin/sle_data_app --mode real 2>&1 | tee /tmp/sle_app.log
 ```
 
 ### 步骤2: 主机端发送测试数据
@@ -107,11 +107,11 @@ run_dtu_root_real.bat
 
 ```cmd
 # 电表过流拉闸，root 侧收到完整 ST 包
-py -3 dtu_downlink_command_tester.py COM19 COM23 COM36 --duration 60 --expect meter-trip --expect-root-id 1
+py -3 dtu_downlink_command_tester.py COM19 COM23 COM36 --duration 60 --expect meter-trip --expect-dtu-id 1
 
 # 继电器断开/闭合模拟，验收 root 侧收到完整 ST 包
-py -3 dtu_downlink_command_tester.py COM19 COM23 COM36 --duration 60 --expect relay-open --expect-root-id 1
-py -3 dtu_downlink_command_tester.py COM19 COM23 COM36 --duration 60 --expect relay-close --expect-root-id 1
+py -3 dtu_downlink_command_tester.py COM19 COM23 COM36 --duration 60 --expect relay-open --expect-dtu-id 9
+py -3 dtu_downlink_command_tester.py COM19 COM23 COM36 --duration 60 --expect relay-close --expect-dtu-id 9
 ```
 
 ## Linux使用方法
@@ -120,7 +120,7 @@ py -3 dtu_downlink_command_tester.py COM19 COM23 COM36 --duration 60 --expect re
 
 ```bash
 killall sle_data_app; sleep 5
-/userdata/gateway/bin/sle_data_app --config /userdata/gateway/config/sle_data_app.json 2>&1 | tee /tmp/sle_app.log
+/userdata/gateway/bin/sle_data_app --mode real 2>&1 | tee /tmp/sle_app.log
 ```
 
 ### 步骤2: 主机端发送测试数据

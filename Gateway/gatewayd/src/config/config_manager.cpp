@@ -232,12 +232,46 @@ bool ConfigManager::load(const std::string &path, std::string *error)
     cfg.sle.enable = sle.value("enable", false);
     cfg.sle.data_socket = sle.value("data_socket", "/var/run/gateway/sle_data.sock");
     cfg.sle.cmd_socket = sle.value("cmd_socket", "/var/run/gateway/sle_cmd.sock");
-    cfg.sle.roots.clear();
-    for (const auto &root_item : sle.value("roots", nlohmann::json::array())) {
-        config::SleRootConfig rc;
-        rc.node_id = root_item.value("node_id", 0);
-        cfg.sle.roots.push_back(rc);
+
+    const auto topology = root.value("topology", nlohmann::json::object());
+    cfg.topology.source = topology.value("source", cfg.topology.source);
+    cfg.topology.expected_dtu_count =
+        topology.value("expected_dtu_count", cfg.topology.expected_dtu_count);
+    cfg.topology.expected_external_device_count =
+        topology.value("expected_external_device_count",
+                       cfg.topology.expected_external_device_count);
+
+    const auto online_policy = topology.value("online_policy", nlohmann::json::object());
+    cfg.topology.online_policy.dtu_from_topology_snapshot =
+        online_policy.value("dtu_from_topology_snapshot", true);
+    cfg.topology.online_policy.external_from_device_map =
+        online_policy.value("external_from_device_map", true);
+    cfg.topology.online_policy.external_inherits_dtu_online =
+        online_policy.value("external_inherits_dtu_online", true);
+    cfg.topology.online_policy.emit_online_change =
+        online_policy.value("emit_online_change", true);
+    cfg.topology.online_policy.missing_dtu_online =
+        online_policy.value("missing_dtu_online", false);
+    cfg.topology.online_policy.missing_external_online =
+        online_policy.value("missing_external_online", false);
+
+    const auto static_json = topology.value("static_json", nlohmann::json::object());
+    cfg.topology.static_json.enable_for_test =
+        static_json.value("enable_for_test", false);
+
+    const auto dynamic = topology.value("dynamic", nlohmann::json::object());
+    cfg.topology.dynamic.required_frames.clear();
+    for (const auto &item : dynamic.value("required_frames",
+                                          nlohmann::json::array({"dtu_topology",
+                                                                 "external_map"}))) {
+        cfg.topology.dynamic.required_frames.push_back(item.get<std::string>());
     }
+    cfg.topology.dynamic.startup_timeout_ms =
+        dynamic.value("startup_timeout_ms", cfg.topology.dynamic.startup_timeout_ms);
+    cfg.topology.dynamic.persist_path =
+        dynamic.value("persist_path", cfg.topology.dynamic.persist_path);
+    cfg.topology.dynamic.allow_fallback_to_static =
+        dynamic.value("allow_fallback_to_static", false);
 
     const auto offline = root.value("offline_analysis", nlohmann::json::object());
     cfg.offline_analysis.enable = offline.value("enable", true);
@@ -294,6 +328,23 @@ bool ConfigManager::load(const std::string &path, std::string *error)
     cfg.dtu_devices.clear();
     for (const auto &item : root.value("devices", nlohmann::json::array())) {
         std::string type = item.value("type", "gateway");
+        if (cfg.topology.source == "root_report") {
+            if (type == "dtu_node" &&
+                (item.contains("parent_id") || item.contains("child_ids"))) {
+                if (error)
+                    *error = "topology.source=root_report forbids static DTU topology fields: " +
+                             item.value("device_id", std::string("<unknown>"));
+                return false;
+            }
+            if (type != "dtu_node" &&
+                (item.contains("dtu_id") || item.contains("dtu_node_id"))) {
+                if (error)
+                    *error = "topology.source=root_report forbids static external device mapping fields: " +
+                             item.value("device_id", std::string("<unknown>"));
+                return false;
+            }
+        }
+
         if (type == "dtu_node")
             cfg.dtu_devices.push_back(parseDtuDevice(item));
         else
@@ -331,14 +382,54 @@ bool ConfigManager::validate(const AppConfig &config, std::string *error) const
         (config.thingskit.basic_client_id.empty() ||
          config.thingskit.basic_username.empty()))
         return fail("thingskit.mqtt_basic client_id/username must not be empty in mqtt_basic mode");
-    if (config.devices.empty())
-        return fail("devices must not be empty");
     if (config.publish.interval_ms <= 0)
         return fail("publish.interval_ms must be positive");
     if (config.publish.gateway_status_interval_ms <= 0)
         return fail("publish.gateway_status_interval_ms must be positive");
     if (config.publish.cache_ttl_ms <= 0)
         return fail("publish.cache_ttl_ms must be positive");
+
+    const auto &topology = config.topology;
+    if (topology.source != "root_report" && topology.source != "static_json")
+        return fail("topology.source must be root_report/static_json");
+    if (topology.expected_dtu_count <= 0)
+        return fail("topology.expected_dtu_count must be positive");
+    if (topology.expected_external_device_count <= 0)
+        return fail("topology.expected_external_device_count must be positive");
+    if (topology.source == "static_json" && !topology.static_json.enable_for_test)
+        return fail("topology.static_json.enable_for_test must be true when source=static_json");
+    if (topology.source == "static_json" && config.devices.empty())
+        return fail("devices must not be empty when topology.source=static_json");
+    if (topology.source == "static_json" && config.dtu_devices.empty())
+        return fail("dtu node devices must not be empty when topology.source=static_json");
+    if (topology.source == "root_report") {
+        if (topology.static_json.enable_for_test)
+            return fail("topology.static_json.enable_for_test must be false when source=root_report");
+        if (topology.dynamic.allow_fallback_to_static)
+            return fail("topology.dynamic.allow_fallback_to_static must be false when source=root_report");
+        if (!topology.online_policy.dtu_from_topology_snapshot ||
+            !topology.online_policy.external_from_device_map ||
+            !topology.online_policy.external_inherits_dtu_online ||
+            !topology.online_policy.emit_online_change)
+            return fail("topology.online_policy snapshot flags must be true when source=root_report");
+        const int configured_dtu_count = static_cast<int>(config.dtu_devices.size());
+        const int configured_external_count = static_cast<int>(config.devices.size());
+        if (configured_dtu_count != topology.expected_dtu_count)
+            return fail("topology.expected_dtu_count must match configured DTU inventory count");
+        if (configured_external_count != topology.expected_external_device_count)
+            return fail("topology.expected_external_device_count must match configured external inventory count");
+    }
+    if (topology.dynamic.startup_timeout_ms <= 0)
+        return fail("topology.dynamic.startup_timeout_ms must be positive");
+    if (topology.dynamic.persist_path.empty())
+        return fail("topology.dynamic.persist_path must not be empty");
+    if (topology.dynamic.required_frames.empty())
+        return fail("topology.dynamic.required_frames must not be empty");
+    const std::set<std::string> allowed_topology_frames = {"dtu_topology", "external_map"};
+    for (const auto &item : topology.dynamic.required_frames) {
+        if (!allowed_topology_frames.count(item))
+            return fail("topology.dynamic.required_frames contains unsupported item: " + item);
+    }
 
     const auto &offline = config.offline_analysis;
     if (offline.enable) {
@@ -430,10 +521,12 @@ bool ConfigManager::validate(const AppConfig &config, std::string *error) const
         config.offline_analysis.offline_control.enable) {
         for (const auto &relay_device_id : config.offline_analysis.offline_control.relay_devices) {
             const auto type_it = device_types.find(relay_device_id);
-            if (type_it == device_types.end())
+            if (type_it == device_types.end() &&
+                config.topology.source == "static_json")
                 return fail("offline_analysis.offline_control.relay_devices unknown device: " +
                             relay_device_id);
-            if (type_it->second != model::DeviceType::Relay)
+            if (type_it != device_types.end() &&
+                type_it->second != model::DeviceType::Relay)
                 return fail("offline_analysis.offline_control.relay_devices must be relay device: " +
                             relay_device_id);
         }
@@ -441,10 +534,6 @@ bool ConfigManager::validate(const AppConfig &config, std::string *error) const
 
     for (const auto &item : config.offline_analysis.rule_engine.device_overrides) {
         const auto type_it = device_types.find(item.first);
-        if (type_it == device_types.end())
-            return fail("offline_analysis.rule_engine.device_overrides unknown device: " +
-                        item.first);
-
         const auto &override = item.second;
         if (override.over_voltage_v < 0.0 || override.under_voltage_v < 0.0 ||
             override.frequency_low_hz < 0.0 || override.frequency_high_hz < 0.0 ||
@@ -453,6 +542,13 @@ bool ConfigManager::validate(const AppConfig &config, std::string *error) const
             override.hold_ms < 0 || override.offline_timeout_ms < 0)
             return fail("offline_analysis.rule_engine.device_overrides values must be positive: " +
                         item.first);
+
+        if (type_it == device_types.end()) {
+            if (config.topology.source == "root_report")
+                continue;
+            return fail("offline_analysis.rule_engine.device_overrides unknown device: " +
+                        item.first);
+        }
 
         if (type_it->second == model::DeviceType::SinglePhaseMeter) {
             const auto meter = applyMeterOverride(

@@ -20,7 +20,7 @@ public:
     int priority() const override { return priority_; }
     bool enabled() const override { return config_.enable; }
 
-    bool bringUp() override;
+    bool bringUp(uint32_t route_metric = 0) override;
     bool isInterfaceUp() const override;
     bool hasIp() const override;
     bool canReachCloud(const std::string &host,

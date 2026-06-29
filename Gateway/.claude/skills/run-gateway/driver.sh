@@ -1,6 +1,6 @@
 #!/bin/bash
 # Gateway 构建、部署、测试驱动脚本
-# 用法: driver.sh [build-sle|build-gw|push|test|test-real-listen|watch-real|full]
+# 用法: driver.sh [build-sle|build-gw|push|install-autostart|uninstall-autostart|test|test-real-listen|watch-real|watch-sle|restart-real-watch|full]
 
 set -e
 
@@ -14,6 +14,7 @@ SYSROOT="$PROJECT_ROOT/buildroot/output/rockchip_rk3506_emmc/host/arm-buildroot-
 
 # 板端路径
 ADB_ROOT="/userdata/gateway"
+INIT_DIR="/etc/init.d"
 
 # 清理 PATH（buildroot 不接受含空格的 PATH）
 clean_path() {
@@ -86,6 +87,29 @@ push() {
     adb shell "chmod +x $ADB_ROOT/bin/sle_data_app $ADB_ROOT/bin/gatewayd $ADB_ROOT/test/ipc_send"
 
     echo "✅ 推送完成"
+}
+
+# ── 安装板端断电重启自启脚本 ──
+install_autostart() {
+    echo "=== 安装 Gateway 板端自启脚本 ==="
+
+    adb shell "mkdir -p $INIT_DIR $ADB_ROOT/data/log /var/run/gateway"
+    adb push "$GATEWAY_DIR/gatewayd/scripts/S42gateway-network-policy" "$INIT_DIR/S42gateway-network-policy"
+    adb push "$GATEWAY_DIR/gatewayd/scripts/S95gateway" "$INIT_DIR/S95gateway"
+    adb shell "chmod +x $INIT_DIR/S42gateway-network-policy $INIT_DIR/S95gateway"
+
+    echo ""
+    echo "=== 已安装脚本 ==="
+    adb shell "ls -l $INIT_DIR/S42gateway-network-policy $INIT_DIR/S95gateway"
+    echo "✅ 自启脚本安装完成。重启后会自动启动 gatewayd + sle_data_app --mode real"
+}
+
+# ── 卸载板端断电重启自启脚本 ──
+uninstall_autostart() {
+    echo "=== 卸载 Gateway 板端自启脚本 ==="
+
+    adb shell "rm -f $INIT_DIR/S42gateway-network-policy $INIT_DIR/S95gateway"
+    echo "✅ 自启脚本已删除。当前运行中的进程不会被自动停止"
 }
 
 # ── 编译 ipc_send 工具 ──
@@ -240,8 +264,8 @@ test_real_listen() {
     adb shell "tail -40 /tmp/sle_data_app.out 2>/dev/null"
 
     echo ""
-    echo "真实监听已启动。Windows 串口侧发送示例（完整拓扑压测：31 个 DTU 心跳 + 11 个外接设备 DATA/轮）："
-    echo "cd C:\\Temp\\GatewayTest && py -3 .\\dtu_root_run_sender.py COM19 COM23 COM36 --scenario topology-all --duration 60 --interval 5 --line-delay 0.02 --warmup-sec 5 --warmup-interval 0.2 --warmup-text 12123213 --post-warmup-delay 8 --hold-open 10"
+    echo "真实监听已启动。Windows 串口侧发送示例（两路 root：05/06 快照 + 29 个 DTU + 9 个外接设备 DATA/轮）："
+    echo "cd C:\\Temp\\GatewayTest && py -3 .\\dtu_root_run_sender.py COM19 COM23 --port-root COM19=1 --port-root COM23=12 --scenario topology-all --duration 60 --interval 5 --line-delay 0.02 --warmup-sec 5 --warmup-interval 0.2 --warmup-text 12123213 --post-warmup-delay 8 --hold-open 10"
     echo "或在仓库 test 目录双击/运行 run_dtu_root_real.bat。"
     echo ""
     echo "持续监听可运行："
@@ -252,6 +276,19 @@ test_real_listen() {
 watch_real() {
     echo "=== 监听真实 SLE/Gateway 日志，Ctrl+C 结束 ==="
     adb shell "tail -f /tmp/sle_data_app.out /tmp/sle_app.log $ADB_ROOT/data/log/gateway.log"
+}
+
+# ── 专用 SLE 串口链路监听 ──
+watch_sle() {
+    bash "$GATEWAY_DIR/gatewayd/test/watch_sle.sh" "$@"
+}
+
+# ── 重启完整真实 Gateway 后进入专用监听 ──
+restart_real_watch() {
+    test_real_listen
+    echo ""
+    echo "=== 进入专用 SLE 串口链路监听，Ctrl+C 结束 ==="
+    watch_sle
 }
 
 # ── 全流程 ──
@@ -270,21 +307,29 @@ case "${1:-help}" in
     build-ipc)  build_ipc_send ;;
     gen-test)   gen_test ;;
     push)       push ;;
+    install-autostart) install_autostart ;;
+    uninstall-autostart) uninstall_autostart ;;
     test)       test ;;
     test-real-listen) test_real_listen ;;
     watch-real) watch_real ;;
+    watch-sle) shift; watch_sle "$@" ;;
+    restart-real-watch) restart_real_watch ;;
     full)       full ;;
     *)
-        echo "用法: $0 [build-sle|build-gw|build-ipc|gen-test|push|test|test-real-listen|watch-real|full]"
+        echo "用法: $0 [build-sle|build-gw|build-ipc|gen-test|push|install-autostart|uninstall-autostart|test|test-real-listen|watch-real|watch-sle|restart-real-watch|full]"
         echo ""
         echo "  build-sle   编译 sle_data_app"
         echo "  build-gw    编译 gatewayd"
         echo "  build-ipc   编译 ipc_send 工具"
         echo "  gen-test    生成测试数据"
         echo "  push        推送到板端"
+        echo "  install-autostart    安装 /etc/init.d 自启脚本，断电重启后自动运行真实链路"
+        echo "  uninstall-autostart  删除 /etc/init.d 自启脚本"
         echo "  test        板端测试"
         echo "  test-real-listen  启动 gatewayd + sle_data_app --mode real，等待串口侧真实数据"
         echo "  watch-real  持续监听真实 SLE/Gateway 日志"
+        echo "  watch-sle   专用 SLE 串口链路监听，可追加 --scan/--raw"
+        echo "  restart-real-watch  重启完整真实 gatewayd + sle_data_app 后进入专用 SLE 监听"
         echo "  full        全流程"
         ;;
 esac

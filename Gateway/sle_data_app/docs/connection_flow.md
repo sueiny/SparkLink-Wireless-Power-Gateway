@@ -6,7 +6,7 @@
 
 ```text
 main()
-  -> load sle_data_app.json
+  -> init compile-time config
   -> redirect stdout to /tmp/sle_stack_raw.log
   -> notify_printer_start()
   -> sle_manager_init()
@@ -26,8 +26,9 @@ maintenance manager 每秒调用 `sle_manager_tick()`，处理连接流程超时
 
 ```text
 seek_result_cb()
-  -> match MAC prefix or fallback name
-  -> candidate_update(addr, rssi, now)
+  -> match MAC prefix 02:00
+  -> parse LTV vendor root meta (DT/ST + ROOT)
+  -> candidate_update(addr, rssi, meta, now)
   -> candidate_try_start_best()
 ```
 

@@ -7,6 +7,7 @@
 #define SLE_DATA_APP_NAME_MAX 64
 #define SLE_DATA_APP_PATH_MAX 160
 #define SLE_DATA_APP_MAX_CONNECTIONS 8
+#define SLE_DATA_APP_ADDR_LEN 6
 
 /**
  * @brief sle_data_app 配置结构体
@@ -29,6 +30,11 @@ typedef struct {
     uint16_t conn_latency;
     uint16_t supervision_timeout;
     uint16_t mtu;
+
+    /* 本机 SLE 地址 */
+    bool set_local_addr;
+    uint8_t local_addr_type;
+    uint8_t local_addr[SLE_DATA_APP_ADDR_LEN];
 
     /* 设备过滤 */
     uint16_t mac_prefix;

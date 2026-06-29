@@ -6,7 +6,7 @@
 static const sle_app_config_t kDefaultConfig = {
     /* 连接数量 */
     .max_connections            = 8,
-    .target_active_connections  = 3,
+    .target_active_connections  = 2,
 
     /* 扫描参数 */
     .scan_interval              = 100,
@@ -23,10 +23,15 @@ static const sle_app_config_t kDefaultConfig = {
      */
     .conn_latency               = 0xFFFF,
     .supervision_timeout        = 0x1F4,
-    .mtu                        = 300,
+    .mtu                        = 1024,
+
+    /* 本机 SLE 地址 */
+    .set_local_addr             = true,
+    .local_addr_type            = 0,
+    .local_addr                 = {0x02, 0x00, 0x00, 0x00, 0x00, 0x00},
 
     /* 设备过滤 */
-    .mac_prefix                 = 0x12,
+    .mac_prefix                 = 0x0200,
     .data_property_uuid         = 0xFDF1,
     .auto_select_data_property  = true,
 
@@ -87,6 +92,16 @@ void sle_app_config_print(const sle_app_config_t *config)
         config->auto_select_data_property ? "true" : "false",
         config->continue_scan_when_full ? "true" : "false",
         config->stale_timeout_ms);
+    fprintf(stderr, "[SLE][CONFIG] set_local_addr=%s local_addr_type=%u "
+        "local_addr=%02x:%02x:%02x:%02x:%02x:%02x\n",
+        config->set_local_addr ? "true" : "false",
+        config->local_addr_type,
+        config->local_addr[0],
+        config->local_addr[1],
+        config->local_addr[2],
+        config->local_addr[3],
+        config->local_addr[4],
+        config->local_addr[5]);
     fprintf(stderr, "[SLE][CONFIG] connecting_timeout_ms=%u pairing_timeout_ms=%u "
         "discovery_timeout_ms=%u param_update_timeout_ms=%u\n",
         config->connecting_timeout_ms,

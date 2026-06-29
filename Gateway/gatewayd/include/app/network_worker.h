@@ -4,6 +4,7 @@
 #include "common/logger.h"
 #include "network/net_manager.h"
 
+#include <condition_variable>
 #include <mutex>
 
 namespace gateway::app {
@@ -17,6 +18,7 @@ public:
     NetworkWorker(log::Logger &logger, network::NetManager &net_manager);
 
     const char *name() const override { return "network"; }
+    void stop() override;
 
     // 返回最近一次检测到的网络状态。内部加锁，允许发布线程安全读取。
     network::NetworkState state() const;
@@ -28,6 +30,8 @@ private:
     log::Logger &logger_;
     network::NetManager &net_manager_;
     mutable std::mutex mutex_;
+    std::mutex control_mutex_;
+    std::condition_variable control_cv_;
     network::NetworkState state_;
 };
 

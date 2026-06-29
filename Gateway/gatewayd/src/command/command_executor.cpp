@@ -1,5 +1,6 @@
 #include "command/command_executor.h"
 #include "datasource/ipc_cmd_sender.h"
+#include "datasource/sle_data_source.h"
 
 #include "codec/sle_downlink_builder.h"
 #include "ipc_cmd_protocol.h"
@@ -37,7 +38,7 @@ const model::DtuDeviceInfo *findDtu(int node_id, const config::AppConfig &config
     return it == config.dtu_devices.end() ? nullptr : &*it;
 }
 
-uint16_t rootIdForDtu(int dtu_id, const config::AppConfig &config)
+uint16_t rootIdForStaticDtu(int dtu_id, const config::AppConfig &config)
 {
     int current = dtu_id;
     for (size_t depth = 0; depth < config.dtu_devices.size() + 1; ++depth) {
@@ -73,8 +74,10 @@ constexpr int kRawStIpcTimeoutMs = 6000;
 
 } // namespace
 
-CommandExecutor::CommandExecutor(datasource::IpcCmdSender *ipc_cmd_sender)
-    : ipc_cmd_sender_(ipc_cmd_sender)
+CommandExecutor::CommandExecutor(datasource::IpcCmdSender *ipc_cmd_sender,
+                                 datasource::SleDataSource *sle_data_source)
+    : ipc_cmd_sender_(ipc_cmd_sender),
+      sle_data_source_(sle_data_source)
 {
 }
 
@@ -122,14 +125,34 @@ CommandResult CommandExecutor::executeViaIpc(const CommandRequest &request,
         if (!device)
             return makeCommandResult(false, "UNKNOWN_DEVICE", "target device not found");
 
-        const uint16_t root_id = rootIdForDtu(device->dtu_id, config);
+        model::DeviceInfo routed_device = *device;
+        uint16_t root_id = 0;
+        uint16_t target_dtu_id = dtu_id;
+        if (config.topology.source == "root_report") {
+            if (!sle_data_source_) {
+                return makeCommandResult(false, "ROUTE_UNAVAILABLE",
+                                         "dynamic topology source is not available");
+            }
+            datasource::SleDataSource::ExternalDeviceRoute route;
+            std::string route_error;
+            if (!sle_data_source_->resolveExternalDeviceRoute(
+                    request.target_device_id, &route, &route_error)) {
+                return makeCommandResult(false, "ROUTE_UNAVAILABLE", route_error);
+            }
+            routed_device = route.device;
+            root_id = route.root_id;
+            target_dtu_id = route.dtu_id;
+        } else {
+            root_id = rootIdForStaticDtu(dtu_id, config);
+        }
+
         const uint8_t relay_channel =
             static_cast<uint8_t>(jsonIntOr(request.params, "relay_channel",
                                            jsonIntOr(request.params, "channel", 0)));
         codec::SleDownlinkFrame downlink;
         std::string error;
         if (!codec::buildSetRelayDownlinkFrame(
-                *device,
+                routed_device,
                 root_id,
                 jsonIntOr(request.params, "state", 0),
                 relay_channel,
@@ -159,7 +182,7 @@ CommandResult CommandExecutor::executeViaIpc(const CommandRequest &request,
             {"result", 1},
             {"root_id", downlink.root_node_id},
             {"dst_node_id", downlink.dst_node_id},
-            {"target_dtu_id", downlink.target_node_id},
+            {"target_dtu_id", target_dtu_id},
             {"st_len", st_len},
             {"st_hex", codec::hexText(downlink.frame.data(), downlink.frame.size())},
         };
@@ -184,9 +207,13 @@ CommandResult CommandExecutor::executeViaIpc(const CommandRequest &request,
 
     const int ipc_timeout_ms =
         cmd_type == CMD_METHOD_RAW_ST_DOWNLINK ? kRawStIpcTimeoutMs : kDefaultIpcTimeoutMs;
+    const uint8_t ipc_dtu_id =
+        cmd_type == CMD_METHOD_RAW_ST_DOWNLINK && command_data.contains("target_dtu_id")
+            ? static_cast<uint8_t>(command_data.value("target_dtu_id", static_cast<int>(dtu_id)))
+            : dtu_id;
 
     const bool ok = ipc_cmd_sender_->sendCommand(
-        dtu_id, cmd_type, param_data, param_len,
+        ipc_dtu_id, cmd_type, param_data, param_len,
         &result_code, resp_data, &resp_data_len, ipc_timeout_ms, request.request_id);
 
     if (!ok) {
@@ -274,10 +301,16 @@ CommandResult CommandExecutor::execute(const CommandRequest &request,
 
     // 这轮只真实化 set_relay 下发，其它命令继续走模拟路径。
     if (ipc_cmd_sender_ && request.method == "set_relay") {
-        const int dtu_id = findDtuIdForDevice(request, config);
+        const int dtu_id = config.topology.source == "root_report"
+                               ? 0
+                               : findDtuIdForDevice(request, config);
+        if (config.topology.source == "root_report")
+            return executeViaIpc(request, 0, config);
         if (dtu_id > 0) {
             return executeViaIpc(request, static_cast<uint8_t>(dtu_id), config);
         }
+        return makeCommandResult(false, "ROUTE_UNAVAILABLE",
+                                 "target device has no DTU route");
     }
 
     return executeSimulated(request);

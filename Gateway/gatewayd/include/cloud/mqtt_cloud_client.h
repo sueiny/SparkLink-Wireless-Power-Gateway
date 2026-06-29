@@ -27,8 +27,8 @@ public:
     MqttCloudClient(const MqttCloudClient &) = delete;
     MqttCloudClient &operator=(const MqttCloudClient &) = delete;
 
-    // 记录期望使用的网络接口。当前 MQTT socket 仍依赖系统默认路由。
-    void setBindInterface(const std::string &ifname) { bind_interface_ = ifname; }
+    // 记录期望使用的网络接口；下一次 connect() 会尽量绑定到该接口 IPv4。
+    void setBindInterface(const std::string &ifname);
 
     // 建立 MQTT 连接并启动 libmosquitto 后台 loop。
     // 成功返回 true；认证失败、TCP 失败或等待连接回调超时都会返回 false。
@@ -66,6 +66,7 @@ private:
     bool publishToTopic(const std::string &topic, const std::string &payload);
     std::string buildTopic(const std::string &suffix) const;
     void ensureClientCreated();
+    void applyBindAddressOption();
     void destroyClient();
     bool waitForConnected(int timeout_ms) const;
 
@@ -86,6 +87,7 @@ private:
     std::string attributes_topic_;
     std::string events_topic_;
     std::string bind_interface_;
+    std::string bind_address_;
     MessageCallback message_callback_;
 };
 

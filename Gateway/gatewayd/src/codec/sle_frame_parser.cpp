@@ -55,26 +55,14 @@ bool parseSleDataPayload(const uint8_t *payload, uint16_t payload_len, SleDataPa
     if (payload == nullptr || out == nullptr) {
         return false;
     }
-    // 最小: modbus_type(1) + modbus_len(1) = 2 字节
-    if (payload_len < 2) {
+    // DATA payload 本身就是完整 Modbus RTU；最小 RTU 为 addr + func + CRC。
+    if (payload_len < 4) {
         fprintf(stderr, "[SLE-DATA] payload too short: %u\n", payload_len);
         return false;
     }
 
-    out->modbus_type = payload[0];
-    out->modbus_len  = payload[1];
-
-    if (out->modbus_len == 0) {
-        fprintf(stderr, "[SLE-DATA] modbus_len is 0\n");
-        return false;
-    }
-    if (out->modbus_len > payload_len - 2) {
-        fprintf(stderr, "[SLE-DATA] modbus_len %u > remaining %u\n",
-                out->modbus_len, payload_len - 2);
-        return false;
-    }
-
-    out->modbus_rtu = payload + 2;
+    out->modbus_rtu = payload;
+    out->modbus_len = payload_len;
     return true;
 }
 

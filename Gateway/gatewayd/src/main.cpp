@@ -85,7 +85,7 @@ int runMqttTest(const std::string &config_path)
     status.network_type = "mqtt_test";
     status.network_ifname = "unknown";
     status.cloud_connected = true;
-    status.device_count = static_cast<int>(cfg.devices.size());
+    status.device_count = cfg.topology.expected_external_device_count;
     status.cache_count = 0;
     status.ts_ms = gateway::common::nowMs();
 

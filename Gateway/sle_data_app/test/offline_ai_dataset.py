@@ -134,7 +134,6 @@ def build_device_frame(device: Dict[str, object], seq: int, values: Dict[str, fl
     else:
         raise ValueError(f"unsupported device kind: {kind}")
 
-    payload = bytes([int(device["modbus_type"]), len(rtu)]) + rtu
     dtu_id = int(device["dtu_id"])
     return st.build_sle_frame(
         st.SLE_FRAME_TYPE_DATA,
@@ -142,7 +141,7 @@ def build_device_frame(device: Dict[str, object], seq: int, values: Dict[str, fl
         dtu_id,
         st.DEFAULT_DST_NODE,
         seq,
-        payload,
+        rtu,
     )
 
 

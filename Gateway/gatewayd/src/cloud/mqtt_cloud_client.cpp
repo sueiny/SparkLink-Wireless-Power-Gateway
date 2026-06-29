@@ -67,6 +67,21 @@ MqttCloudClient::~MqttCloudClient()
     destroyClient();
 }
 
+void MqttCloudClient::setBindInterface(const std::string &ifname)
+{
+    bind_interface_ = ifname;
+    bind_address_.clear();
+
+    if (bind_interface_.empty() || bind_interface_ == "none")
+        return;
+
+    bind_address_ = network::interfaceIpv4Address(bind_interface_);
+    if (bind_address_.empty()) {
+        logger_.warn("MQTT", "bind interface has no IPv4, using default route ifname=" +
+                                 bind_interface_);
+    }
+}
+
 bool MqttCloudClient::connect()
 {
     if (isConnected())
@@ -80,8 +95,10 @@ bool MqttCloudClient::connect()
     // 因此后面还需要 waitForConnected，避免 connect 返回成功但认证实际失败。
     // 注意：setDefaultRouteVia 由调用方 (PublishManager::ensureCloudConnected) 负责，
     // MQTT 客户端不应修改系统路由。
+    applyBindAddressOption();
     logger_.info("MQTT", "connecting to " + config_.host + ":" + std::to_string(config_.port) +
-                ", expected_ifname=" + (bind_interface_.empty() ? "default" : bind_interface_));
+                ", expected_ifname=" + (bind_interface_.empty() ? "default" : bind_interface_) +
+                ", bind_address=" + (bind_address_.empty() ? "default" : bind_address_));
 
     const int rc = mosquitto_connect(
         client_,
@@ -245,6 +262,22 @@ void MqttCloudClient::ensureClientCreated()
             config_.password.empty() ? nullptr : config_.password.c_str());
         if (rc != MOSQ_ERR_SUCCESS)
             logger_.warn("MQTT", std::string("username_pw_set failed: ") + mosquittoErrorText(rc));
+    }
+}
+
+void MqttCloudClient::applyBindAddressOption()
+{
+    if (!client_)
+        return;
+
+    if (bind_address_.empty())
+        return;
+
+    const int rc = mosquitto_string_option(client_, MOSQ_OPT_BIND_ADDRESS, bind_address_.c_str());
+    if (rc != MOSQ_ERR_SUCCESS) {
+        logger_.warn("MQTT", "bind address option failed ifname=" + bind_interface_ +
+                                 ", address=" + bind_address_ +
+                                 ", error=" + mosquittoErrorText(rc));
     }
 }
 

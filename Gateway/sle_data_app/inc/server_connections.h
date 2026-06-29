@@ -42,7 +42,8 @@ typedef struct {
     sle_server_connection_state_t state;    /* 当前连接状态 */
     sle_addr_t addr;                        /* 对端设备地址 */
     uint16_t conn_id;                       /* SDK分配的连接ID */
-    uint16_t root_node_id;                  /* 学习到的 root 节点 ID */
+    uint16_t root_node_id;                  /* 广播或 root 自身 ST 帧学习到的 root 节点 ID */
+    char tree_magic[3];                     /* 广播树类型: "DT" 第一外设树，"ST" 第二纯 DTU 树 */
     uint8_t pair_state;                     /* 配对状态 */
     
     /* 连接流程标志 */
@@ -128,8 +129,12 @@ void server_connections_set_notify_handle(sle_server_connections_t *table, int s
 /* 缓存写属性 handle；后续做下行控制时使用。 */
 void server_connections_set_write_handle(sle_server_connections_t *table, int server_index, uint16_t handle);
 
-/* 记录该连接对应的 root 节点 ID；从 root 自身 ST 帧中学习。 */
+/* 记录该连接对应的 root 节点 ID；优先来自 root 广播，其次由 root 自身 ST 帧刷新。 */
 void server_connections_set_root_node_id(sle_server_connections_t *table, int server_index, uint16_t root_node_id);
+
+/* 记录 root 广播身份；用于两路 root 区分和下行路由诊断。 */
+void server_connections_set_root_identity(sle_server_connections_t *table, int server_index,
+    uint16_t root_node_id, const char *tree_magic);
 
 /* 记录一次上行数据，用于观察每个 server 的收包情况。 */
 void server_connections_record_rx(sle_server_connections_t *table, int server_index, uint64_t now_ms);

@@ -15,12 +15,10 @@
 | 设备名称 | 设备类型 | 配置文件 | 网关关系 |
 |----------|----------|----------|----------|
 | dtu网关 | GATEWAY | DTU网关v1 | 网关 |
-| DTU_001 ~ DTU_011 | SENSOR | DTU节点 | 子设备 |
+| DTU_001, DTU_002, DTU_003, DTU_004, DTU_005, DTU_006, DTU_007, DTU_008, DTU_010 | SENSOR | DTU节点 | 子设备 |
 | METER_001 ~ METER_007 | SENSOR | 单相电表 | 子设备 |
 | ENV_001 | SENSOR | 温湿度变送器 | 子设备 |
-| ENV_002 | SENSOR | 温湿度变送器 | 子设备 |
 | RELAY_001 | SENSOR | 继电器 | 子设备 |
-| RELAY_002 | SENSOR | 继电器 | 子设备 |
 
 ## 产品与物模型边界
 

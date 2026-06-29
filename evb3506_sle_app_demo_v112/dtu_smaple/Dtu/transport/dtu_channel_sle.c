@@ -31,7 +31,7 @@
 #define DTU_SLE_CONN_INTERVAL              0x14
 #define DTU_SLE_CONN_LATENCY               0x1F3
 #define DTU_SLE_CONN_TIMEOUT               0x1F4
-#define DTU_SLE_MTU_SIZE                   300
+#define DTU_SLE_MTU_SIZE                   1024
 #define DTU_SLE_SERVICE_UUID               0xFDF0
 #define DTU_SLE_PROPERTY_UUID              0xFDF1
 #define DTU_SLE_SERVER_APP_UUID            0x4454

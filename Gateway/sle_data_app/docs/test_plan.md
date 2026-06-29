@@ -29,19 +29,19 @@ make -C app/Gateway/sle_data_app push
 `push` 会同步：
 
 - 可执行文件到 `/userdata/gateway/bin/sle_data_app`
-- 配置到 `/userdata/gateway/config/sle_data_app.json`
+- 运行参数使用编译期默认值；如需改 `mac_prefix/mtu/target_active_connections`，修改 `src/sle_app_config.c` 后重新编译。
 
 ## 真实 DTU 1 分钟监听
 
 ```bash
-adb shell 'killall sle_data_app 2>/dev/null || true; sleep 1; rm -f /tmp/sle_app.log /tmp/sle_stack_raw.log; timeout 60 /userdata/gateway/bin/sle_data_app --config /userdata/gateway/config/sle_data_app.json'
+adb shell 'killall sle_data_app 2>/dev/null || true; sleep 1; rm -f /tmp/sle_app.log /tmp/sle_stack_raw.log; timeout 60 /userdata/gateway/bin/sle_data_app --mode real'
 adb pull /tmp/sle_app.log app/Gateway/sle_data_app/test/sle_app.log
 python3 app/Gateway/sle_data_app/test/analyze_log.py app/Gateway/sle_data_app/test/sle_app.log
 ```
 
 期望：
 
-- 三台目标 DTU 都进入 `READY`。
+- 两路 root 都进入 `READY`，日志包含 `tree=DT` 和 `tree=ST`。
 - 终端 stderr 能看到 `[SLE][STATUS]`、`[SLE][TABLE]`、`[SLE][TIMING]` 和 `[SLE][RX]` 镜像。
 - `/tmp/sle_app.log` 持续写入三台设备的 `[SLE][RX]`。
 - `/tmp/sle_stack_raw.log` 保存 SDK stdout 原始日志。
@@ -52,17 +52,17 @@ python3 app/Gateway/sle_data_app/test/analyze_log.py app/Gateway/sle_data_app/te
 
 ### 单连接
 
-- 启动 1 个 DTU。
-- Gateway 能扫描到 MAC 前缀匹配 `mac_prefix` 的设备。
+- 启动 1 个 root。
+- Gateway 能扫描到 MAC 前缀匹配 `mac_prefix=0x0200` 且广播 LTV 厂商字段为 `DT/ST + ROOT` 的设备。
 - 完成 connect、pair、MTU、服务发现。
 - 进入 `READY` 后持续输出 `[SLE][RX]`。
 
-### 一对三稳定连接
+### 两路 root 稳定连接
 
-- `target_active_connections=3`。
-- 三个不同 MAC 分配到独立 `server_index`。
-- 第三个进入 `READY` 后连接表保持 3 个 active。
-- 三台设备的 RX 不串到其他 `server_index`。
+- `target_active_connections=2`。
+- `DT` 和 `ST` 两种 root 分配到独立 `server_index`。
+- 两路进入 `READY` 后连接表保持 2 个 active。
+- 两路设备的 RX 不串到其他 `server_index`。
 
 ### 断开重连
 

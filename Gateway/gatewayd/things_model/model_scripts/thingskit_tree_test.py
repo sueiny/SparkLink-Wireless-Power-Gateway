@@ -47,9 +47,7 @@ DEVICE_DTU_MAP = {
     "METER_006": "DTU_006",
     "METER_007": "DTU_007",
     "ENV_001": "DTU_008",
-    "ENV_002": "DTU_009",
     "RELAY_001": "DTU_010",
-    "RELAY_002": "DTU_011",
 }
 
 # 电表二叉树
@@ -66,7 +64,7 @@ METER_TREE = {
 # DTU拓扑树（parent_mac, child_macs）
 GW_MAC = "00:11:22:33:44:55"
 DTU_TOPOLOGY = {
-    "DTU_001": {"parent": GW_MAC, "children": "AA:BB:CC:DD:02:01,AA:BB:CC:DD:03:01"},
+    "DTU_001": {"parent": GW_MAC, "children": "AA:BB:CC:DD:02:01,AA:BB:CC:DD:03:01,AA:BB:CC:DD:08:01,AA:BB:CC:DD:10:01"},
     "DTU_002": {"parent": "AA:BB:CC:DD:01:01", "children": "AA:BB:CC:DD:04:01,AA:BB:CC:DD:05:01"},
     "DTU_003": {"parent": "AA:BB:CC:DD:01:01", "children": "AA:BB:CC:DD:06:01,AA:BB:CC:DD:07:01"},
     "DTU_004": {"parent": "AA:BB:CC:DD:02:01", "children": ""},
@@ -74,9 +72,7 @@ DTU_TOPOLOGY = {
     "DTU_006": {"parent": "AA:BB:CC:DD:03:01", "children": ""},
     "DTU_007": {"parent": "AA:BB:CC:DD:03:01", "children": ""},
     "DTU_008": {"parent": GW_MAC, "children": ""},
-    "DTU_009": {"parent": GW_MAC, "children": ""},
     "DTU_010": {"parent": GW_MAC, "children": ""},
-    "DTU_011": {"parent": GW_MAC, "children": ""},
 }
 
 

@@ -1,5 +1,10 @@
 # Gateway 新物模型设计
 
+> Status: Historical model design and migration reference.
+> Authority: 仅用于理解旧物模型方案和迁移背景。
+> Superseded by: [things_model_v2.md](things_model_v2.md) and active `gatewayd/things_model/*.json`.
+> Last verified against: current `gateway_config.json` not fully revalidated; retained as historical reference on 2026-06-28.
+
 ## 1. 设计原则
 
 - **统一使用数字ID**：DTU节点和设备均使用 1-255 的数字ID标识，不再使用MAC地址

@@ -7,6 +7,7 @@
 
 namespace gateway::datasource {
 class IpcCmdSender;
+class SleDataSource;
 } // namespace gateway::datasource
 
 namespace gateway::command {
@@ -17,7 +18,8 @@ namespace gateway::command {
 class CommandExecutor {
 public:
     // ipc_cmd_sender: 可选，nullptr 时走模拟路径。
-    explicit CommandExecutor(datasource::IpcCmdSender *ipc_cmd_sender = nullptr);
+    explicit CommandExecutor(datasource::IpcCmdSender *ipc_cmd_sender = nullptr,
+                             datasource::SleDataSource *sle_data_source = nullptr);
 
     // 返回 OK/UNSUPPORTED 等结构化结果。
     CommandResult execute(const CommandRequest &request, const config::AppConfig &config) const;
@@ -35,6 +37,7 @@ private:
     int findDtuIdForDevice(const CommandRequest &request, const config::AppConfig &config) const;
 
     datasource::IpcCmdSender *ipc_cmd_sender_;
+    datasource::SleDataSource *sle_data_source_;
     mutable uint16_t next_downlink_seq_ = 1;
 };
 

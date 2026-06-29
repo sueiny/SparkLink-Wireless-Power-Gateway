@@ -16,13 +16,13 @@
       "productId": "env_sensor",
       "productName": "温湿度变送器",
       "modelFile": "env_sensor_model.json",
-      "devices": ["ENV_001", "ENV_002"]
+      "devices": ["ENV_001"]
     },
     {
       "productId": "relay_device",
       "productName": "继电器",
       "modelFile": "relay_device_model.json",
-      "devices": ["RELAY_001", "RELAY_002"]
+      "devices": ["RELAY_001"]
     },
     {
       "productId": "dtu_node",
@@ -30,7 +30,7 @@
       "modelFile": "dtu_node_model.json",
       "devices": [
         "DTU_001", "DTU_002", "DTU_003", "DTU_004", "DTU_005", "DTU_006",
-        "DTU_007", "DTU_008", "DTU_009", "DTU_010", "DTU_011",
+        "DTU_007", "DTU_008", "DTU_010",
         "DTU_012", "DTU_013", "DTU_014", "DTU_015", "DTU_016", "DTU_017",
         "DTU_018", "DTU_019", "DTU_020", "DTU_021", "DTU_022", "DTU_023",
         "DTU_024", "DTU_025", "DTU_026", "DTU_027", "DTU_028", "DTU_029",

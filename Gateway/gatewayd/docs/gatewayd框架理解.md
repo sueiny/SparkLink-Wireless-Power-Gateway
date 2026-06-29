@@ -8,6 +8,11 @@ tags:
 
 # gatewayd 框架理解
 
+> Status: Current architecture note.
+> Authority: `gatewayd` 主流程、模块清单、线程队列和数据/命令链路的框架入口。
+> Superseded by: None.
+> Last verified against: doc status reviewed on 2026-06-28; recheck source before architecture-sensitive changes.
+
 ## 项目中用在哪里
 
 `gatewayd` 是 RK3506 网关主进程，负责把 SLE/模拟数据转成 ThingsKit MQTT 上报，并处理云端命令。它和 `sle_data_app` 是两个独立进程：

@@ -37,7 +37,7 @@ void modbus_sim_init(int server_count);
 /*
  * 为指定 server_index 生成一帧仿真 Modbus RTU 响应。
  * tick: 全局 tick 计数（每秒 +1）。
- * server_index: 连接表索引（0-7）。
+ * server_index: 连接表索引（当前 mock 使用 0-8）。
  * modbus_type: 设备类型（2=电表, 3=温湿度, 4=继电器）。
  * out_buf: 输出缓冲区，至少 MODBUS_FRAME_MAX_LEN 字节。
  * out_len: 输出帧实际长度。

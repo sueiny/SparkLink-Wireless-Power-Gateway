@@ -8,8 +8,6 @@
 namespace gateway::codec {
 namespace {
 
-constexpr size_t kMinDownlinkPayloadLen = 13; // Matches the currently verified meter downlink size.
-
 uint16_t crc16Modbus(const uint8_t *data, size_t len)
 {
     uint16_t crc = 0xFFFF;
@@ -23,11 +21,6 @@ uint16_t crc16Modbus(const uint8_t *data, size_t len)
         }
     }
     return crc;
-}
-
-uint8_t modbusTypeFor(const model::DeviceInfo &device)
-{
-    return static_cast<uint8_t>(device.modbus_type > 0 ? device.modbus_type : 0);
 }
 
 uint8_t modbusAddrFor(const model::DeviceInfo &device)
@@ -103,18 +96,7 @@ bool buildStFrame(uint16_t root_node_id,
                   SleDownlinkFrame *out,
                   std::string *error)
 {
-    std::vector<uint8_t> framed_payload = payload;
-    if (framed_payload.size() < kMinDownlinkPayloadLen) {
-        /*
-         * Current DTU RUN firmware reliably prints meter downlinks whose ST
-         * payload is 13 bytes. Shorter relay payloads can be acknowledged by
-         * SSAP but not appear on UART0. Padding is outside modbus_len, so the
-         * Modbus RTU body remains unchanged for downstream parsers.
-         */
-        framed_payload.resize(kMinDownlinkPayloadLen, 0);
-    }
-
-    if (framed_payload.size() > SLE_FRAME_MAX_PAYLOAD) {
+    if (payload.size() > SLE_FRAME_MAX_PAYLOAD) {
         if (error)
             *error = "payload too large for ST frame";
         return false;
@@ -126,7 +108,7 @@ bool buildStFrame(uint16_t root_node_id,
     out->root_node_id = root_node_id;
     out->dst_node_id = dst_node_id;
     out->frame.clear();
-    out->frame.reserve(SLE_FRAME_HEADER_LEN + framed_payload.size());
+    out->frame.reserve(SLE_FRAME_HEADER_LEN + payload.size());
     out->frame.push_back(SLE_FRAME_MAGIC_0);
     out->frame.push_back(SLE_FRAME_MAGIC_1);
     out->frame.push_back(SLE_FRAME_VERSION);
@@ -135,8 +117,8 @@ bool buildStFrame(uint16_t root_node_id,
     appendU16LE(&out->frame, 0);
     appendU16LE(&out->frame, dst_node_id);
     appendU16LE(&out->frame, seq);
-    appendU16LE(&out->frame, static_cast<uint16_t>(framed_payload.size()));
-    out->frame.insert(out->frame.end(), framed_payload.begin(), framed_payload.end());
+    appendU16LE(&out->frame, static_cast<uint16_t>(payload.size()));
+    out->frame.insert(out->frame.end(), payload.begin(), payload.end());
     return true;
 }
 
@@ -172,18 +154,18 @@ bool buildSetRelayDownlinkFrame(const model::DeviceInfo &device,
     if (rtu.empty())
         return false;
 
-    const uint8_t modbus_type = modbusTypeFor(device);
-    std::vector<uint8_t> payload;
-    payload.reserve(2 + rtu.size());
-    payload.push_back(modbus_type);
-    payload.push_back(static_cast<uint8_t>(rtu.size()));
-    payload.insert(payload.end(), rtu.begin(), rtu.end());
+    const uint16_t target_node_id = static_cast<uint16_t>(device.dtu_id);
+    if (target_node_id == 0) {
+        if (error)
+            *error = "target DTU id missing";
+        return false;
+    }
 
-    // ST transport only targets the Root. The complete Modbus RTU control
-    // payload is still preserved; tree routing after Root is outside gatewayd.
-    const bool ok = buildStFrame(root_node_id, root_node_id, seq, payload, out, error);
+    // root_node_id selects the SLE root connection; ST dst_node_id targets the
+    // DTU currently mounting the external device. DATA payload is pure RTU.
+    const bool ok = buildStFrame(root_node_id, target_node_id, seq, rtu, out, error);
     if (ok && out)
-        out->target_node_id = static_cast<uint16_t>(device.dtu_id);
+        out->target_node_id = target_node_id;
     return ok;
 }
 

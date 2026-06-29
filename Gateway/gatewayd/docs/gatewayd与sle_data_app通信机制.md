@@ -1,5 +1,10 @@
 # gatewayd 与 sle_data_app 通信机制
 
+> Status: Current IPC reference.
+> Authority: `gatewayd` 与 `sle_data_app` 的数据 IPC、命令 IPC、abstract socket 和 raw ST bridge 以本文为入口。
+> Superseded by: None.
+> Last verified against: `gatewayd/config/gateway_config.json`, `src/command/command_executor.cpp`, `sle_data_app/src/sle_cmd_handler.c` on 2026-06-28.
+
 ## 1. 总览
 
 `gatewayd` 和 `sle_data_app` 是两个独立进程，当前通过两个 Unix Domain Socket 通道通信：
@@ -15,8 +20,7 @@
 "sle": {
   "enable": true,
   "data_socket": "/var/run/gateway/sle_data.sock",
-  "cmd_socket": "/var/run/gateway/sle_cmd.sock",
-  "roots": [{"node_id": 1}, {"node_id": 12}]
+  "cmd_socket": "/var/run/gateway/sle_cmd.sock"
 }
 ```
 
@@ -24,8 +28,8 @@
 
 - `sle.enable=true` 时，`gatewayd` 使用 `SleDataSource + SleIpcWorker` 替代 `MockDataSource`。
 - 上行数据走批量 IPC，再进入 `telemetry_queue_`，由 `PublishManager` 上报 ThingsKit。
-- 下行命令从 ThingsKit MQTT 进入 `CommandManager`，再通过 `IpcCmdSender` 发到 `sle_data_app`。
-- `sle_data_app` 的命令执行侧当前仍是 Mock：收到命令后返回模拟成功，不真正调用 SLE SDK 写设备。
+- 下行 `set_relay` 从 ThingsKit MQTT 进入 `CommandManager`，由 `gatewayd` 构造 Modbus RTU 和完整 ST DATA 帧，再通过 `IpcCmdSender` 发到 `sle_data_app`。
+- `sle_data_app` 命令侧当前是 raw ST bridge：只处理 `CMD_METHOD_RAW_ST_DOWNLINK=100`，校验后调用 `sle_manager_write_st_frame()` 写入目标 root；非 raw ST method 返回 unsupported。
 
 ## 2. 进程启动和模块装配
 
@@ -64,7 +68,7 @@ CommandManager   处理云端下行命令
 - `app/Gateway/sle_data_app/src/ipc_sender.c`：数据上行客户端，首次发送时连接 `gatewayd`。
 - `app/Gateway/sle_data_app/src/ipc_cmd_receiver.c`：命令下行服务端，独立线程监听 `gatewayd` 命令。
 - `app/Gateway/sle_data_app/src/notify_printer.c`：SLE/mock 回调和数据 IPC 之间的缓冲层。
-- `app/Gateway/sle_data_app/src/sle_cmd_handler.c`：命令处理回调，当前为 Mock 实现。
+- `app/Gateway/sle_data_app/src/sle_cmd_handler.c`：raw ST 下行桥接，校验 IPC meta 和 ST 头后写入 SLE。
 
 启动顺序：
 
@@ -156,7 +160,7 @@ SLE notify/mock data
 限制：
 
 - `gatewayd` 接收侧拒绝 `frame_len == 0`。
-- `gatewayd` 接收侧拒绝 `frame_len > 256`。
+- `gatewayd` 接收侧拒绝 `frame_len > 1024`。
 - `sle_data_app` 支持最多 64 帧批量发送，批量发送只是连续写入多组 `len + body`，协议上仍是一帧一帧读取。
 
 ### 4.3 sle_data_app 发送侧
@@ -198,9 +202,11 @@ if batch 非空:
 - 成功连接后读取 `2B len + body`。
 - 解析 SLE ST 帧头。
 - 根据 `frame_type` 分派：
-  - `HEARTBEAT`：生成 DTU 节点状态和拓扑遥测。
-  - `DATA`：解析 Modbus RTU，生成外接设备或 DTU 节点遥测。
-  - `TOPO_SUMMARY`：更新 `RouteTable`，不直接产生遥测。
+  - `DATA(0x02)`：解析 Modbus RTU，按 `src_node_id + 0x06` 动态映射生成外接设备遥测。
+  - `DTU_NETWORK_TOPOLOGY(0x05)`：更新 root_report DTU 在线快照和 `RouteTable`。
+  - `EXTERNAL_DEVICE_MAP(0x06)`：更新外接设备当前挂载映射。
+
+`HEARTBEAT(0x01)`、`TOPO_SUMMARY(0x03)`、`DEPTH_UPDATE(0x04)` 只保留为 DTU SLE Tree 内部协议或历史测试输入，不作为当前 gateway-root 主链路验收依据。协议权威说明见 [ST帧对接规定.md](ST帧对接规定.md)。
 
 ### 4.5 SLE ST 帧格式
 
@@ -223,20 +229,17 @@ if batch 非空:
 
 | 值 | 名称 | gatewayd 行为 |
 |----|------|---------------|
-| `1` | `HEARTBEAT` | 上报 DTU 节点状态、角色、拓扑 |
-| `2` | `DATA` | 解析 Modbus RTU，生成设备遥测 |
-| `3` | `TOPO_SUMMARY` | 更新路由表 |
-| `4` | `DEPTH_UPDATE` | 常量已定义，当前未处理 |
+| `2` | `DATA` | payload 是纯 Modbus RTU；按 `src_node_id + 0x06` 映射生成外设遥测 |
+| `5` | `DTU_TOPOLOGY` | 更新 root_report DTU 在线快照 |
+| `6` | `EXTERNAL_MAP` | 更新外接设备当前挂载映射 |
 
 `DATA` payload 格式：
 
 ```text
-[0]   modbus_type
-[1]   modbus_len
-[2-N] modbus_rtu
+[0-N] modbus_rtu
 ```
 
-`modbus_type` 当前约定：
+`modbus_type` 不再在 DATA payload 中携带。gatewayd 通过 ST `src_node_id` 找当前 0x06 映射，再从 `gateway_config.json` 外设 inventory 读取：
 
 | 值 | 设备类型 |
 |----|----------|
@@ -266,22 +269,19 @@ ThingsKit MQTT command
 
 ### 5.2 gatewayd 命令映射
 
-`CommandExecutor` 会先把云端 `method` 映射成 IPC 命令枚举：
+`CommandExecutor` 目前只把真实下发的 `set_relay` 转换为 raw ST：
 
 | 云端 method | IPC method | 说明 |
 |-------------|------------|------|
-| `set_relay` | `CMD_METHOD_SET_RELAY = 1` | 继电器控制 |
-| `set_mode` | `CMD_METHOD_SET_MODE = 2` | 控制模式 |
-| `set_collect_cycle` | `CMD_METHOD_SET_COLLECT_CYCLE = 3` | 采集周期 |
-| `trigger_collect` | `CMD_METHOD_TRIGGER_COLLECT = 4` | 触发采集 |
-| `reboot` | `CMD_METHOD_REBOOT = 5` | 重启 DTU |
+| `set_relay` | `CMD_METHOD_RAW_ST_DOWNLINK = 100` | `gatewayd` 根据物模型、动态路由和 Modbus 语义构造完整 ST DATA 帧，`sle_data_app` 原样写 SLE。 |
+| 其他 method | 不走 raw ST；按当前代码保留模拟/unsupported 行为 | 非 raw ST method 即使进入 `sle_data_app`，也会明确返回 unsupported。 |
 
 目标 DTU 选择规则：
 
-- 如果目标是 DTU 节点，直接使用该 DTU 的 `node_id`。
-- 如果目标是外接设备，使用配置中的 `dtu_id` 找到其挂载 DTU。
-- 如果找不到 DTU，回退到 `executeSimulated()`。
+- `topology.source=root_report` 时，外接设备路由来自当前有效 `0x06` 映射和 `0x05` root 拓扑；`gatewayd` 解析出 `root_id` 和 `target_dtu_id`。
+- `topology.source=static_json` 测试模式才使用 JSON 静态 `dtu_id/parent_id` 推导 root。
 - 如果目标是网关自身，不走 IPC，直接走模拟执行。
+- 如果不是当前已真实化的 `set_relay`，按 `CommandExecutor::executeSimulated()` 或 unsupported 处理。
 
 ### 5.3 命令 IPC 外层帧
 
@@ -308,9 +308,19 @@ ThingsKit MQTT command
 说明：
 
 - `seq` 由 `gatewayd` 递增生成，用于匹配响应。
-- `param_data` 当前是云端 `params` JSON 字符串。
-- `param_len` 最大 256 字节。
+- raw ST 下行的 `param_data` 为 `root_id + dst_node_id + st_frame_len + st_frame`。
+- 非 raw ST 命令的 `param_data` 仍可能是旧 JSON 参数形态，但 `sle_data_app` 当前不执行这些 method。
+- `param_len` 最大 1030 字节；RAW_ST_DOWNLINK 为 6 字节元数据 + 最大 1024 字节 ST 帧。
 - `IpcCmdSender` 写完请求后同步等待响应，当前超时为 3000ms。
+
+raw ST `param_data`：
+
+```text
+[0-1] root_id       2B little-endian，用于选择 SLE root 连接
+[2-3] dst_node_id   2B little-endian，必须等于 ST 头 dst_node_id
+[4-5] st_frame_len  2B little-endian
+[6-N] st_frame      完整 ST DATA 帧
+```
 
 ### 5.5 命令响应帧
 
@@ -336,7 +346,7 @@ ThingsKit MQTT command
 `data` 当前约定为 JSON，例如：
 
 ```json
-{"result":1,"message":"relay set (mock)"}
+{"result":1,"message":"raw ST forwarded","root_id":1,"dst_node_id":9,"st_len":21}
 ```
 
 ## 6. 当前能力边界
@@ -344,10 +354,10 @@ ThingsKit MQTT command
 | 项目 | 当前状态 |
 |------|----------|
 | 数据 IPC | 已接通，支持批量上送 SLE ST 帧 |
-| SLE ST 帧解析 | 已支持 `HEARTBEAT`、`DATA`、`TOPO_SUMMARY` |
+| SLE ST 帧解析 | 当前 gateway-root 主链路支持 `DATA(0x02)`、`DTU_NETWORK_TOPOLOGY(0x05)`、`EXTERNAL_DEVICE_MAP(0x06)`；旧 `HEARTBEAT/TOPO_SUMMARY/DEPTH_UPDATE` 只作内部/历史参考 |
 | Modbus 解析 | 已由 `modbus_parser.cpp` 转换成 `TelemetryData` |
 | 命令 IPC | 已接通，支持请求/响应同步匹配 |
-| 命令执行 | `sle_data_app` 侧仍是 Mock，不真正调用 SLE SDK |
+| 命令执行 | `set_relay` 已走 `gatewayd` 封装 raw ST + `sle_data_app` SLE write；非 raw ST 业务 method 仍未真实执行 |
 | Socket 重连 | 数据通道由 `sle_data_app` 首次发送/失败后重连；`gatewayd` 断连后重新 accept |
 | 告警事件 | 不在当前 IPC 主流程内，当前主流程仍是遥测和命令 |
 
@@ -411,5 +421,4 @@ adb shell "grep -E 'CMD|command|rpc|response' /userdata/gateway/data/log/gateway
 | notify 队列和批量发送 | `app/Gateway/sle_data_app/src/notify_printer.c` |
 | 命令 IPC 服务端 | `app/Gateway/sle_data_app/src/ipc_cmd_receiver.c` |
 | 命令协议定义 | `app/Gateway/sle_data_app/inc/ipc_cmd_protocol.h` |
-| 命令处理 Mock | `app/Gateway/sle_data_app/src/sle_cmd_handler.c` |
-
+| raw ST 下行桥接 | `app/Gateway/sle_data_app/src/sle_cmd_handler.c` |

@@ -2,8 +2,8 @@
 """Listen to DTU root COM output and verify gateway downlink ST commands.
 
 Windows usage:
-    py -3 dtu_downlink_command_tester.py COM23 --expect meter-trip --expect-root-id 1
-    py -3 dtu_downlink_command_tester.py COM19 COM23 COM36 --expect relay-open --expect-root-id 1
+    py -3 dtu_downlink_command_tester.py COM23 --expect meter-trip --expect-dtu-id 1
+    py -3 dtu_downlink_command_tester.py COM19 COM23 COM36 --expect relay-open --expect-dtu-id 9
 """
 
 from __future__ import annotations
@@ -22,7 +22,7 @@ except ImportError as exc:  # pragma: no cover - environment check
 
 
 SLE_HEADER_LEN = 13
-SLE_FRAME_MAX_PAYLOAD = 243
+SLE_FRAME_MAX_PAYLOAD = 1011
 
 
 @dataclass
@@ -30,7 +30,6 @@ class ParsedFrame:
     port: str
     raw_hex: str
     dst_node_id: int
-    modbus_type: int
     modbus_rtu: bytes
     crc_ok: bool
 
@@ -89,33 +88,27 @@ def parse_st_frame(port: str, raw: bytes) -> Optional[ParsedFrame]:
 
     frame = raw[:total_len]
     payload = frame[SLE_HEADER_LEN:]
-    if len(payload) < 2:
-        return None
-    modbus_type = payload[0]
-    modbus_len = payload[1]
-    if modbus_len == 0 or len(payload) < 2 + modbus_len:
+    if len(payload) < 4:
         return None
 
-    modbus_rtu = payload[2:2 + modbus_len]
+    modbus_rtu = payload
     return ParsedFrame(
         port=port,
         raw_hex=frame.hex().upper(),
         dst_node_id=u16le(frame, 7),
-        modbus_type=modbus_type,
         modbus_rtu=modbus_rtu,
         crc_ok=modbus_crc_ok(modbus_rtu),
     )
 
 
 def frame_matches(frame: ParsedFrame, args: argparse.Namespace) -> bool:
-    if frame.dst_node_id != args.expect_root_id or not frame.crc_ok:
+    if frame.dst_node_id != args.expect_dtu_id or not frame.crc_ok:
         return False
 
     rtu = frame.modbus_rtu
     if args.expect == "meter-trip":
         return (
-            frame.modbus_type == 2
-            and len(rtu) >= 11
+            len(rtu) >= 11
             and rtu[1] == 0x10
             and rtu[2:4] == b"\x00\x10"
             and rtu[7:9] == b"\xAA\xAA"
@@ -124,8 +117,7 @@ def frame_matches(frame: ParsedFrame, args: argparse.Namespace) -> bool:
     if args.expect in {"relay-open", "relay-close"}:
         expected_value = b"\x00\x00" if args.expect == "relay-open" else b"\xFF\x00"
         return (
-            frame.modbus_type == 4
-            and len(rtu) >= 8
+            len(rtu) >= 8
             and rtu[1] == 0x05
             and rtu[2:4] == bytes([0x00, args.channel & 0xFF])
             and rtu[4:6] == expected_value
@@ -159,7 +151,6 @@ def listen(args: argparse.Namespace) -> dict:
                         seen_frames.append({
                             "port": frame.port,
                             "dst_node_id": frame.dst_node_id,
-                            "modbus_type": frame.modbus_type,
                             "modbus_rtu_hex": frame.modbus_rtu.hex().upper(),
                             "crc_ok": frame.crc_ok,
                             "raw_hex": frame.raw_hex,
@@ -176,7 +167,7 @@ def listen(args: argparse.Namespace) -> dict:
     result = {
         "matched": matched is not None,
         "expect": args.expect,
-        "expect_root_id": args.expect_root_id,
+        "expect_dtu_id": args.expect_dtu_id,
         "channel": args.channel,
         "ports": args.ports,
         "frames_seen": frames_seen,
@@ -197,17 +188,22 @@ def main() -> int:
     parser.add_argument("ports", nargs="+", help="COM ports, e.g. COM23 COM36")
     parser.add_argument("--expect", required=True,
                         choices=["meter-trip", "relay-open", "relay-close"])
+    parser.add_argument("--expect-dtu-id", type=int, default=None,
+                        help="Expected ST dst_node_id, i.e. target DTU node id")
     parser.add_argument("--expect-root-id", type=int, default=None,
-                        help="Expected ST dst_node_id, i.e. the root node that receives the complete downlink frame")
+                        help="Deprecated alias for --expect-dtu-id")
     parser.add_argument("--dtu-id", type=int, default=None,
-                        help="Deprecated alias for --expect-root-id")
+                        help="Deprecated alias for --expect-dtu-id")
     parser.add_argument("--channel", type=int, default=0)
     parser.add_argument("--duration", type=float, default=60.0)
     args = parser.parse_args()
-    if args.expect_root_id is None:
-        if args.dtu_id is None:
-            parser.error("--expect-root-id is required")
-        args.expect_root_id = args.dtu_id
+    if args.expect_dtu_id is None:
+        if args.dtu_id is not None:
+            args.expect_dtu_id = args.dtu_id
+        elif args.expect_root_id is not None:
+            args.expect_dtu_id = args.expect_root_id
+        else:
+            parser.error("--expect-dtu-id is required")
 
     result = listen(args)
     print(json.dumps(result, ensure_ascii=False, indent=2))

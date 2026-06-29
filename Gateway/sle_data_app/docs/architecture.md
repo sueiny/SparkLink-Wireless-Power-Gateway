@@ -2,13 +2,13 @@
 
 ## 进程与线程
 
-`sle_data_app` 是 Gateway 侧独立 SLE client 测试进程，不接入 `gatewayd`。主线程负责加载配置、初始化组件、等待退出信号和释放资源。
+`sle_data_app` 是 Gateway 侧独立 SLE client 进程，通过 Unix Socket 接入 `gatewayd`。主线程负责初始化编译期默认配置、启动组件、等待退出信号和释放资源；当前不再支持运行时 JSON 配置加载。
 
 运行时主要线程如下：
 
 ```text
 main thread
-  -> load config
+  -> init compile-time config
   -> start notify_printer
   -> sle_manager_init()
   -> start maintenance manager
@@ -36,11 +36,11 @@ SDK 回调不直接格式化大量 RX 数据。notify/indication 回调只做 `c
 
 ## 模块职责
 
-- `main.c`: 配置路径解析、stdout 重定向、信号等待、长期 worker 生命周期调度。
+- `main.c`: 模式参数解析、stdout 重定向、信号等待、长期 worker 生命周期调度。
 - `sle_multi_client.c`: SLE enable、扫描、候选缓存、连接、配对、MTU、服务发现、notify 入口和连接维护 tick。
 - `server_connections.c`: 按稳定 MAC 维护 `server_index`，按运行期 `conn_id` 找回连接槽。
 - `notify_printer.c`: 有界队列 + worker 线程，异步输出 `[SLE][RX]`。
-- `sle_app_config.c`: JSON 轻量配置解析、默认值和参数校验。
+- `sle_app_config.c`: 编译期默认值和配置打印。
 
 ## 输出路径
 
@@ -64,7 +64,13 @@ terminal / stderr
 
 连接身份以 MAC 地址为准，`server_index` 是 app 内部稳定槽位，`conn_id` 是 SDK 每次连接后分配的运行期句柄。
 
-扫描命中目标后先进入候选缓存。候选缓存记录 MAC、RSSI、最近出现时间、失败降权时间和连接耗时起点。调度器从候选中选择一个设备发起连接。
+扫描命中目标后先进入候选缓存。当前先按广播 MAC 前两字节 `02:00` 过滤，再解析 LTV 厂商字段：
+
+```text
+0B FF 53 54/44 54 01 role node_id_lo node_id_hi free_slots root_lo root_hi depth
+```
+
+只有 magic 为 `ST` 或 `DT` 且 `role=1(ROOT)` 的广播会进入候选。候选缓存记录 MAC、RSSI、广播 root_id、树类型、最近出现时间、失败降权时间和连接耗时起点。调度器从候选中选择一个设备发起连接。
 
 当前策略仍然保持单 link-create：
 

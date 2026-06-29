@@ -59,13 +59,17 @@
 #define SLE_DISCONNECT_REASON_DISCOVERY_TIMEOUT     0xE004
 #define SLE_DISCONNECT_REASON_ACTIVE_LIMIT          0xE005
 #define SLE_DOWNLINK_BUFFER_SLOTS                  4
-#define SLE_DOWNLINK_MAX_LEN                       256
+#define SLE_DOWNLINK_MAX_LEN                       1024
 #define SLE_DOWNLINK_WRITE_TIMEOUT_MS              3000
 #define SLE_DOWNLINK_ROUTE_WAIT_MS                 2500
 #define SLE_DOWNLINK_ROUTE_WAIT_STEP_US            100000
 #define SLE_DOWNLINK_POST_WRITE_GAP_US             1000000
 #define SLE_ST_HEADER_LEN                          13
 #define SLE_ROLE_ROOT                              1
+#define SLE_ADV_TYPE_VENDOR                        0xFF
+#define SLE_ROOT_META_LEN                          0x0B
+#define SLE_ROOT_META_VALUE_LEN                    10
+#define SLE_ROOT_META_VERSION                      0x01
 
 /* 日志控制 */
 #define SLE_VERBOSE_LOG 0
@@ -101,6 +105,11 @@ typedef struct {
     bool used;
     sle_addr_t addr;
     int8_t rssi;
+    char tree_magic[3];
+    uint16_t adv_node_id;
+    uint16_t adv_root_id;
+    uint8_t adv_free_slots;
+    uint8_t adv_depth;
     uint64_t first_seen_ms;
     uint64_t last_seen_ms;
     uint64_t failed_until_ms;
@@ -113,9 +122,18 @@ typedef struct {
     int selected_index;
     int ready_count;
     bool target_known;
-    bool selected_by_addr_hint;
     sle_server_connection_state_t target_state;
 } sle_downlink_route_t;
+
+typedef struct {
+    bool valid;
+    char magic[3];
+    uint8_t role;
+    uint16_t node_id;
+    uint8_t free_slots;
+    uint16_t root_id;
+    uint8_t depth;
+} sle_root_adv_meta_t;
 
 static sle_connect_candidate_t g_candidates[SLE_DATA_APP_MAX_CONNECTIONS];
 static uint64_t g_first_connect_start_ms;
@@ -189,8 +207,9 @@ static void print_connection_table(void)
         }
         char addr[32] = {0};
         server_connections_addr_to_string(&server.addr, addr, sizeof(addr));
-        fprintf(stderr, "[SLE][TABLE] server_index=%u state=%s conn_id=%u root_id=%u mac=%s rx_count=%u reason=0x%x\n",
-            i, server_connections_state_name(server.state), server.conn_id, server.root_node_id, addr,
+        fprintf(stderr, "[SLE][TABLE] server_index=%u state=%s conn_id=%u tree=%s root_id=%u mac=%s rx_count=%u reason=0x%x\n",
+            i, server_connections_state_name(server.state), server.conn_id,
+            server.tree_magic[0] != '\0' ? server.tree_magic : "--", server.root_node_id, addr,
             server.rx_count, server.disconnect_reason);
     }
     fprintf(stderr, "[SLE][TABLE] end\n");
@@ -270,38 +289,64 @@ static bool addr_equal(const sle_addr_t *a, const sle_addr_t *b)
         memcmp(a->addr, b->addr, sizeof(a->addr)) == 0;
 }
 
-static uint16_t root_id_hint_from_addr(const sle_addr_t *addr)
+static uint16_t route_root_id_for_server(const sle_server_connection_t *server)
 {
-    if (!addr_matches_prefix(addr, g_config.mac_prefix)) {
-        return 0;
-    }
-
-    uint8_t suffix = addr->addr[5];
-    if ((suffix & 0xF0) == 0xA0 && (suffix & 0x0F) != 0) {
-        return (uint16_t)(suffix & 0x0F);
-    }
-    if (suffix > 0 && suffix < 0x80) {
-        return suffix;
-    }
-    return 0;
-}
-
-static uint16_t route_root_id_for_server(const sle_server_connection_t *server, bool *from_addr_hint)
-{
-    if (from_addr_hint != NULL) {
-        *from_addr_hint = false;
-    }
     if (server == NULL) {
         return 0;
     }
-    if (server->root_node_id != 0) {
-        return server->root_node_id;
+    return server->root_node_id;
+}
+
+static bool parse_root_adv_meta(const uint8_t *data, uint8_t data_len, sle_root_adv_meta_t *out)
+{
+    if (out == NULL) {
+        return false;
     }
-    uint16_t hinted = root_id_hint_from_addr(&server->addr);
-    if (hinted != 0 && from_addr_hint != NULL) {
-        *from_addr_hint = true;
+    memset(out, 0, sizeof(*out));
+    if (data == NULL || data_len == 0) {
+        return false;
     }
-    return hinted;
+
+    uint8_t offset = 0;
+    while (offset < data_len) {
+        uint8_t field_len = data[offset++];
+        if (field_len == 0) {
+            continue;
+        }
+        if ((uint16_t)offset + field_len > data_len) {
+            return false;
+        }
+
+        const uint8_t type = data[offset];
+        const uint8_t *value = &data[offset + 1];
+        const uint8_t value_len = (uint8_t)(field_len - 1);
+        offset = (uint8_t)(offset + field_len);
+
+        if (type != SLE_ADV_TYPE_VENDOR || field_len != SLE_ROOT_META_LEN ||
+            value_len != SLE_ROOT_META_VALUE_LEN) {
+            continue;
+        }
+        if (!((value[0] == 'S' && value[1] == 'T') ||
+              (value[0] == 'D' && value[1] == 'T'))) {
+            continue;
+        }
+        if (value[2] != SLE_ROOT_META_VERSION || value[3] != SLE_ROLE_ROOT) {
+            continue;
+        }
+
+        out->valid = true;
+        out->magic[0] = (char)value[0];
+        out->magic[1] = (char)value[1];
+        out->magic[2] = '\0';
+        out->role = value[3];
+        out->node_id = (uint16_t)(value[4] | ((uint16_t)value[5] << 8));
+        out->free_slots = value[6];
+        out->root_id = (uint16_t)(value[7] | ((uint16_t)value[8] << 8));
+        out->depth = value[9];
+        return true;
+    }
+
+    return false;
 }
 
 /* --------------------------------------------------------------------------
@@ -338,9 +383,12 @@ static int find_candidate_slot(uint64_t now)
     return oldest;
 }
 
-static void candidate_update(const sle_addr_t *addr, int8_t rssi, uint64_t now)
+static void candidate_update(const sle_addr_t *addr,
+    int8_t rssi,
+    const sle_root_adv_meta_t *meta,
+    uint64_t now)
 {
-    if (addr == NULL) {
+    if (addr == NULL || meta == NULL || !meta->valid) {
         return;
     }
     int index = find_candidate_by_addr(addr);
@@ -357,6 +405,12 @@ static void candidate_update(const sle_addr_t *addr, int8_t rssi, uint64_t now)
     }
     g_candidates[index].used = true;
     g_candidates[index].rssi = rssi;
+    snprintf(g_candidates[index].tree_magic, sizeof(g_candidates[index].tree_magic),
+        "%s", meta->magic);
+    g_candidates[index].adv_node_id = meta->node_id;
+    g_candidates[index].adv_root_id = meta->root_id;
+    g_candidates[index].adv_free_slots = meta->free_slots;
+    g_candidates[index].adv_depth = meta->depth;
     g_candidates[index].last_seen_ms = now;
 }
 
@@ -388,6 +442,52 @@ static uint64_t candidate_connect_start(const sle_addr_t *addr)
     return index >= 0 ? g_candidates[index].connect_start_ms : 0;
 }
 
+static uint16_t candidate_root_id(const sle_addr_t *addr)
+{
+    int index = find_candidate_by_addr(addr);
+    if (index < 0) {
+        return 0;
+    }
+    return g_candidates[index].adv_root_id != 0 ?
+        g_candidates[index].adv_root_id : g_candidates[index].adv_node_id;
+}
+
+static const char *candidate_tree_magic(const sle_addr_t *addr)
+{
+    int index = find_candidate_by_addr(addr);
+    if (index < 0 || g_candidates[index].tree_magic[0] == '\0') {
+        return NULL;
+    }
+    return g_candidates[index].tree_magic;
+}
+
+static bool server_state_uses_connection_slot(sle_server_connection_state_t state)
+{
+    return state == SLE_SERVER_CONNECTING ||
+        state == SLE_SERVER_CONNECTED ||
+        state == SLE_SERVER_PAIRING ||
+        state == SLE_SERVER_DISCOVERING ||
+        state == SLE_SERVER_READY;
+}
+
+static bool tree_magic_has_active_connection(const char *tree_magic)
+{
+    if (tree_magic == NULL || tree_magic[0] == '\0') {
+        return false;
+    }
+    for (uint8_t i = 0; i < g_config.max_connections; ++i) {
+        sle_server_connection_t server;
+        if (!server_connections_get_server_copy(&g_server_connections, i, &server) || !server.used) {
+            continue;
+        }
+        if (server_state_uses_connection_slot(server.state) &&
+            strcmp(server.tree_magic, tree_magic) == 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
 static bool candidate_is_connectable(int index, uint64_t now)
 {
     if (index < 0 || index >= SLE_DATA_APP_MAX_CONNECTIONS || !g_candidates[index].used) {
@@ -397,6 +497,9 @@ static bool candidate_is_connectable(int index, uint64_t now)
         return false;
     }
     if (g_candidates[index].failed_until_ms > now) {
+        return false;
+    }
+    if (tree_magic_has_active_connection(g_candidates[index].tree_magic)) {
         return false;
     }
 
@@ -435,12 +538,16 @@ static int candidate_choose_best(uint64_t now)
     return best;
 }
 
-static bool seek_result_matches_target(const sle_seek_result_info_t *result)
+static bool seek_result_matches_target(const sle_seek_result_info_t *result, sle_root_adv_meta_t *meta)
 {
     if (result == NULL) {
         return false;
     }
-    return addr_matches_prefix(&result->addr, g_config.mac_prefix);
+    if (!addr_matches_prefix(&result->addr, g_config.mac_prefix)) {
+        return false;
+    }
+
+    return parse_root_adv_meta(result->data, result->data_length, meta);
 }
 
 /* --------------------------------------------------------------------------
@@ -631,6 +738,12 @@ static bool prepare_pending_connect(const sle_addr_t *addr, uint64_t now)
     }
 
     server_connections_mark_connecting(&g_server_connections, server_index, addr);
+    uint16_t adv_root_id = candidate_root_id(addr);
+    const char *tree_magic = candidate_tree_magic(addr);
+    if (adv_root_id != 0 || tree_magic != NULL) {
+        server_connections_set_root_identity(&g_server_connections, server_index,
+            adv_root_id, tree_magic);
+    }
     if (g_config.connecting_timeout_ms > 0) {
         server_connections_set_state_timeout(&g_server_connections, server_index, g_config.connecting_timeout_ms);
     }
@@ -770,6 +883,40 @@ static errcode_t request_connection_param_update(uint16_t conn_id)
     return ret;
 }
 
+static errcode_t set_configured_local_addr(void)
+{
+    if (!g_config.set_local_addr) {
+        return ERRCODE_SLE_SUCCESS;
+    }
+
+    sle_addr_t addr;
+    memset(&addr, 0, sizeof(addr));
+    addr.type = g_config.local_addr_type;
+    memcpy(addr.addr, g_config.local_addr, sizeof(addr.addr));
+
+    errcode_t ret = sle_set_local_addr(&addr);
+    fprintf(stderr, "[SLE][ADDR] set local addr=%02x:%02x:%02x:%02x:%02x:%02x type=%u ret=%d\n",
+        addr.addr[0], addr.addr[1], addr.addr[2],
+        addr.addr[3], addr.addr[4], addr.addr[5],
+        addr.type, ret);
+    return ret;
+}
+
+static void log_current_local_addr(void)
+{
+    sle_addr_t current;
+    memset(&current, 0, sizeof(current));
+    errcode_t ret = sle_get_local_addr(&current);
+    if (ret == ERRCODE_SLE_SUCCESS) {
+        fprintf(stderr, "[SLE][ADDR] current local addr=%02x:%02x:%02x:%02x:%02x:%02x type=%u\n",
+            current.addr[0], current.addr[1], current.addr[2],
+            current.addr[3], current.addr[4], current.addr[5],
+            current.type);
+    } else {
+        fprintf(stderr, "[SLE][ADDR][WARN] get local addr failed ret=%d\n", ret);
+    }
+}
+
 /* SLE 协议栈 enable 后再注册 SSAP client 并启动扫描，贴近已验证样例流程。 */
 static void sle_enable_cb(errcode_t status)
 {
@@ -780,7 +927,13 @@ static void sle_enable_cb(errcode_t status)
     g_sle_enabled = 1;
     SLE_VERBOSE("[SLE] enable success\n");
     set_default_connection_params();
-    errcode_t ret = ssapc_register_client(&g_client_app_uuid, &g_client_id);
+    errcode_t ret = set_configured_local_addr();
+    if (ret != ERRCODE_SLE_SUCCESS) {
+        fprintf(stderr, "[SLE][ERROR] set local addr after enable failed ret=%d\n", ret);
+        return;
+    }
+    log_current_local_addr();
+    ret = ssapc_register_client(&g_client_app_uuid, &g_client_id);
     if (ret != ERRCODE_SLE_SUCCESS) {
         printf("[SLE][ERROR] register ssap client failed ret=%d\n", ret);
         return;
@@ -827,7 +980,8 @@ static void seek_result_cb(sle_seek_result_info_t *result)
     if (result == NULL) {
         return;
     }
-    if (!seek_result_matches_target(result)) {
+    sle_root_adv_meta_t meta;
+    if (!seek_result_matches_target(result, &meta)) {
         return;
     }
     if (!has_active_capacity()) {
@@ -837,8 +991,11 @@ static void seek_result_cb(sle_seek_result_info_t *result)
     uint64_t now = now_ms();
     char addr[32] = {0};
     server_connections_addr_to_string(&result->addr, addr, sizeof(addr));
-    candidate_update(&result->addr, result->rssi, now);
-    SLE_VERBOSE("[SLE][SCAN] candidate addr=%s rssi=%d\n", addr, result->rssi);
+    candidate_update(&result->addr, result->rssi, &meta, now);
+    fprintf(stderr, "[SLE][SCAN] candidate tree=%s root role=%u node_id=%u root_id=%u "
+        "free_slots=%u depth=%u addr=%s rssi=%d\n",
+        meta.magic, meta.role, meta.node_id, meta.root_id, meta.free_slots, meta.depth,
+        addr, result->rssi);
     candidate_try_start_best();
 }
 
@@ -1221,15 +1378,13 @@ static int select_downlink_route(uint16_t root_id, sle_downlink_route_t *route)
             continue;
         }
 
-        bool from_addr_hint = false;
-        uint16_t route_root_id = route_root_id_for_server(&server, &from_addr_hint);
+        uint16_t route_root_id = route_root_id_for_server(&server);
         if (root_id != 0 && route_root_id == root_id) {
             route->target_known = true;
             route->target_state = server.state;
             if (server_ready_for_downlink(&server)) {
                 route->selected = server;
                 route->selected_index = (int)i;
-                route->selected_by_addr_hint = from_addr_hint;
                 return SLE_MANAGER_WRITE_OK;
             }
         }
@@ -1250,11 +1405,6 @@ static int select_downlink_route(uint16_t root_id, sle_downlink_route_t *route)
     }
     if (route->ready_count == 0) {
         return SLE_MANAGER_WRITE_NO_READY_ROOT;
-    }
-    if (route->ready_count == 1 && root_id != 0 && route->selected.root_node_id == 0) {
-        fprintf(stderr, "[CMD][ST-TX][WARN] fallback to only READY root, requested_root=%u server_index=%d\n",
-            root_id, route->selected_index);
-        return SLE_MANAGER_WRITE_OK;
     }
     if (root_id == 0 && route->ready_count == 1) {
         return SLE_MANAGER_WRITE_OK;
@@ -1403,9 +1553,8 @@ int sle_manager_write_st_frame(uint16_t root_id, const uint8_t *data, uint16_t l
     }
 
     uint16_t dst_node_id = (uint16_t)(data[7] | (data[8] << 8));
-    fprintf(stderr, "[CMD][ST-TX] mode=write_req root_id=%u dst_node_id=%u server_index=%d conn_id=%u handle=0x%x len=%u ret=%d route=%s\n",
-        root_id, dst_node_id, route.selected_index, route.selected.conn_id, route.selected.write_handle, len, ret,
-        route.selected_by_addr_hint ? "addr_hint" : "learned");
+    fprintf(stderr, "[CMD][ST-TX] mode=write_req root_id=%u dst_node_id=%u server_index=%d conn_id=%u handle=0x%x len=%u ret=%d route=root_meta\n",
+        root_id, dst_node_id, route.selected_index, route.selected.conn_id, route.selected.write_handle, len, ret);
     if (ret == ERRCODE_SLE_SUCCESS) {
         /*
          * write_cfm means the stack accepted the write, but the current root

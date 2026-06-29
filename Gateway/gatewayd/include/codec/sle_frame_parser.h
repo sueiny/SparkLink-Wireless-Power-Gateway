@@ -11,14 +11,16 @@ constexpr uint8_t  SLE_FRAME_MAGIC_0     = 0x53;  // 'S'
 constexpr uint8_t  SLE_FRAME_MAGIC_1     = 0x54;  // 'T'
 constexpr uint8_t  SLE_FRAME_VERSION     = 0x01;
 constexpr int      SLE_FRAME_HEADER_LEN  = 13;
-constexpr int      SLE_FRAME_MAX_LEN     = 256;
-constexpr int      SLE_FRAME_MAX_PAYLOAD = 243;   // 256 - 13
+constexpr int      SLE_FRAME_MAX_LEN     = 1024;
+constexpr int      SLE_FRAME_MAX_PAYLOAD = SLE_FRAME_MAX_LEN - SLE_FRAME_HEADER_LEN;
 
 // 帧类型
 constexpr uint8_t SLE_FRAME_TYPE_HEARTBEAT    = 1;
 constexpr uint8_t SLE_FRAME_TYPE_DATA         = 2;
 constexpr uint8_t SLE_FRAME_TYPE_TOPO_SUMMARY = 3;
 constexpr uint8_t SLE_FRAME_TYPE_DEPTH_UPDATE = 4;
+constexpr uint8_t SLE_FRAME_TYPE_DTU_TOPOLOGY = 5;
+constexpr uint8_t SLE_FRAME_TYPE_EXTERNAL_MAP = 6;
 
 // 角色 ID
 constexpr uint8_t SLE_ROLE_ROOT    = 1;
@@ -45,11 +47,10 @@ struct SleFrameHeader {
 };
 
 // DATA 帧 payload 解析结果
-// payload 格式: modbus_type(1) + modbus_len(1) + modbus_rtu(N)
+// payload 格式: modbus_rtu(N)，完整 Modbus RTU 帧。
 struct SleDataPayload {
-    uint8_t  modbus_type;    // 2=电表, 3=温湿度, 4=继电器
-    uint8_t  modbus_len;
     const uint8_t *modbus_rtu;  // 指向帧内数据，不拥有内存
+    uint16_t modbus_len;
 };
 
 // TOPO_SUMMARY 帧 payload 解析结果

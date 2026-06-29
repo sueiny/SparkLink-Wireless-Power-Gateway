@@ -27,14 +27,15 @@ struct DtuNodeModel {
     std::vector<uint16_t> child_ids;          // 子节点 ID 列表
 };
 
-// 外接设备配置（V2：用 station_id + dtu_id 替代 MAC）
+// 外接设备配置。root_report 正式模式下，dtu_id 只由 ST 0x06 运行期映射填充；
+// gateway_config.json 只提供 inventory 和 Modbus 元数据。
 struct DeviceInfo {
     std::string device_id;                    // ThingsKit 设备 ID，如 "METER_001"
     std::string product_id;
     std::string name;
     DeviceType type = DeviceType::Gateway;
     int station_id = 0;                       // Modbus 站号 (1-255)
-    int dtu_id = 0;                           // 挂载的 DTU 节点 ID
+    int dtu_id = 0;                           // 运行期挂载 DTU；正式配置不填写
     int modbus_addr = 0;
     int modbus_type = 0;                      // 0x02=电表, 0x03=温湿度, 0x04=继电器
     bool online = true;
@@ -42,7 +43,8 @@ struct DeviceInfo {
     int dtu_node_id = 0;
 };
 
-// DTU 节点配置（V2：ID-based）
+// DTU 节点配置（V2：ID-based）。root_report 正式配置只填写 device_id/type/node_id；
+// parent_id/child_ids 只来自 ST 0x05 或 static_json 测试模式。
 struct DtuDeviceInfo {
     std::string device_id;                    // "DTU_036"
     int node_id = 0;                          // SLE 节点 ID

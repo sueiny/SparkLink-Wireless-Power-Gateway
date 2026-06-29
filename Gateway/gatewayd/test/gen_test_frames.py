@@ -13,11 +13,100 @@ import sys
 SLE_MAGIC = bytes([0x53, 0x54])
 SLE_VERSION = 0x01
 SLE_FRAME_DATA = 2
+SLE_FRAME_DTU_TOPOLOGY = 5
+SLE_FRAME_EXTERNAL_MAP = 6
 SLE_ROLE_ROOT = 1
+SLE_ROLE_LEAF = 3
 
 CONFIG_PATH = os.path.normpath(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "config", "gateway_config.json")
 )
+
+TEST_TOPOLOGY_TEXT_BY_ROOT = {
+    1: """1
+|- 2
+|- 3
+|- 4
+|- 5
+|- 6
+|- 7
+|- 8
+`- 9
+""",
+    10: """10
+|- 11
+|- 12
+|- 13
+|- 14
+|- 15
+|- 16
+|- 17
+|- 18
+|- 19
+|- 20
+|- 21
+|- 22
+|- 23
+|- 24
+|- 25
+|- 26
+|- 27
+|- 28
+|- 29
+|- 30
+|- 31
+|- 32
+|- 33
+|- 34
+|- 35
+|- 36
+|- 37
+|- 38
+|- 39
+|- 40
+|- 41
+|- 42
+|- 43
+|- 44
+|- 45
+|- 46
+|- 47
+|- 48
+|- 49
+|- 50
+|- 51
+|- 52
+|- 53
+|- 54
+|- 55
+|- 56
+|- 57
+|- 58
+|- 59
+|- 60
+|- 61
+|- 62
+|- 63
+|- 64
+|- 65
+|- 66
+|- 67
+|- 68
+`- 69
+""",
+}
+
+TEST_EXTERNAL_DTUS = {
+    "METER_001": 1,
+    "METER_002": 2,
+    "METER_003": 3,
+    "METER_004": 4,
+    "METER_005": 5,
+    "METER_006": 6,
+    "METER_007": 7,
+    "ENV_001": 8,
+    "RELAY_001": 9,
+}
 
 
 def crc16_modbus(data: bytes) -> int:
@@ -80,14 +169,14 @@ def build_relay_response(slave_addr: int, relay_state: int) -> bytes:
     return frame + bytes([crc & 0xFF, (crc >> 8) & 0xFF])
 
 
-def build_sle_frame(src_node_id: int, dst_node_id: int, seq: int,
-                    payload: bytes) -> bytes:
+def build_sle_frame(frame_type: int, src_node_id: int, dst_node_id: int, seq: int,
+                    payload: bytes, src_role: int = SLE_ROLE_ROOT) -> bytes:
     header = bytearray(13)
     header[0] = 0x53
     header[1] = 0x54
     header[2] = SLE_VERSION
-    header[3] = SLE_FRAME_DATA
-    header[4] = SLE_ROLE_ROOT
+    header[3] = frame_type
+    header[4] = src_role
     header[5] = src_node_id & 0xFF
     header[6] = (src_node_id >> 8) & 0xFF
     header[7] = dst_node_id & 0xFF
@@ -99,10 +188,6 @@ def build_sle_frame(src_node_id: int, dst_node_id: int, seq: int,
     return bytes(header) + payload
 
 
-def build_data_payload(modbus_type: int, modbus_rtu: bytes) -> bytes:
-    return bytes([modbus_type, len(modbus_rtu)]) + modbus_rtu
-
-
 def build_sle_ipc_frame(raw_data: bytes) -> dict:
     raw_list = list(raw_data)
     raw_list.extend([0] * (256 - len(raw_list)))
@@ -110,6 +195,33 @@ def build_sle_ipc_frame(raw_data: bytes) -> dict:
         "raw_len": len(raw_data),
         "raw_data": raw_list,
     }
+
+
+def build_topology_frame(seq: int, root_id: int) -> bytes:
+    payload = TEST_TOPOLOGY_TEXT_BY_ROOT[root_id].encode("ascii")
+    return build_sle_frame(
+        SLE_FRAME_DTU_TOPOLOGY,
+        root_id,
+        0x0000,
+        seq,
+        payload,
+        SLE_ROLE_ROOT,
+    )
+
+
+def build_external_map_frame(seq: int) -> bytes:
+    lines = [
+        f"DTU_{dtu_id:03d}-{device_id}"
+        for device_id, dtu_id in sorted(TEST_EXTERNAL_DTUS.items(), key=lambda item: item[1])
+    ]
+    return build_sle_frame(
+        SLE_FRAME_EXTERNAL_MAP,
+        1,
+        0x0000,
+        seq,
+        ("\n".join(lines) + "\n").encode("ascii"),
+        SLE_ROLE_ROOT,
+    )
 
 
 def load_config_devices():
@@ -121,7 +233,7 @@ def load_config_devices():
         if item.get("type") == "dtu_node":
             continue
         device_id = item.get("device_id", "")
-        dtu_id = int(item.get("dtu_id", 0))
+        dtu_id = int(TEST_EXTERNAL_DTUS.get(device_id, 0))
         modbus_type = int(item.get("modbus_type", 0))
         modbus_addr = int(item.get("modbus_addr", 1))
         if not device_id or dtu_id <= 0 or modbus_type <= 0:
@@ -145,6 +257,18 @@ def main():
             profile = sys.argv[2]
         else:
             raise SystemExit("unsupported arguments")
+
+    for root_id in sorted(TEST_TOPOLOGY_TEXT_BY_ROOT):
+        ipc_frame = build_sle_ipc_frame(build_topology_frame(seq, root_id))
+        ipc_frame["kind"] = "topology"
+        ipc_frame["root_id"] = root_id
+        frames.append(ipc_frame)
+        seq += 1
+    ipc_frame = build_sle_ipc_frame(build_external_map_frame(seq))
+    ipc_frame["kind"] = "external_map"
+    ipc_frame["root_id"] = 1
+    frames.append(ipc_frame)
+    seq += 1
 
     for device_id, dtu_id, modbus_type, modbus_addr in load_config_devices():
         if modbus_type == 2:
@@ -188,13 +312,13 @@ def main():
         else:
             continue
 
-        payload = build_data_payload(modbus_type, modbus_rtu)
-        raw_data = build_sle_frame(dtu_id, 0x0000, seq, payload)
+        raw_data = build_sle_frame(SLE_FRAME_DATA, dtu_id, 0x0000, seq, modbus_rtu, SLE_ROLE_LEAF)
         seq += 1
 
         ipc_frame = build_sle_ipc_frame(raw_data)
         ipc_frame["device_id"] = device_id
         ipc_frame["dtu_id"] = dtu_id
+        ipc_frame["kind"] = "data"
         frames.append(ipc_frame)
 
     out_dir = os.path.dirname(os.path.abspath(__file__))
@@ -216,7 +340,10 @@ def main():
     print(f"Binary payload: {len(out_bin)} bytes -> {bin_path}")
     for fr in frames:
         src = fr["raw_data"][5] | (fr["raw_data"][6] << 8)
-        print(f"  {fr['device_id']}: dtu_id={fr['dtu_id']} src_node={src} modbus_type={fr['raw_data'][13]}")
+        if fr.get("kind") == "data":
+            print(f"  {fr['device_id']}: dtu_id={fr['dtu_id']} src_node={src}")
+        else:
+            print(f"  {fr.get('kind', 'frame')}: src_node={src}")
 
 
 if __name__ == "__main__":

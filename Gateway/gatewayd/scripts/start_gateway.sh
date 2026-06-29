@@ -6,6 +6,11 @@ GATEWAY_DIR="/userdata/gateway"
 LOG_DIR="$GATEWAY_DIR/data/log"
 mkdir -p "$LOG_DIR" /var/run/gateway
 
+if [ -x /etc/init.d/S95gateway ]; then
+    /etc/init.d/S95gateway restart
+    exit $?
+fi
+
 # 停止旧进程
 killall gatewayd 2>/dev/null
 killall sle_data_app 2>/dev/null
@@ -18,11 +23,16 @@ rm -f /var/run/gateway/sle_data.sock
 nohup $GATEWAY_DIR/bin/gatewayd --config $GATEWAY_DIR/config/gateway_config.json \
     > /tmp/gatewayd.log 2>&1 &
 
-# 等待 gatewayd 初始化
-sleep 3
+# 等待 gatewayd 监听抽象 SLE IPC socket
+for i in $(seq 1 30); do
+    if grep -q '@var/run/gateway/sle_data.sock' /proc/net/unix 2>/dev/null; then
+        break
+    fi
+    sleep 1
+done
 
-# 启动 sle_data_app
-nohup $GATEWAY_DIR/bin/sle_data_app \
+# 启动真实 SLE 数据链路
+nohup $GATEWAY_DIR/bin/sle_data_app --mode real \
     > /tmp/sle_data_app.log 2>&1 &
 
 echo "Gateway started at $(date)" >> "$LOG_DIR/startup.log"

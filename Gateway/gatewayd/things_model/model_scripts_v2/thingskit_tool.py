@@ -59,9 +59,7 @@ class ThingsKitTool:
             "METER_006": "单相电表",
             "METER_007": "单相电表",
             "ENV_001": "温湿度变送器",
-            "ENV_002": "温湿度变送器",
             "RELAY_001": "继电器",
-            "RELAY_002": "继电器",
             "DTU_001": "DTU节点",
             "DTU_002": "DTU节点",
             "DTU_003": "DTU节点",
@@ -70,9 +68,7 @@ class ThingsKitTool:
             "DTU_006": "DTU节点",
             "DTU_007": "DTU节点",
             "DTU_008": "DTU节点",
-            "DTU_009": "DTU节点",
             "DTU_010": "DTU节点",
-            "DTU_011": "DTU节点",
             "dtu网关": "DTU网关v1"
         }
         

@@ -1,0 +1,157 @@
+#!/bin/sh
+#
+# Gateway production autostart for the current board filesystem.
+# Starts real gatewayd and real SLE data bridge after network services.
+#
+
+GATEWAY_DIR="/userdata/gateway"
+BIN_DIR="$GATEWAY_DIR/bin"
+CONFIG="$GATEWAY_DIR/config/gateway_config.json"
+LOG_DIR="$GATEWAY_DIR/data/log"
+STARTUP_LOG="$LOG_DIR/startup.log"
+RUN_DIR="/var/run/gateway"
+DATA_SOCKET="@var/run/gateway/sle_data.sock"
+
+log_msg()
+{
+    mkdir -p "$LOG_DIR" "$RUN_DIR" 2>/dev/null || true
+    echo "$(date '+%Y-%m-%d %H:%M:%S') $*" >> "$STARTUP_LOG"
+}
+
+is_running()
+{
+    pidof "$1" >/dev/null 2>&1
+}
+
+wait_process_exit()
+{
+    name="$1"
+    timeout="$2"
+    i=0
+    while [ "$i" -lt "$timeout" ]; do
+        if ! is_running "$name"; then
+            return 0
+        fi
+        i=$((i + 1))
+        sleep 1
+    done
+    return 1
+}
+
+wait_gateway_socket()
+{
+    i=0
+    while [ "$i" -lt 30 ]; do
+        if grep -q "$DATA_SOCKET" /proc/net/unix 2>/dev/null; then
+            return 0
+        fi
+        i=$((i + 1))
+        sleep 1
+    done
+    return 1
+}
+
+start_gatewayd()
+{
+    if is_running gatewayd; then
+        log_msg "gatewayd already running"
+        return 0
+    fi
+
+    if [ ! -x "$BIN_DIR/gatewayd" ]; then
+        log_msg "gatewayd binary missing: $BIN_DIR/gatewayd"
+        return 1
+    fi
+    if [ ! -f "$CONFIG" ]; then
+        log_msg "gatewayd config missing: $CONFIG"
+        return 1
+    fi
+
+    rm -f "$RUN_DIR/sle_data.sock" "$RUN_DIR/sle_cmd.sock" 2>/dev/null || true
+    nohup "$BIN_DIR/gatewayd" --config "$CONFIG" >/tmp/gatewayd.out 2>&1 &
+    echo $! > "$RUN_DIR/gatewayd.pid"
+    log_msg "gatewayd started pid=$!"
+    return 0
+}
+
+start_sle_data_app()
+{
+    if is_running sle_data_app; then
+        log_msg "sle_data_app already running"
+        return 0
+    fi
+
+    if [ ! -x "$BIN_DIR/sle_data_app" ]; then
+        log_msg "sle_data_app binary missing: $BIN_DIR/sle_data_app"
+        return 1
+    fi
+
+    if ! wait_gateway_socket; then
+        log_msg "gateway data socket not ready, skip sle_data_app start"
+        return 1
+    fi
+
+    nohup "$BIN_DIR/sle_data_app" --mode real >/tmp/sle_data_app.out 2>&1 &
+    echo $! > "$RUN_DIR/sle_data_app.pid"
+    log_msg "sle_data_app real started pid=$!"
+    return 0
+}
+
+start_all()
+{
+    mkdir -p "$LOG_DIR" "$RUN_DIR" "$GATEWAY_DIR/data" 2>/dev/null || true
+    /etc/init.d/S42gateway-network-policy start >/dev/null 2>&1 || true
+    start_gatewayd || return 1
+    start_sle_data_app || return 1
+    log_msg "gateway autostart complete"
+}
+
+stop_all()
+{
+    log_msg "gateway autostart stop"
+    killall sle_data_app 2>/dev/null || true
+    if ! wait_process_exit sle_data_app 10; then
+        log_msg "sle_data_app did not exit in time, force kill"
+        killall -9 sle_data_app 2>/dev/null || true
+        wait_process_exit sle_data_app 3 || true
+    fi
+    killall gatewayd 2>/dev/null || true
+    if ! wait_process_exit gatewayd 10; then
+        log_msg "gatewayd did not exit in time, force kill"
+        killall -9 gatewayd 2>/dev/null || true
+        wait_process_exit gatewayd 3 || true
+    fi
+    rm -f "$RUN_DIR/gatewayd.pid" "$RUN_DIR/sle_data_app.pid" \
+        "$RUN_DIR/sle_data.sock" "$RUN_DIR/sle_cmd.sock" 2>/dev/null || true
+}
+
+status_all()
+{
+    echo "gatewayd:"
+    pidof gatewayd 2>/dev/null || echo "not running"
+    echo "sle_data_app:"
+    pidof sle_data_app 2>/dev/null || echo "not running"
+    echo "default routes:"
+    ip route show default 2>/dev/null || true
+}
+
+case "$1" in
+    start)
+        start_all
+        ;;
+    stop)
+        stop_all
+        ;;
+    restart)
+        stop_all
+        sleep 1
+        start_all
+        ;;
+    status)
+        status_all
+        ;;
+    *)
+        echo "Usage: $0 {start|stop|restart|status}"
+        exit 1
+        ;;
+esac

@@ -1,6 +1,9 @@
 #include "datasource/ipc_receiver.h"
 
+#include "codec/sle_frame_parser.h"
+
 #include <cerrno>
+#include <chrono>
 #include <cstddef>
 #include <cstdio>
 #include <cstring>
@@ -11,6 +14,12 @@
 #include <poll.h>
 
 namespace gateway::datasource {
+namespace {
+
+constexpr int kReadPollTimeoutMs = 200;
+constexpr int kPartialFrameTimeoutMs = 3000;
+
+} // namespace
 
 IpcReceiver::IpcReceiver() : listen_fd_(-1), client_fd_(-1) {}
 
@@ -123,14 +132,27 @@ bool IpcReceiver::acceptClient(int timeout_ms)
 IpcReceiver::ReadStatus IpcReceiver::readExact(uint8_t *buf, size_t n)
 {
     size_t received = 0;
+    auto last_progress = std::chrono::steady_clock::now();
     while (received < n) {
         // 先 poll 等待数据到达；超时只表示当前没有完整帧，不能当成断连。
         struct pollfd pfd = {client_fd_, POLLIN, 0};
-        int pr = poll(&pfd, 1, 200);  // 200ms 超时
+        int pr = poll(&pfd, 1, kReadPollTimeoutMs);
         if (pr == 0 && received == 0)
             return ReadStatus::Timeout;
-        if (pr == 0)
+        if (pr == 0) {
+            const auto now = std::chrono::steady_clock::now();
+            const auto idle_ms =
+                std::chrono::duration_cast<std::chrono::milliseconds>(now - last_progress).count();
+            if (idle_ms >= kPartialFrameTimeoutMs) {
+                fprintf(stderr,
+                        "[IPC] partial frame read timeout: received=%zu expected=%zu idle_ms=%lld\n",
+                        received,
+                        n,
+                        static_cast<long long>(idle_ms));
+                return ReadStatus::Error;
+            }
             continue;
+        }
         if (pr < 0) {
             if (errno == EINTR)
                 continue;
@@ -147,6 +169,54 @@ IpcReceiver::ReadStatus IpcReceiver::readExact(uint8_t *buf, size_t n)
                 return ReadStatus::Error;
             }
             received += static_cast<size_t>(r);
+            last_progress = std::chrono::steady_clock::now();
+            continue;
+        }
+
+        if (pfd.revents & (POLLERR | POLLHUP | POLLNVAL))
+            return ReadStatus::Disconnected;
+    }
+    return ReadStatus::Ok;
+}
+
+IpcReceiver::ReadStatus IpcReceiver::readExactStarted(uint8_t *buf, size_t n)
+{
+    size_t received = 0;
+    auto last_progress = std::chrono::steady_clock::now();
+    while (received < n) {
+        struct pollfd pfd = {client_fd_, POLLIN, 0};
+        int pr = poll(&pfd, 1, kReadPollTimeoutMs);
+        if (pr == 0) {
+            const auto now = std::chrono::steady_clock::now();
+            const auto idle_ms =
+                std::chrono::duration_cast<std::chrono::milliseconds>(now - last_progress).count();
+            if (idle_ms >= kPartialFrameTimeoutMs) {
+                fprintf(stderr,
+                        "[IPC] partial frame read timeout: received=%zu expected=%zu idle_ms=%lld\n",
+                        received,
+                        n,
+                        static_cast<long long>(idle_ms));
+                return ReadStatus::Error;
+            }
+            continue;
+        }
+        if (pr < 0) {
+            if (errno == EINTR)
+                continue;
+            return ReadStatus::Error;
+        }
+
+        if (pfd.revents & POLLIN) {
+            ssize_t r = read(client_fd_, buf + received, n - received);
+            if (r == 0)
+                return ReadStatus::Disconnected;
+            if (r < 0) {
+                if (errno == EINTR)
+                    continue;
+                return ReadStatus::Error;
+            }
+            received += static_cast<size_t>(r);
+            last_progress = std::chrono::steady_clock::now();
             continue;
         }
 
@@ -172,18 +242,20 @@ IpcReceiveStatus IpcReceiver::receiveRawFrame(std::vector<uint8_t> &out)
     }
     uint16_t frame_len = static_cast<uint16_t>(len_buf[0] | (len_buf[1] << 8));
 
-    if (frame_len == 0 || frame_len > 256) {
+    if (frame_len == 0 || frame_len > codec::SLE_FRAME_MAX_LEN) {
         fprintf(stderr, "[IPC] invalid frame length: %u\n", frame_len);
         return IpcReceiveStatus::Error;
     }
 
     // 读帧体
     out.resize(frame_len);
-    status = readExact(out.data(), frame_len);
+    status = readExactStarted(out.data(), frame_len);
     if (status != ReadStatus::Ok) {
         out.clear();
-        if (status == ReadStatus::Timeout)
+        if (status == ReadStatus::Timeout) {
+            fprintf(stderr, "[IPC] frame body timeout: len=%u\n", frame_len);
             return IpcReceiveStatus::Error;
+        }
         if (status == ReadStatus::Error)
             return IpcReceiveStatus::Error;
         return IpcReceiveStatus::Disconnected;

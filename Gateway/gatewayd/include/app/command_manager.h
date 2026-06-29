@@ -17,6 +17,7 @@
 
 namespace gateway::datasource {
 class IpcCmdSender;
+class SleDataSource;
 } // namespace gateway::datasource
 
 namespace gateway::app {
@@ -39,7 +40,8 @@ public:
                    common::BlockingQueue<command::RawCommandMessage> &command_queue,
                    common::BlockingQueue<std::vector<model::TelemetryData>> &telemetry_queue,
                    common::BlockingQueue<PublishMessage> &publish_queue,
-                   datasource::IpcCmdSender *ipc_cmd_sender = nullptr);
+                   datasource::IpcCmdSender *ipc_cmd_sender = nullptr,
+                   datasource::SleDataSource *sle_data_source = nullptr);
 
     const char *name() const override { return "command"; }
 
