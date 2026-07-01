@@ -106,11 +106,12 @@ struct WifiConfig {
 
 struct CellularConfig {
     bool enable = true;
-    std::string ifname = "ppp0";
-    std::string module = "L610";
-    std::string serial_device = "/dev/ttyS1";
+    std::string ifname = "cell0";
+    std::string module = "ML307";
+    std::string serial_device = "/dev/ttyUSB2";
     int baudrate = 115200;
     std::string apn = "cmnet";
+    std::string mode = "ecm_rndis";
 };
 
 struct NetworkConfig {

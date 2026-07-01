@@ -6,6 +6,8 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cstdio>
+#include <fstream>
 #include <sstream>
 #include <thread>
 #include <utility>
@@ -14,6 +16,9 @@ namespace gateway::app {
 namespace {
 
 constexpr int64_t kQueueDropLogIntervalMs = 10000;
+constexpr int64_t kHeartbeatIntervalMs = 2000;
+constexpr const char *kGatewaydHeartbeatPath = "/tmp/gatewayd.heartbeat";
+constexpr const char *kGatewaydHeartbeatTmpPath = "/tmp/gatewayd.heartbeat.tmp";
 
 config::ThingsKitConfig gatewayCloudConfig(const config::ThingsKitConfig &base)
 {
@@ -34,6 +39,16 @@ void logQueueDropDelta(log::Logger &logger,
                                ", total=" + std::to_string(current));
     }
     last = current;
+}
+
+void writeHeartbeat(const char *path, const char *tmp_path, int64_t now_sec)
+{
+    std::ofstream out(tmp_path, std::ios::trunc);
+    if (!out)
+        return;
+    out << now_sec << "\n";
+    out.close();
+    std::rename(tmp_path, path);
 }
 
 } // namespace
@@ -176,11 +191,16 @@ int GatewayApp::run(const std::atomic_bool &quit)
     size_t last_command_drops = command_queue_.droppedCount();
     size_t last_publish_drops = publish_queue_.droppedCount();
     int64_t last_drop_log_ms = common::nowMs();
+    int64_t last_heartbeat_ms = 0;
 
     // 主线程不参与业务处理，只周期性观察队列丢弃情况，并等待退出信号。
     while (!quit.load()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
         const int64_t now = common::nowMs();
+        if (now - last_heartbeat_ms >= kHeartbeatIntervalMs) {
+            writeHeartbeat(kGatewaydHeartbeatPath, kGatewaydHeartbeatTmpPath, now / 1000);
+            last_heartbeat_ms = now;
+        }
         if (now - last_drop_log_ms >= kQueueDropLogIntervalMs) {
             logQueueDropDelta(logger_, "telemetry", telemetry_queue_.droppedCount(), last_telemetry_drops);
             logQueueDropDelta(logger_, "command", command_queue_.droppedCount(), last_command_drops);

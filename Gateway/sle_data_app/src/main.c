@@ -16,11 +16,25 @@
 #include <unistd.h>
 
 #define STACK_RAW_LOG_PATH "/tmp/sle_stack_raw.log"
+#define SLE_HEARTBEAT_PATH "/tmp/sle_data_app.heartbeat"
+#define SLE_HEARTBEAT_TMP_PATH "/tmp/sle_data_app.heartbeat.tmp"
 #define TICK_INTERVAL_SEC  1
+#define HEARTBEAT_INTERVAL_SEC 2
 #define CMD_SOCKET_PATH    "\0/var/run/gateway/sle_cmd.sock"  /* 抽象命名空间 */
 #define CMD_SOCKET_PATH_LEN 30  /* 含首字节 \0 */
 
 static sigset_t g_wait_signals;
+
+static void write_heartbeat(time_t now_sec)
+{
+    FILE *fp = fopen(SLE_HEARTBEAT_TMP_PATH, "w");
+    if (fp == NULL) {
+        return;
+    }
+    fprintf(fp, "%ld\n", (long)now_sec);
+    fclose(fp);
+    rename(SLE_HEARTBEAT_TMP_PATH, SLE_HEARTBEAT_PATH);
+}
 
 typedef enum {
     SLE_APP_MODE_MOCK,
@@ -211,15 +225,21 @@ int main(int argc, char **argv)
      * 每秒超时返回一次。
      * 收到 SIGINT/SIGTERM 时 sigtimedwait 返回信号编号，退出循环。
      */
+    time_t last_heartbeat_sec = 0;
     while (1) {
-        struct timespec ts;
-        clock_gettime(CLOCK_REALTIME, &ts);
-        ts.tv_sec += TICK_INTERVAL_SEC;
+        struct timespec timeout;
+        timeout.tv_sec = TICK_INTERVAL_SEC;
+        timeout.tv_nsec = 0;
 
-        int sig = sigtimedwait(&g_wait_signals, NULL, &ts);
+        int sig = sigtimedwait(&g_wait_signals, NULL, &timeout);
         if (sig > 0) {
             fprintf(stderr, "[SLE][STATUS] received signal %d\n", sig);
             break;
+        }
+        time_t now_sec = time(NULL);
+        if (now_sec - last_heartbeat_sec >= HEARTBEAT_INTERVAL_SEC) {
+            write_heartbeat(now_sec);
+            last_heartbeat_sec = now_sec;
         }
         /* 超时 = 1 秒到了，SLE 管理器未初始化时跳过 tick */
         if (sle_manager_started) {

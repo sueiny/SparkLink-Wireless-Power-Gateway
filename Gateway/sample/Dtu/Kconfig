@@ -1,0 +1,41 @@
+# DTU Kconfig 菜单；配置会生成 CONFIG_* 宏供代码使用。
+
+# 详细日志默认关闭，避免高频接收路径打印拖慢 transport task。
+config DTU_TRACE_LOG
+    bool
+    prompt "Enable DTU trace log."
+    default n
+    help
+        Enable detailed DTU trace and RX performance logs.
+
+# 设备名用于 BLE/SLE 广播和 READ_DEV_INFO 响应。
+config DTU_DEVICE_NAME
+    string
+    prompt "DTU device name."
+    default "DTU_N01"
+    help
+        Configure the DTU device name used by BLE advertising and
+        READ_DEV_INFO response. If not configured, the DTU sample
+        falls back to "DTU_N01".
+
+config DTU_FORCE_MENUCONFIG_MAC
+    bool
+    prompt "Prefer menuconfig fixed MAC over AT/system MAC."
+    default n
+    help
+        Prefer DTU_FIXED_MAC as the first MAC source.
+        If disabled, DTU first uses the MAC written by AT+EFUSEMAC
+        to the system SLE MAC storage, and falls back to DTU_FIXED_MAC
+        only when the AT/system MAC is unavailable.
+
+# 固定 MAC 默认只作兜底；打开 DTU_FORCE_MENUCONFIG_MAC 后才优先生效。
+config DTU_FIXED_MAC
+    string
+    prompt "DTU fixed MAC address."
+    default "A1:A2:A3:A4:A5:A6"
+    help
+        Configure a fixed DTU MAC address for BLE advertising and
+        READ_DEV_INFO response. Supported formats are
+        "AABBCCDDEEFF" and "AA:BB:CC:DD:EE:FF".
+        If not configured, the DTU sample falls back to
+        "A1:A2:A3:A4:A5:A6".

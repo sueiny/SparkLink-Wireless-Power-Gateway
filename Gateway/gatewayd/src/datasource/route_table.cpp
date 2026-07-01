@@ -10,6 +10,8 @@
 namespace gateway::datasource {
 namespace {
 
+constexpr int64_t kSnapshotMissingGraceMs = 10000;
+
 std::string trim(const std::string &text)
 {
     size_t begin = 0;
@@ -83,6 +85,57 @@ uint8_t roleForNode(const RouteEntry &entry)
     if (entry.parent_id == 0)
         return codec::SLE_ROLE_ROOT;
     return entry.child_ids.empty() ? codec::SLE_ROLE_LEAF : codec::SLE_ROLE_RELAY;
+}
+
+void appendUniqueChild(std::vector<uint16_t> *child_ids, uint16_t child_id)
+{
+    if (child_ids == nullptr)
+        return;
+    if (std::find(child_ids->begin(), child_ids->end(), child_id) == child_ids->end())
+        child_ids->push_back(child_id);
+}
+
+void normalizeSnapshot(std::map<uint16_t, RouteEntry> *snapshot)
+{
+    if (snapshot == nullptr)
+        return;
+
+    for (auto &item : *snapshot) {
+        auto &child_ids = item.second.child_ids;
+        std::sort(child_ids.begin(), child_ids.end());
+        child_ids.erase(std::unique(child_ids.begin(), child_ids.end()), child_ids.end());
+        item.second.role = roleForNode(item.second);
+    }
+}
+
+std::map<uint16_t, RouteEntry> mergeRootSnapshot(
+    const std::map<uint16_t, RouteEntry> &parsed,
+    const std::map<uint16_t, RouteEntry> &previous_snapshot,
+    int64_t now_ms)
+{
+    std::map<uint16_t, RouteEntry> merged = parsed;
+
+    for (const auto &item : previous_snapshot) {
+        if (merged.count(item.first) > 0)
+            continue;
+        if (item.second.last_update_ms <= 0)
+            continue;
+        if (now_ms - item.second.last_update_ms > kSnapshotMissingGraceMs)
+            continue;
+        merged[item.first] = item.second;
+    }
+
+    for (const auto &item : merged) {
+        if (item.second.parent_id == 0)
+            continue;
+        auto parent_it = merged.find(item.second.parent_id);
+        if (parent_it == merged.end())
+            continue;
+        appendUniqueChild(&parent_it->second.child_ids, item.first);
+    }
+
+    normalizeSnapshot(&merged);
+    return merged;
 }
 
 bool parseTopologyText(const uint8_t *payload,
@@ -237,7 +290,7 @@ RouteUpdateResult RouteTable::updateFromTopologyText(uint16_t report_root_id,
     if (previous_root_snapshot != root_snapshots_.end())
         previous_snapshot = previous_root_snapshot->second;
 
-    root_snapshots_[root_id] = parsed;
+    root_snapshots_[root_id] = mergeRootSnapshot(parsed, previous_snapshot, now_ms);
     std::set<uint16_t> aggregate_nodes;
     for (const auto &root_item : root_snapshots_) {
         for (const auto &node_item : root_item.second) {

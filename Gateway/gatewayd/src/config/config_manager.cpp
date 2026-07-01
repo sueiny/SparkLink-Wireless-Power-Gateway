@@ -9,6 +9,17 @@
 namespace gateway::config {
 namespace {
 
+bool isUnsupportedCellularIfname(const std::string &ifname)
+{
+    if (ifname.empty())
+        return false;
+    if (ifname == "eth1" || ifname == "wlan0" || ifname == "usb0")
+        return true;
+    if (ifname.compare(0, 3, "eth") == 0)
+        return true;
+    return ifname.compare(0, 3, "ppp") == 0 || ifname.compare(0, 4, "wlan") == 0;
+}
+
 model::DeviceInfo parseDevice(const nlohmann::json &item)
 {
     model::DeviceInfo device;
@@ -204,11 +215,12 @@ bool ConfigManager::load(const std::string &path, std::string *error)
 
     const auto cellular = network.value("cellular", nlohmann::json::object());
     cfg.network.cellular.enable = cellular.value("enable", true);
-    cfg.network.cellular.ifname = cellular.value("ifname", "ppp0");
-    cfg.network.cellular.module = cellular.value("module", "L610");
-    cfg.network.cellular.serial_device = cellular.value("serial_device", "/dev/ttyS1");
+    cfg.network.cellular.ifname = cellular.value("ifname", "cell0");
+    cfg.network.cellular.module = cellular.value("module", "ML307");
+    cfg.network.cellular.serial_device = cellular.value("serial_device", "/dev/ttyUSB2");
     cfg.network.cellular.baudrate = cellular.value("baudrate", 115200);
     cfg.network.cellular.apn = cellular.value("apn", "cmnet");
+    cfg.network.cellular.mode = cellular.value("mode", "ecm_rndis");
 
     const auto publish = root.value("publish", nlohmann::json::object());
     cfg.publish.interval_ms = publish.value("interval_ms", 5000);
@@ -502,6 +514,19 @@ bool ConfigManager::validate(const AppConfig &config, std::string *error) const
         return fail("network.cloud_test_host must not be empty");
     if (config.network.cloud_test_port < 1 || config.network.cloud_test_port > 65535)
         return fail("network.cloud_test_port must be 1-65535");
+    if (config.network.cellular.mode != "ecm_rndis")
+        return fail("network.cellular.mode must be ecm_rndis");
+    if (config.network.cellular.module != "ML307")
+        return fail("network.cellular.module must be ML307");
+    if (config.network.cellular.serial_device.empty())
+        return fail("network.cellular.serial_device must not be empty");
+    if (!config.network.cellular.ifname.empty() &&
+        config.network.cellular.ifname != "cell0") {
+        return fail("network.cellular.ifname must be cell0 or empty");
+    }
+    if (isUnsupportedCellularIfname(config.network.cellular.ifname)) {
+        return fail("network.cellular.ifname must not be eth*/wlan0/usb0/ppp*/wlan*");
+    }
 
     std::set<std::string> device_ids;
     for (const auto &device : config.devices) {

@@ -11,11 +11,11 @@ CONFIG="/userdata/gateway/config/gateway_config.json"
 
 ETH_IF="eth1"
 WIFI_IF="wlan0"
-CELL_IF="ppp0"
 
 ETH_METRIC="100"
 WIFI_METRIC="200"
 CELL_METRIC="300"
+CELL_IF="cell0"
 
 log_msg()
 {
@@ -31,6 +31,75 @@ iface_exists()
 iface_has_ipv4()
 {
     ip -4 addr show dev "$1" 2>/dev/null | grep -q 'inet '
+}
+
+is_ml307_netdev()
+{
+    ifname="$1"
+    dev="/sys/class/net/$ifname/device"
+    [ -d "$dev" ] || return 1
+
+    driver="$(basename "$(readlink -f "$dev/driver" 2>/dev/null)" 2>/dev/null || true)"
+    modalias="$(cat "$dev/modalias" 2>/dev/null || true)"
+    product="$(cat "$dev/../product" 2>/dev/null || true)"
+    manufacturer="$(cat "$dev/../manufacturer" 2>/dev/null || true)"
+
+    case "$driver" in
+        rndis_host|cdc_ether|cdc_ncm) ;;
+        *) return 1 ;;
+    esac
+
+    echo "$modalias $product $manufacturer" | grep -Eq 'v2ECCp3012|ML307|CMIOT'
+}
+
+find_ml307_netdev()
+{
+    for path in /sys/class/net/*; do
+        [ -d "$path" ] || continue
+        ifname="$(basename "$path")"
+        case "$ifname" in
+            lo|eth1|wlan0|usb0|ppp*|wlan*) continue ;;
+        esac
+        if is_ml307_netdev "$ifname"; then
+            echo "$ifname"
+            return 0
+        fi
+    done
+    return 1
+}
+
+ensure_cell0_ifname()
+{
+    iface_exists "$CELL_IF" && return 0
+
+    raw_ifname="$(find_ml307_netdev 2>/dev/null || true)"
+    if [ -z "$raw_ifname" ]; then
+        log_msg "ML307 netdev not found for $CELL_IF rename"
+        return 1
+    fi
+
+    case "$raw_ifname" in
+        lo|eth1|wlan0|usb0|ppp*|wlan*)
+            log_msg "refusing invalid ML307 netdev raw=$raw_ifname"
+            return 1
+            ;;
+    esac
+
+    ip link set "$raw_ifname" down 2>/dev/null || true
+    if ip link set "$raw_ifname" name "$CELL_IF" 2>/dev/null; then
+        ip link set "$CELL_IF" up 2>/dev/null || true
+        log_msg "renamed ML307 netdev raw=$raw_ifname to $CELL_IF"
+        return 0
+    fi
+
+    log_msg "failed to rename ML307 netdev raw=$raw_ifname to $CELL_IF"
+    return 1
+}
+
+cellular_ifname()
+{
+    iface_exists "$CELL_IF" && echo "$CELL_IF" && return 0
+    return 1
 }
 
 default_route_for()
@@ -143,6 +212,7 @@ try_iface()
 apply_policy_once()
 {
     mode="$(network_mode)"
+    cell_if="$(cellular_ifname 2>/dev/null || true)"
     case "$mode" in
         ethernet)
             try_iface "$ETH_IF" "$ETH_METRIC" && return 0
@@ -151,18 +221,18 @@ apply_policy_once()
             try_iface "$WIFI_IF" "$WIFI_METRIC" && return 0
             ;;
         cellular)
-            try_iface "$CELL_IF" "$CELL_METRIC" && return 0
+            [ -n "$cell_if" ] && try_iface "$cell_if" "$CELL_METRIC" && return 0
             ;;
         auto|"")
             try_iface "$ETH_IF" "$ETH_METRIC" && return 0
             try_iface "$WIFI_IF" "$WIFI_METRIC" && return 0
-            try_iface "$CELL_IF" "$CELL_METRIC" && return 0
+            [ -n "$cell_if" ] && try_iface "$cell_if" "$CELL_METRIC" && return 0
             ;;
         *)
             log_msg "unknown network.mode=$mode, fallback auto policy"
             try_iface "$ETH_IF" "$ETH_METRIC" && return 0
             try_iface "$WIFI_IF" "$WIFI_METRIC" && return 0
-            try_iface "$CELL_IF" "$CELL_METRIC" && return 0
+            [ -n "$cell_if" ] && try_iface "$cell_if" "$CELL_METRIC" && return 0
             ;;
     esac
     return 1
@@ -170,6 +240,7 @@ apply_policy_once()
 
 start_policy()
 {
+    ensure_cell0_ifname || true
     log_msg "gateway network policy start mode=$(network_mode)"
 
     i=0

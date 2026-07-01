@@ -78,7 +78,7 @@
 验收：
 - 当前为 wlan0 时插入 eth1，eth1 真能连云则抢占 eth1。
 - eth1 只有 IP 但无法连云时不抢占 wlan0。
-- 当前选中 wlan0 时，不允许默认路由/DNS 漂到 eth1/eth2。
+- 当前选中 wlan0 时，不允许默认路由/DNS 漂到 eth1/cell0。
 
 ## 阶段 5：自启网络脚本指定模式解析修复
 
@@ -89,7 +89,7 @@
 验收：
 - 配置 `network.mode=wifi` 时脚本只尝试 wlan0。
 - 配置 `network.mode=ethernet` 时脚本只尝试 eth1。
-- 配置 `network.mode=auto` 时按 eth1/wlan0/ppp0 顺序尝试。
+- 配置 `network.mode=auto` 时按 eth1/wlan0/ML307 ECM-RNDIS 顺序尝试，蜂窝数据面稳定命名为 cell0。
 
 ## 阶段 6：文档与模拟 socket 测试
 

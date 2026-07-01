@@ -15,6 +15,8 @@ SYSROOT="$PROJECT_ROOT/buildroot/output/rockchip_rk3506_emmc/host/arm-buildroot-
 # 板端路径
 ADB_ROOT="/userdata/gateway"
 INIT_DIR="/etc/init.d"
+MQTT_WAIT_ATTEMPTS="${MQTT_WAIT_ATTEMPTS:-60}"
+MQTT_WAIT_INTERVAL_SEC="${MQTT_WAIT_INTERVAL_SEC:-2}"
 
 # 清理 PATH（buildroot 不接受含空格的 PATH）
 clean_path() {
@@ -23,6 +25,58 @@ clean_path() {
     export https_proxy=""
     export HTTP_PROXY=""
     export HTTPS_PROXY=""
+}
+
+stop_board_monitor_for_manual_run() {
+    adb shell "if [ -x $INIT_DIR/S96gateway-monitor ]; then $INIT_DIR/S96gateway-monitor stop >/dev/null 2>&1 || true; fi; pid=\$(cat /var/run/gateway/gateway-monitor.pid 2>/dev/null || true); if [ -n \"\$pid\" ] && kill -0 \"\$pid\" 2>/dev/null; then kill \"\$pid\" 2>/dev/null || true; sleep 1; kill -9 \"\$pid\" 2>/dev/null || true; fi; rm -f /var/run/gateway/gateway-monitor.pid"
+}
+
+stop_gateway_processes_for_manual_run() {
+    echo "停止板端 Gateway monitor/gatewayd/sle_data_app..."
+    stop_board_monitor_for_manual_run
+    adb shell "killall -9 gatewayd 2>/dev/null; killall -9 sle_data_app 2>/dev/null; sleep 1; rm -f /var/run/gateway/gatewayd.pid /var/run/gateway/sle_data_app.pid /var/run/gateway/gatewayd.start_ts /var/run/gateway/sle_data_app.start_ts /tmp/gatewayd.heartbeat /tmp/sle_data_app.heartbeat"
+}
+
+wait_mqtt_connected() {
+    local max_wait=$((MQTT_WAIT_ATTEMPTS * MQTT_WAIT_INTERVAL_SEC))
+    echo "等待 MQTT 连接，最长 ${max_wait}s..."
+
+    for i in $(seq 1 "$MQTT_WAIT_ATTEMPTS"); do
+        if adb shell "grep -q '\"cloud_connected\":1' $ADB_ROOT/data/log/gateway.log 2>/dev/null"; then
+            echo "✅ MQTT 已连接"
+            return 0
+        fi
+        sleep "$MQTT_WAIT_INTERVAL_SEC"
+    done
+
+    if adb shell "grep -q '\"cloud_connected\":1' $ADB_ROOT/data/log/gateway.log 2>/dev/null"; then
+        echo "✅ MQTT 已连接"
+        return 0
+    fi
+
+    return 1
+}
+
+start_sle_data_app_real_once() {
+    local existing_pids
+
+    existing_pids="$(adb shell "pidof sle_data_app 2>/dev/null || true" | tr -d '\r')"
+    if [ -n "$existing_pids" ]; then
+        echo "sle_data_app 已运行，复用现有进程: $existing_pids"
+        return 0
+    fi
+
+    echo "启动 sle_data_app(real)..."
+    adb shell "nohup $ADB_ROOT/bin/sle_data_app --mode real > /tmp/sle_data_app.out 2>&1 &"
+    sleep 2
+
+    existing_pids="$(adb shell "pidof sle_data_app 2>/dev/null || true" | tr -d '\r')"
+    if [ -z "$existing_pids" ]; then
+        echo "❌ sle_data_app 启动失败"
+        adb shell "tail -80 /tmp/sle_data_app.out 2>/dev/null"
+        return 1
+    fi
+    echo "✅ sle_data_app 已启动: $existing_pids"
 }
 
 # ── 编译 sle_data_app ──
@@ -78,13 +132,17 @@ push() {
     adb shell "rm -rf $ADB_ROOT/things_model"
     adb push "$GATEWAY_DIR/gatewayd/things_model" "$ADB_ROOT/things_model"
 
+    # 网络脚本
+    adb shell "mkdir -p $ADB_ROOT/scripts"
+    adb push "$GATEWAY_DIR/gatewayd/scripts/net" "$ADB_ROOT/scripts/"
+
     # 测试数据和工具
     adb shell "mkdir -p $ADB_ROOT/test"
     adb push "$GATEWAY_DIR/gatewayd/test/test_payload.bin" "$ADB_ROOT/test/"
     adb push "$GATEWAY_DIR/gatewayd/test/ipc_send" "$ADB_ROOT/test/"
 
     # 权限
-    adb shell "chmod +x $ADB_ROOT/bin/sle_data_app $ADB_ROOT/bin/gatewayd $ADB_ROOT/test/ipc_send"
+    adb shell "chmod +x $ADB_ROOT/bin/sle_data_app $ADB_ROOT/bin/gatewayd $ADB_ROOT/test/ipc_send $ADB_ROOT/scripts/net/*.sh"
 
     echo "✅ 推送完成"
 }
@@ -96,19 +154,20 @@ install_autostart() {
     adb shell "mkdir -p $INIT_DIR $ADB_ROOT/data/log /var/run/gateway"
     adb push "$GATEWAY_DIR/gatewayd/scripts/S42gateway-network-policy" "$INIT_DIR/S42gateway-network-policy"
     adb push "$GATEWAY_DIR/gatewayd/scripts/S95gateway" "$INIT_DIR/S95gateway"
-    adb shell "chmod +x $INIT_DIR/S42gateway-network-policy $INIT_DIR/S95gateway"
+    adb push "$GATEWAY_DIR/gatewayd/scripts/S96gateway-monitor" "$INIT_DIR/S96gateway-monitor"
+    adb shell "chmod +x $INIT_DIR/S42gateway-network-policy $INIT_DIR/S95gateway $INIT_DIR/S96gateway-monitor"
 
     echo ""
     echo "=== 已安装脚本 ==="
-    adb shell "ls -l $INIT_DIR/S42gateway-network-policy $INIT_DIR/S95gateway"
-    echo "✅ 自启脚本安装完成。重启后会自动启动 gatewayd + sle_data_app --mode real"
+    adb shell "ls -l $INIT_DIR/S42gateway-network-policy $INIT_DIR/S95gateway $INIT_DIR/S96gateway-monitor"
+    echo "✅ 自启脚本安装完成。重启后会自动启动 gatewayd + sle_data_app --mode real + gateway monitor"
 }
 
 # ── 卸载板端断电重启自启脚本 ──
 uninstall_autostart() {
     echo "=== 卸载 Gateway 板端自启脚本 ==="
 
-    adb shell "rm -f $INIT_DIR/S42gateway-network-policy $INIT_DIR/S95gateway"
+    adb shell "$INIT_DIR/S96gateway-monitor stop >/dev/null 2>&1 || true; rm -f $INIT_DIR/S42gateway-network-policy $INIT_DIR/S95gateway $INIT_DIR/S96gateway-monitor"
     echo "✅ 自启脚本已删除。当前运行中的进程不会被自动停止"
 }
 
@@ -147,7 +206,7 @@ test() {
     echo "=== 板端测试 ==="
 
     # 停止旧进程
-    adb shell "killall -9 gatewayd 2>/dev/null; killall -9 sle_data_app 2>/dev/null; sleep 1"
+    stop_gateway_processes_for_manual_run
 
     # 清理 socket
     adb shell "rm -f /var/run/gateway/sle_data.sock; mkdir -p /var/run/gateway"
@@ -174,14 +233,7 @@ test() {
     fi
 
     # 等待 MQTT 连接
-    echo "等待 MQTT 连接..."
-    for i in $(seq 1 30); do
-        if adb shell "grep -q '\"cloud_connected\":1' $ADB_ROOT/data/log/gateway.log 2>/dev/null"; then
-            echo "✅ MQTT 已连接"
-            break
-        fi
-        sleep 2
-    done
+    wait_mqtt_connected || true
 
     # 发送测试数据
     echo "发送测试数据..."
@@ -214,7 +266,7 @@ except:
 test_real_listen() {
     echo "=== 真实 SLE 监听准备 ==="
 
-    adb shell "killall -9 gatewayd 2>/dev/null; killall -9 sle_data_app 2>/dev/null; sleep 1"
+    stop_gateway_processes_for_manual_run
     adb shell "rm -f /var/run/gateway/sle_data.sock; mkdir -p /var/run/gateway"
     adb shell "rm -f $ADB_ROOT/data/log/gateway.log /tmp/gatewayd.log /tmp/sle_data_app.out /tmp/sle_app.log /tmp/sle_stack_raw.log"
 
@@ -237,23 +289,11 @@ test_real_listen() {
         return 1
     fi
 
-    echo "等待 MQTT 连接..."
-    mqtt_ready=0
-    for i in $(seq 1 30); do
-        if adb shell "grep -q '\"cloud_connected\":1' $ADB_ROOT/data/log/gateway.log 2>/dev/null"; then
-            echo "✅ MQTT 已连接"
-            mqtt_ready=1
-            break
-        fi
-        sleep 2
-    done
-    if [ "$mqtt_ready" -ne 1 ]; then
+    if ! wait_mqtt_connected; then
         echo "⚠️ MQTT 未在等待窗口内确认连接，仍启动真实 SLE 监听"
     fi
 
-    echo "启动 sle_data_app(real)..."
-    adb shell "nohup $ADB_ROOT/bin/sle_data_app --mode real > /tmp/sle_data_app.out 2>&1 &"
-    sleep 2
+    start_sle_data_app_real_once
 
     echo ""
     echo "=== 进程状态 ==="

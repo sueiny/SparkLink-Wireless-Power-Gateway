@@ -73,24 +73,24 @@
 
 ```json
 "network": {
-  "mode": "auto",
+  "mode": "cellular",
   "cloud_test_host": "thingskit.aiotcomm.com.cn",
   "cloud_test_port": 11883,
   "priority": ["ethernet", "wifi", "cellular"],
   "ethernet": {"enable": true, "ifname": "eth1"},
   "wifi": {"enable": true, "ifname": "wlan0", "ssid": "Sueiny", "password": "...", "country": "CN"},
-  "cellular": {"enable": true, "ifname": "ppp0", "module": "L610", "serial_device": "/dev/ttyS1", "baudrate": 115200, "apn": "cmnet"}
+  "cellular": {"enable": true, "ifname": "cell0", "module": "ML307", "serial_device": "/dev/ttyUSB2", "baudrate": 115200, "apn": "cmnet", "mode": "ecm_rndis"}
 }
 ```
 
 | 字段 | 说明 | 校验/注意 |
 | --- | --- | --- |
-| `mode` | 网络模式。 | 只允许 `auto/ethernet/wifi/cellular`。当前配置为 `auto`。 |
+| `mode` | 网络模式。 | 只允许 `auto/ethernet/wifi/cellular`。当前配置为 `cellular`，先固定蜂窝链路通关。 |
 | `priority` | `auto` 模式下选网优先级。 | 每项只允许 `ethernet/wifi/cellular`。 |
 | `cloud_test_host/cloud_test_port` | 云端 TCP 探测目标。 | host 不能为空；port 必须是 `1..65535`。 |
 | `ethernet.enable/ifname` | 以太网配置。 | 当前启用 `eth1`，在 `auto` 优先级中排第一。 |
 | `wifi.enable/ifname/ssid/password/country` | Wi-Fi 配置。 | 当前启用 `wlan0`，SSID 为现场值。 |
-| `cellular.*` | 4G/蜂窝配置。 | 当前启用，作为 `auto` 兜底路径。 |
+| `cellular.*` | ML307 ECM/RNDIS 蜂窝配置。 | `/dev/ttyUSB2` 为 AT 控制口，数据面固定命名为 `cell0`，不接管 `eth1/wlan0`。 |
 
 网络模块只负责选网和路由/DNS 诊断；MQTT 是否连接成功最终仍由 `thingskit` 配置和云端连通性决定。
 

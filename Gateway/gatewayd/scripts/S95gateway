@@ -11,6 +11,11 @@ LOG_DIR="$GATEWAY_DIR/data/log"
 STARTUP_LOG="$LOG_DIR/startup.log"
 RUN_DIR="/var/run/gateway"
 DATA_SOCKET="@var/run/gateway/sle_data.sock"
+MONITOR_INIT="/etc/init.d/S96gateway-monitor"
+GATEWAYD_HB="/tmp/gatewayd.heartbeat"
+SLE_HB="/tmp/sle_data_app.heartbeat"
+GATEWAYD_START_TS="$RUN_DIR/gatewayd.start_ts"
+SLE_START_TS="$RUN_DIR/sle_data_app.start_ts"
 
 log_msg()
 {
@@ -21,6 +26,18 @@ log_msg()
 is_running()
 {
     pidof "$1" >/dev/null 2>&1
+}
+
+mark_process_start()
+{
+    path="$1"
+    date +%s > "$path" 2>/dev/null || true
+}
+
+touch_heartbeat()
+{
+    path="$1"
+    date +%s > "$path" 2>/dev/null || true
 }
 
 wait_process_exit()
@@ -67,7 +84,9 @@ start_gatewayd()
         return 1
     fi
 
-    rm -f "$RUN_DIR/sle_data.sock" "$RUN_DIR/sle_cmd.sock" 2>/dev/null || true
+    rm -f "$RUN_DIR/sle_data.sock" "$RUN_DIR/sle_cmd.sock" "$GATEWAYD_HB" 2>/dev/null || true
+    mark_process_start "$GATEWAYD_START_TS"
+    touch_heartbeat "$GATEWAYD_HB"
     nohup "$BIN_DIR/gatewayd" --config "$CONFIG" >/tmp/gatewayd.out 2>&1 &
     echo $! > "$RUN_DIR/gatewayd.pid"
     log_msg "gatewayd started pid=$!"
@@ -91,6 +110,9 @@ start_sle_data_app()
         return 1
     fi
 
+    rm -f "$SLE_HB" 2>/dev/null || true
+    mark_process_start "$SLE_START_TS"
+    touch_heartbeat "$SLE_HB"
     nohup "$BIN_DIR/sle_data_app" --mode real >/tmp/sle_data_app.out 2>&1 &
     echo $! > "$RUN_DIR/sle_data_app.pid"
     log_msg "sle_data_app real started pid=$!"
@@ -103,12 +125,18 @@ start_all()
     /etc/init.d/S42gateway-network-policy start >/dev/null 2>&1 || true
     start_gatewayd || return 1
     start_sle_data_app || return 1
+    if [ -x "$MONITOR_INIT" ]; then
+        "$MONITOR_INIT" start >/dev/null 2>&1 || true
+    fi
     log_msg "gateway autostart complete"
 }
 
 stop_all()
 {
     log_msg "gateway autostart stop"
+    if [ -x "$MONITOR_INIT" ]; then
+        "$MONITOR_INIT" stop >/dev/null 2>&1 || true
+    fi
     killall sle_data_app 2>/dev/null || true
     if ! wait_process_exit sle_data_app 10; then
         log_msg "sle_data_app did not exit in time, force kill"
@@ -122,7 +150,8 @@ stop_all()
         wait_process_exit gatewayd 3 || true
     fi
     rm -f "$RUN_DIR/gatewayd.pid" "$RUN_DIR/sle_data_app.pid" \
-        "$RUN_DIR/sle_data.sock" "$RUN_DIR/sle_cmd.sock" 2>/dev/null || true
+        "$RUN_DIR/sle_data.sock" "$RUN_DIR/sle_cmd.sock" \
+        "$GATEWAYD_HB" "$SLE_HB" "$GATEWAYD_START_TS" "$SLE_START_TS" 2>/dev/null || true
 }
 
 status_all()
@@ -131,6 +160,8 @@ status_all()
     pidof gatewayd 2>/dev/null || echo "not running"
     echo "sle_data_app:"
     pidof sle_data_app 2>/dev/null || echo "not running"
+    echo "gateway monitor:"
+    pidof S96gateway-monitor 2>/dev/null || cat "$RUN_DIR/gateway-monitor.pid" 2>/dev/null || echo "not running"
     echo "default routes:"
     ip route show default 2>/dev/null || true
 }

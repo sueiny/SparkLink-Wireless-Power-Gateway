@@ -32,11 +32,12 @@
     },
     "cellular": {
       "enable": true,
-      "ifname": "ppp0",
-      "module": "L610",
-      "serial_device": "/dev/ttyS1",
+      "ifname": "cell0",
+      "module": "ML307",
+      "serial_device": "/dev/ttyUSB2",
       "baudrate": 115200,
-      "apn": "cmnet"
+      "apn": "cmnet",
+      "mode": "ecm_rndis"
     }
   },
   "publish": {

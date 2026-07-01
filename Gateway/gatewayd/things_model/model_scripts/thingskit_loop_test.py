@@ -155,7 +155,7 @@ class LoopTester:
         # DTU网关属性
         gw_data = {
             "network_type": random.choice(["ethernet", "wifi", "4g"]),
-            "network_ifname": random.choice(["eth0", "wlan0", "ppp0"]),
+            "network_ifname": random.choice(["eth1", "wlan0", "cell0"]),
             "cloud_connected": 1,
             "device_count": 22,
             "cache_count": random.randint(0, 5),

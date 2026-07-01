@@ -91,18 +91,13 @@ bool parseExternalMapPayload(const uint8_t *payload,
             return false;
         }
 
-        const std::string dtu_text = line.substr(0, dash);
+        const std::string dtu_text = trim(line.substr(0, dash));
         const std::string device_id = line.substr(dash + 1);
-        if (dtu_text.rfind("DTU_", 0) != 0) {
-            if (error)
-                *error = "external map line missing DTU_ prefix: " + line;
-            return false;
-        }
 
         int dtu_id = 0;
-        if (!parsePositiveInt(dtu_text.substr(4), &dtu_id)) {
+        if (!parsePositiveInt(dtu_text, &dtu_id)) {
             if (error)
-                *error = "invalid DTU id in external map line: " + line;
+                *error = "invalid node id in external map line: " + line;
             return false;
         }
         if (!device_ids.insert(device_id).second) {
@@ -379,26 +374,27 @@ std::vector<model::TelemetryData> SleDataSource::handleExternalMapFrame(
     for (const auto &device : parsed) {
         const auto device_it = device_id_to_index_.find(device.device_id);
         if (device_it == device_id_to_index_.end()) {
-            logger_.error("SLE-TOPO",
-                          "ST 0x06 references unknown external device_id=" +
-                              device.device_id);
-            return result;
+            logger_.warn("SLE-TOPO",
+                         "ST 0x06 skip unknown external device_id=" +
+                             device.device_id +
+                             ", dtu_id=" + std::to_string(device.dtu_id));
+            continue;
         }
         if (dtu_id_to_index_.find(device.dtu_id) == dtu_id_to_index_.end()) {
-            logger_.error("SLE-TOPO",
-                          "ST 0x06 references unknown DTU node dtu_id=" +
-                              std::to_string(device.dtu_id) +
-                              ", device_id=" + device.device_id);
-            return result;
+            logger_.warn("SLE-TOPO",
+                         "ST 0x06 skip unknown DTU node dtu_id=" +
+                             std::to_string(device.dtu_id) +
+                             ", device_id=" + device.device_id);
+            continue;
         }
         if (route_table_.findRootByNode(static_cast<uint16_t>(device.dtu_id)) !=
             static_cast<int>(header.src_node_id)) {
-            logger_.error("SLE-TOPO",
-                          "ST 0x06 references DTU outside current root topology dtu_id=" +
-                              std::to_string(device.dtu_id) +
-                              ", root=" + std::to_string(header.src_node_id) +
-                              ", device_id=" + device.device_id);
-            return result;
+            logger_.warn("SLE-TOPO",
+                         "ST 0x06 skip DTU outside current root topology dtu_id=" +
+                             std::to_string(device.dtu_id) +
+                             ", root=" + std::to_string(header.src_node_id) +
+                             ", device_id=" + device.device_id);
+            continue;
         }
 
         model::DeviceInfo normalized_device = devices_[device_it->second];

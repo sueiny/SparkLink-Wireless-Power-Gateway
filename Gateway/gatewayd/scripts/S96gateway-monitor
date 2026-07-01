@@ -1,0 +1,289 @@
+#!/bin/sh
+#
+# Lightweight process monitor for gatewayd and sle_data_app.
+# Handles crash restart and heartbeat timeout recovery.
+#
+
+GATEWAY_DIR="/userdata/gateway"
+BIN_DIR="$GATEWAY_DIR/bin"
+CONFIG="$GATEWAY_DIR/config/gateway_config.json"
+LOG_DIR="$GATEWAY_DIR/data/log"
+LOG_FILE="$LOG_DIR/monitor.log"
+RUN_DIR="/var/run/gateway"
+PID_FILE="$RUN_DIR/gateway-monitor.pid"
+DATA_SOCKET="@var/run/gateway/sle_data.sock"
+
+GATEWAYD_HB="/tmp/gatewayd.heartbeat"
+SLE_HB="/tmp/sle_data_app.heartbeat"
+GATEWAYD_START_TS="$RUN_DIR/gatewayd.start_ts"
+SLE_START_TS="$RUN_DIR/sle_data_app.start_ts"
+CHECK_INTERVAL_SEC=2
+HEARTBEAT_TIMEOUT_SEC=15
+GATEWAYD_STARTUP_GRACE_SEC=45
+SLE_STARTUP_GRACE_SEC=90
+TERM_GRACE_SEC=3
+
+log_msg()
+{
+    mkdir -p "$LOG_DIR" "$RUN_DIR" 2>/dev/null || true
+    echo "$(date '+%Y-%m-%d %H:%M:%S') $*" >> "$LOG_FILE"
+}
+
+is_running()
+{
+    pidof "$1" >/dev/null 2>&1
+}
+
+process_pids()
+{
+    pidof "$1" 2>/dev/null || true
+}
+
+heartbeat_age()
+{
+    path="$1"
+    if [ ! -f "$path" ]; then
+        echo 999999
+        return
+    fi
+    now="$(date +%s)"
+    hb_ts="$(sed -n '1{s/[^0-9].*$//;p;}' "$path" 2>/dev/null || echo 0)"
+    case "$hb_ts" in
+        ''|*[!0-9]*) hb_ts=0 ;;
+    esac
+    echo $((now - hb_ts))
+}
+
+timestamp_age()
+{
+    path="$1"
+    if [ ! -f "$path" ]; then
+        echo 999999
+        return
+    fi
+    now="$(date +%s)"
+    ts="$(sed -n '1{s/[^0-9].*$//;p;}' "$path" 2>/dev/null || echo 0)"
+    case "$ts" in
+        ''|*[!0-9]*) ts=0 ;;
+    esac
+    echo $((now - ts))
+}
+
+touch_heartbeat()
+{
+    path="$1"
+    date +%s > "$path" 2>/dev/null || true
+}
+
+mark_process_start()
+{
+    path="$1"
+    date +%s > "$path" 2>/dev/null || true
+}
+
+wait_process_exit()
+{
+    name="$1"
+    timeout="$2"
+    i=0
+    while [ "$i" -lt "$timeout" ]; do
+        if ! is_running "$name"; then
+            return 0
+        fi
+        i=$((i + 1))
+        sleep 1
+    done
+    return 1
+}
+
+wait_gateway_socket()
+{
+    i=0
+    while [ "$i" -lt 30 ]; do
+        if grep -q "$DATA_SOCKET" /proc/net/unix 2>/dev/null; then
+            return 0
+        fi
+        i=$((i + 1))
+        sleep 1
+    done
+    return 1
+}
+
+kill_process()
+{
+    name="$1"
+    reason="$2"
+    pids="$(process_pids "$name")"
+    [ -n "$pids" ] || return 0
+
+    log_msg "kill name=$name reason=$reason pids=$pids"
+    kill $pids 2>/dev/null || true
+    if ! wait_process_exit "$name" "$TERM_GRACE_SEC"; then
+        pids="$(process_pids "$name")"
+        if [ -n "$pids" ]; then
+            log_msg "force kill name=$name reason=$reason pids=$pids"
+            kill -9 $pids 2>/dev/null || true
+            wait_process_exit "$name" 2 || true
+        fi
+    fi
+}
+
+start_gatewayd()
+{
+    if is_running gatewayd; then
+        return 0
+    fi
+    if [ ! -x "$BIN_DIR/gatewayd" ] || [ ! -f "$CONFIG" ]; then
+        log_msg "gatewayd start skipped: missing binary or config"
+        return 1
+    fi
+
+    rm -f "$RUN_DIR/sle_data.sock" "$RUN_DIR/sle_cmd.sock" "$GATEWAYD_HB" 2>/dev/null || true
+    mark_process_start "$GATEWAYD_START_TS"
+    touch_heartbeat "$GATEWAYD_HB"
+    nohup "$BIN_DIR/gatewayd" --config "$CONFIG" >/tmp/gatewayd.out 2>&1 &
+    echo $! > "$RUN_DIR/gatewayd.pid"
+    log_msg "gatewayd restarted pid=$!"
+    return 0
+}
+
+start_sle_data_app()
+{
+    if is_running sle_data_app; then
+        return 0
+    fi
+    if [ ! -x "$BIN_DIR/sle_data_app" ]; then
+        log_msg "sle_data_app start skipped: missing binary"
+        return 1
+    fi
+    if ! wait_gateway_socket; then
+        log_msg "sle_data_app start skipped: gateway socket not ready"
+        return 1
+    fi
+
+    rm -f "$SLE_HB" 2>/dev/null || true
+    mark_process_start "$SLE_START_TS"
+    touch_heartbeat "$SLE_HB"
+    nohup "$BIN_DIR/sle_data_app" --mode real >/tmp/sle_data_app.out 2>&1 &
+    echo $! > "$RUN_DIR/sle_data_app.pid"
+    log_msg "sle_data_app restarted pid=$!"
+    return 0
+}
+
+restart_gateway_stack()
+{
+    reason="$1"
+    kill_process sle_data_app "gatewayd_${reason}"
+    start_gatewayd || return 1
+    start_sle_data_app || true
+}
+
+check_process()
+{
+    name="$1"
+    hb_path="$2"
+    start_ts_path="$3"
+    startup_grace_sec="$4"
+
+    if ! is_running "$name"; then
+        log_msg "detected missing process name=$name"
+        if [ "$name" = "gatewayd" ]; then
+            restart_gateway_stack "missing"
+        else
+            start_sle_data_app
+        fi
+        return
+    fi
+
+    age="$(heartbeat_age "$hb_path")"
+    start_age="$(timestamp_age "$start_ts_path")"
+    if [ "$age" -gt "$HEARTBEAT_TIMEOUT_SEC" ] &&
+        [ "$start_age" -le "$startup_grace_sec" ]; then
+        log_msg "heartbeat pending name=$name age=${age}s startup_age=${start_age}s grace=${startup_grace_sec}s"
+        return
+    fi
+    if [ "$age" -gt "$HEARTBEAT_TIMEOUT_SEC" ]; then
+        log_msg "heartbeat timeout name=$name age=${age}s threshold=${HEARTBEAT_TIMEOUT_SEC}s"
+        kill_process "$name" "heartbeat_timeout_${age}s"
+        if [ "$name" = "gatewayd" ]; then
+            restart_gateway_stack "heartbeat_timeout_${age}s"
+        else
+            start_sle_data_app
+        fi
+    fi
+}
+
+monitor_loop()
+{
+    log_msg "monitor started pid=$$"
+    while true; do
+        check_process gatewayd "$GATEWAYD_HB" "$GATEWAYD_START_TS" "$GATEWAYD_STARTUP_GRACE_SEC"
+        check_process sle_data_app "$SLE_HB" "$SLE_START_TS" "$SLE_STARTUP_GRACE_SEC"
+        sleep "$CHECK_INTERVAL_SEC"
+    done
+}
+
+start_monitor()
+{
+    mkdir -p "$LOG_DIR" "$RUN_DIR" 2>/dev/null || true
+    if [ -f "$PID_FILE" ]; then
+        old_pid="$(cat "$PID_FILE" 2>/dev/null || true)"
+        if [ -n "$old_pid" ] && kill -0 "$old_pid" 2>/dev/null; then
+            log_msg "monitor already running pid=$old_pid"
+            return 0
+        fi
+    fi
+
+    (monitor_loop) &
+    echo $! > "$PID_FILE"
+    log_msg "monitor launch pid=$!"
+}
+
+stop_monitor()
+{
+    if [ -f "$PID_FILE" ]; then
+        pid="$(cat "$PID_FILE" 2>/dev/null || true)"
+        if [ -n "$pid" ]; then
+            kill "$pid" 2>/dev/null || true
+            sleep 1
+            if kill -0 "$pid" 2>/dev/null; then
+                kill -9 "$pid" 2>/dev/null || true
+            fi
+            log_msg "monitor stopped pid=$pid"
+        fi
+    fi
+    rm -f "$PID_FILE" 2>/dev/null || true
+}
+
+status_monitor()
+{
+    if [ -f "$PID_FILE" ]; then
+        pid="$(cat "$PID_FILE" 2>/dev/null || true)"
+        if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
+            echo "running pid=$pid"
+            return 0
+        fi
+    fi
+    echo "not running"
+    return 1
+}
+
+case "$1" in
+    start)
+        start_monitor
+        ;;
+    stop)
+        stop_monitor
+        ;;
+    restart)
+        stop_monitor
+        start_monitor
+        ;;
+    status)
+        status_monitor
+        ;;
+    *)
+        echo "Usage: $0 {start|stop|restart|status}"
+        exit 1
+        ;;
+esac

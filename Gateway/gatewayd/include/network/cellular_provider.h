@@ -4,12 +4,10 @@
 #include "network/i_network_provider.h"
 
 #include <string>
-#include <vector>
 
 namespace gateway::network {
 
-// 4G provider 当前只保留空框架。
-// 后续接 AT/PPP 时在 bringUp() 中实现真实拨号流程。
+// ML307 ECM/RNDIS provider：ttyUSB2 只做 AT 控制面，数据面稳定命名为 cell0。
 class CellularProvider : public INetworkProvider {
 public:
     CellularProvider(config::CellularConfig config, int priority);
@@ -28,7 +26,12 @@ public:
                        std::string *reason = nullptr) const override;
 
 private:
-    std::vector<std::string> candidateIfnames() const;
+    std::string ensureStableIfname() const;
+    std::string findMl307Netdev() const;
+    bool atControlReady() const;
+    bool ensureHostDialup() const;
+    bool isAllowedCellularIfname(const std::string &ifname) const;
+    bool isMl307Netdev(const std::string &ifname) const;
 
     config::CellularConfig config_;
     int priority_ = 0;
